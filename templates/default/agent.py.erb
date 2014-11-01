@@ -1,0 +1,893 @@
+#!/usr/bin/env python
+
+'''
+Created on 6 October 2013
+
+@author: Hamidreza Afzali <afzali@kth.se>
+@author: Jim Dowlin <jdowling@kth.se>
+
+Install:
+ requests:    easy_install requests
+ bottle:      easy_install bottle
+ Cherrypy:    easy_install cherrypy
+ Netifaces:   easy_install netifaces
+ IPy:         easy_install ipy
+ pyOpenSSL:   apt-get install python-openssl 
+ MySQLdb:     apt-get install python-mysqldb
+ pexpect:     apt-get install python-pexpect
+'''
+
+import time
+from time import sleep
+from datetime import datetime
+import multiprocessing
+import thread
+from threading import Lock
+import subprocess
+from subprocess import Popen
+import os
+import sys
+import ConfigParser
+import requests
+import logging.handlers
+import json 
+from OpenSSL import crypto
+import socket
+from os.path import exists, join
+import MySQLdb
+from bottle import Bottle, run, get, post, request, HTTPResponse, server_names, ServerAdapter
+import netifaces 
+from IPy import IP
+import pexpect
+import re
+
+global mysql_process
+global spark_process
+spark_process = None
+mysql_process = None
+var="~#@#@!#@!#!@#@!#"
+
+config_mutex = Lock()
+
+HTTP_OK = 200
+
+CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config.ini"
+SERVICES_FILE = "<%= node[:kagent][:base_dir] %>/services"
+LOG_FILE = "<%= node[:kagent][:base_dir] %>/agent.log"
+CERT_FILE = "<%= node[:kagent][:base_dir] %>/hop.pem"
+KEY_FILE = "<%= node[:kagent][:base_dir] %>/hop.key"
+cores = multiprocessing.cpu_count()
+
+# reading config
+try:
+    config = ConfigParser.ConfigParser()
+    config.read(CONFIG_FILE)
+    server_url = config.get('server', 'url')
+    register_url = server_url + config.get('server', 'path-register')
+    heartbeat_url = server_url + config.get('server', 'path-heartbeat')
+    alert_url = server_url + config.get('server', 'path-alert')
+            
+    server_username = config.get('server', 'username')
+    server_password = config.get('server', 'password')
+    
+    logging_level = config.get('agent', 'logging-level').upper()
+    max_log_size = config.getint('agent', 'max-log-size')    
+    user = config.get('agent', 'username')
+    password = config.get('agent', 'password')          
+    agent_pidfile = config.get('agent', 'pid-file')
+    agent_restport = config.getint('agent', 'restport')
+    heartbeat_interval = config.getfloat('agent', 'heartbeat-interval')
+    watch_interval = config.getfloat('agent', 'watch-interval')
+    mysql_socket = config.get('agent', 'mysql-socket')          
+    network_interface = config.get('agent', 'network-interface')          
+    group_name = config.get('agent', 'group-name')          
+
+# TODO find public/private IP addresses 
+    public_ip = None
+    private_ip = None 
+    eth0_ip = netifaces.ifaddresses(network_interface)[netifaces.AF_INET][0]['addr'] 
+    if (IP(eth0_ip).iptype() == "PUBLIC"):
+        public_ip = eth0_ip
+    else:
+        private_ip = eth0_ip
+    
+    if (config.has_option("agent", "hostname")):
+        hostname = config.get("agent", "hostname")
+    else:
+        hostname = socket.gethostbyaddr(eth0_ip)[0]
+        
+    if (config.has_option("agent", "host-id")):
+        host_id = config.get("agent", "host-id")
+    else:
+        host_id = hostname
+
+    
+except Exception, e:
+    print "Exception while reading {0}: {1}".format(CONFIG_FILE, e)
+    sys.exit(1)
+
+# logging
+try:
+    os.remove(LOG_FILE + '.1')
+except:
+    pass    
+with open(LOG_FILE, 'w'):  # clear log file
+    pass
+logger = logging.getLogger('agent')
+logger_formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+logger_file_handler = logging.handlers.RotatingFileHandler(LOG_FILE, "w", maxBytes=max_log_size, backupCount=1)
+logger_stream_handler = logging.StreamHandler()
+logger_file_handler.setFormatter(logger_formatter)
+logger_stream_handler.setFormatter(logger_formatter)
+logger.addHandler(logger_file_handler)
+logger.addHandler(logger_stream_handler)
+logger.setLevel(logging.INFO)
+
+logger.info("HOPS-Agent started.")
+logger.info("Register URL: {0}".format(register_url))
+logger.info("Heartbeat URL: {0}".format(heartbeat_url))
+logger.info("Alert URL: {0}".format(alert_url))
+logger.info("Host Id: {0}".format(host_id))
+logger.info("Hostname: {0}".format(hostname))
+logger.info("Public IP: {0}".format(public_ip))
+logger.info("Private IP: {0}".format(private_ip))
+
+# reading services
+try:
+    services = ConfigParser.ConfigParser()
+    services.read(SERVICES_FILE)
+    logger.info("Services: {0}".format(services.sections()))
+except Exception, e:
+    logger.error("Exception while reading {0} file: {1}".format(SERVICES_FILE, e))
+    sys.exit(1)     
+ 
+class Util():
+    
+    def read_pid(self, pid_file):
+        with open(pid_file, 'r') as f:
+            pid = str(f.readline()).strip()
+            return pid
+
+    def logging_level(self, level):
+        return {
+                'INFO': logging.INFO,
+                'WARN': logging.WARN,
+                'WARNING': logging.WARNING,
+                'ERROR': logging.ERROR,
+                'DEBUG' : logging.DEBUG,
+                'CRITICAL': logging.CRITICAL,
+                }.get(level, logging.NOTSET)
+
+    @staticmethod
+    def tail(file_name, n):
+        stdin, stdout = os.popen2("tail -n {0} {1}".format(n, file_name))
+        stdin.close()
+        lines = stdout.readlines(); 
+        stdout.close()
+        log = "".join(str(x) for x in lines)
+        return log
+
+
+class Register():
+    def __init__(self, csr, key):
+        while True:
+            cert = Register.register(csr, key)
+            if cert != None:
+                Cert.store(cert, key) 
+                break
+            time.sleep(heartbeat_interval)
+        
+    @staticmethod
+    def register(csr, key):
+            try:     
+                disk_info = DiskInfo() 
+                memory_info = MemoryInfo()                
+                headers = {'content-type': 'application/json'}
+                payload = {}
+                payload["csr"] = csr
+                payload["hostname"] = hostname
+                payload["host-id"] = host_id
+                if (public_ip != None):
+                    payload["public-ip"] = public_ip                      
+                if (private_ip != None):
+                    payload["private-ip"] = private_ip 
+                payload["cores"] = cores
+                payload["disk-capacity"] = disk_info.capacity    
+                payload['memory-capacity'] = memory_info.total                            
+                logger.info("Registering with the dashboard...")
+                auth = (server_username, server_password)
+                resp = requests.put(register_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)
+                if not resp.status_code == HTTP_OK:
+                    raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0}).'.format(resp.status_code))
+                cert = resp.content               
+                logger.info("Registered successfully.")                
+                return cert
+            except Exception as err:
+                logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
+                return None 
+        
+class Heartbeat():
+    daemon_threads = True 
+    def __init__(self):
+        while True:    
+            Heartbeat.send()
+            time.sleep(heartbeat_interval) 
+
+    @staticmethod
+    def send():
+            try:
+                disk_info = DiskInfo() 
+                memory_info = MemoryInfo()
+                load_info = LoadInfo()
+                services_list = Config().read_all_for_heartbeat()
+                now = long(time.mktime(datetime.now().timetuple()))                
+                headers = {'content-type': 'application/json'}
+                payload = {}
+                payload["host-id"] = host_id            
+                payload["agent-time"] = str(now)
+                payload["load1"] = load_info.load1
+                payload["load5"] = load_info.load5
+                payload["load15"] = load_info.load15
+                payload["disk-used"] = disk_info.used
+                payload['memory-used'] = memory_info.used - memory_info.cached - memory_info.buffers
+                payload["services"] = services_list            
+                payload["group-name"] = group_name
+                logger.info("Sending heartbeat...")
+                auth = (server_username, server_password)     
+                resp = requests.put(heartbeat_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)
+                if not resp.status_code == HTTP_OK:
+                    raise Exception('Heartbeat could not be sent (Status code: {0})'.format(resp.status_code))
+            except Exception as err:
+                logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
+
+
+class Alert:
+    @staticmethod    
+    def send(cluster, service, role, time, status):
+        try:
+            headers = {'content-type': 'application/json'}
+            payload = {}
+            payload["Provider"] = "Agent"            
+            payload["Host"] = hostname
+            payload["Time"] = str(time)
+            payload["Plugin"] = "Monitoring"
+            payload["Type"] = "Role"
+            payload["TypeInstance"] = "{0}/{1}/{2}".format(cluster, service, role)
+            payload["DataSource"] = "Agent"
+            payload["CurrentValue"] = status
+            if status == True:
+                payload["Severity"] = "OKAY"
+                payload["Message"] = "Role is running: {0}/{1}/{2}".format(cluster, service, role)
+            else:
+                payload["Severity"] = "FAILURE"
+                payload["Message"] = "Role is not running: {0}/{1}/{2}".format(cluster, service, role)
+            
+            logger.info("Sending Alert...")
+            auth = (server_username, server_password)
+            requests.post(alert_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)        
+        except:
+            logger.error("Cannot access the REST service for alerts. Alert not sent.")
+
+            
+class MemoryInfo(object):
+    def __init__(self):
+        process = subprocess.Popen("free", shell=True, stdout=subprocess.PIPE)
+        stdout_list = process.communicate()[0].split('\n')
+        for line in stdout_list:
+            data = line.split()
+            try:
+                if data[0] == "Mem:":
+                    self.total = int(data[1]) * 1024
+                    self.used = int(data[2]) * 1024
+                    self.free = int(data[3]) * 1024
+                    self.buffers = int(data[5]) * 1024
+                    self.cached = int(data[6]) * 1024
+                    break
+            except IndexError:
+                continue
+
+
+class DiskInfo(object):
+    def __init__(self):
+        disk = os.statvfs("/")
+        self.capacity = disk.f_bsize * disk.f_blocks
+        self.used = disk.f_bsize * (disk.f_blocks - disk.f_bavail)
+
+
+class LoadInfo(object):
+    def __init__(self):
+        self.load1 = os.getloadavg()[0]
+        self.load5 = os.getloadavg()[1]
+        self.load15 = os.getloadavg()[2]
+        
+
+class ExtProcess():  # external process
+    @staticmethod
+    def is_running(pid):
+        pid = int(pid)
+        try:
+            os.kill(pid, 0)
+        except OSError, e:
+            return False
+        else:
+            return True
+        
+    @staticmethod        
+    def watch(cluster, service, role):
+        while True:
+            try:
+                section = Config().section_name(cluster, service, role)
+                pid_file = Config().get(section, "pid-file")
+                pid = Util().read_pid(pid_file)
+                
+                if ExtProcess.is_running(pid) == True:
+                    if not Config().get(section, 'status') == 'Started':
+                        logger.info("Process started: {0}/{1}/{2} pid={3}".format(cluster, service, role, pid))
+                        Service().started(cluster, service, role, pid)
+                    if not Config().get(section, 'pid') == pid:
+                        Config().edit(section, {'pid': pid}, {})
+                else:
+                    raise Exception("Process {0} is not running for {1}/{2}/{3}".format(pid, cluster, service, role))
+            except :  # raised if cannot read pid file (IOError), or manually, if pid is not running
+                logger.warn("Proccess.watch: Process is not running: {0}/{1}/{2}".format(cluster, service, role))
+                if Config().get(section, 'status') == 'Started':
+                    logger.info("Process failed: {0}/{1}/{2}".format(cluster, service, role))
+                    Service().failed(cluster, service, role)
+            finally:                    
+                sleep(watch_interval)
+                  
+
+class Config(): 
+
+    def section_name(self, cluster, service, role=None):
+        if role == None:
+            return "{0}-{1}".format(cluster, service)
+        else:
+            return "{0}-{1}-{2}".format(cluster, service, role)   
+        
+    # select items so that the key does not contain 'file' or 'script'
+    def read_all_for_heartbeat(self):
+        services_list = []
+        config_mutex.acquire()            
+        try:
+            for s in services.sections():
+                if services.has_option(s, "role") or services.get(s, "service") == "SPARK" :
+                    item = {}
+                    for key, val in services.items(s):
+                        if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
+                            item[key] = val
+                    services_list.append(item)                
+        finally:
+            config_mutex.release()
+            return services_list
+        
+    def get_section(self, section):
+        items = {}
+        config_mutex.acquire()
+        try:
+            for key, val in services.items(section):
+                items[key] = val
+        finally:
+            config_mutex.release()
+            return items
+    
+    def add(self, section, options):
+        config_mutex.acquire()
+        try:
+            services.add_section(section)
+            for k, v in options.iteritems():
+                services.set(section, k, v)
+            services.write(open(SERVICES_FILE, 'w'))      
+        finally:
+            config_mutex.release()  
+ 
+    def remove(self, section):
+        config_mutex.acquire()
+        try:
+            services.remove_section(section)
+            services.write(open(SERVICES_FILE, 'w'))
+        finally:
+            config_mutex.release()   
+               
+    def edit(self, section, options_to_set, options_to_remove):
+        config_mutex.acquire()
+        try:
+            for k, v in options_to_set.iteritems():
+                services.set(section, k, v)
+            for k in options_to_remove:
+                services.remove_option(section, k)               
+            services.write(open(SERVICES_FILE, 'w'))      
+        finally:
+            config_mutex.release()
+
+    def get(self, section, option):
+        val = ""
+        config_mutex.acquire()
+        try:         
+            val = services.get(section, option)
+        finally:
+            config_mutex.release()
+            return val                
+
+     
+class Service:
+    
+    def add(self, cluster, service, role):
+        options = Config().makeConfigOptions(cluster, service, role)
+        section = Config().section_name(cluster, service, role)
+        Config().add(section, options)    
+
+    def remove(self, cluster, service, role):
+        section = Config().section_name(cluster, service, role)
+        Config().remove(section)
+
+    # need to be completed. Set the status to Initialize?
+    def init(self, cluster, service, role):
+        section = Config().section_name(cluster, service, role)
+        script = Config().get(section, "init-script")
+        try:
+            p = Popen(script, shell=True, close_fds=True)
+            p.wait()
+            returncode = p.returncode
+            if not returncode == 0:
+                raise Exception("Init script returned a none-zero value")
+            return True
+        except Exception as err:
+            logger.error(err)
+            return False
+
+            
+    def start(self, cluster, service, role):
+        section = Config().section_name(cluster, service, role)
+        script = Config().get(section, "start-script")
+        try:
+            p = Popen(script, shell=True, close_fds=True)
+            p.wait()
+            returncode = p.returncode
+            if not returncode == 0:
+                raise Exception("Start script returned a none-zero value")
+            try:
+                pid = Util().read_pid(Config().get(section, "pid-file"))
+            except:
+                pid = None
+            Service().started(cluster, service, role, pid)
+            return pid
+        except Exception as err:
+            logger.error(err)
+            return False
+        
+    def stop(self, cluster, service, role):
+        section = Config().section_name(cluster, service, role)
+        script = Config().get(section, "stop-script")
+        try:
+            subprocess.check_call(script)  # raises exception if not returncode == 0
+            now = str(long(time.mktime(datetime.now().timetuple())))
+            options_to_set = {'status':'Stopped', 'stop-time':now}
+            options_to_remove = ['pid']
+            Config().edit(section, options_to_set, options_to_remove)
+            return True
+        except Exception as err:
+            logger.error(err)
+            return False
+
+    def failed(self, cluster, service, role):
+        section = Config().section_name(cluster, service, role)
+        now = str(long(time.mktime(datetime.now().timetuple())))
+        options_to_set = {'status':'Stopped', 'stop-time':now}
+        options_to_remove = ['pid']
+        Config().edit(section, options_to_set, options_to_remove)
+        Alert.send(cluster, service, role, now, False)
+
+    def started(self, cluster, service, role, pid):
+        section = Config().section_name(cluster, service, role)
+        now = str(long(time.mktime(datetime.now().timetuple())))
+        options_to_add = {'status':'Started', 'start-time':now}
+        if not pid == None:
+            options_to_add['pid'] = pid
+            
+        options_to_remove = ['stop-time']
+        Config().edit(section, options_to_add, options_to_remove)
+        Alert.send(cluster, service, role, now, True)
+
+
+class MySQLConnector():
+    @staticmethod
+    def read(database, table):
+        try:
+            db = MySQLdb.connect(unix_socket=mysql_socket, db=database)
+            cur = db.cursor()            
+            query = "SELECT * FROM {0}".format(table)
+            cur.execute(query)    
+            return json.dumps(cur.fetchall())
+        except Exception as err:
+            logger.error("Could not access {0} table from {1}: {2}".format(table, database, err))
+            return json.dumps(["Error", "Error: Could not access {0} table from {1}.".format(table, database)])     
+            
+    @staticmethod
+    def read_ndbinfo(table):
+        return MySQLConnector.read("ndbinfo", table)
+    
+    
+class CommandHandler():
+
+    def respose(self, code, msg):
+        resp = HTTPResponse(status=code, output=msg)
+        logger.info("{0}".format(resp))
+        return resp
+         
+    def init(self, cluster, service, role):
+        section = Config().section_name(cluster, service, role)
+        if not services.has_section(section):
+            return CommandHandler().respose(400, 'Role not installed.')
+        else:
+            if Service().init(cluster, service, role) == True:
+                return CommandHandler().respose(200, 'Role initialized.')
+            else:
+                return CommandHandler().respose(400, 'Error: Cannot initialize the service.')
+    
+    def start(self, cluster, service, role):
+        section = Config().section_name(cluster, service, role)
+        if not services.has_section(section):
+            return CommandHandler().respose(400, 'Role not installed.')
+        elif services.get(section, 'status') == 'Started':
+            return CommandHandler().respose(400, 'Role already started.')
+        else:
+            res = Service().start(cluster, service, role)
+            if res == False:
+                return CommandHandler().respose(400, 'Error: Cannot start the service.')
+            else:
+                payload = {}
+                payload['pid'] = str(res)
+                payload['msg'] = 'Role started.'
+                return CommandHandler().respose(200, json.dumps(payload))
+
+    def stop(self, cluster, service, role):
+        section = Config().section_name(cluster, service, role)
+        if not services.has_section(section):
+            return CommandHandler().respose(400, 'Role not installed.')
+        elif not services.get(section, 'status') == 'Started':
+            return CommandHandler().respose(400, 'Role is not running.')
+        else:
+            if Service().stop(cluster, service, role) == True:
+                return CommandHandler().respose(200, 'Role stopped.')
+            else:
+                return CommandHandler().respose(400, 'Error: Cannot stop the service.')
+
+    def read_log(self, cluster, service, role, lines):
+        try:
+            lines = int(lines)
+            if role == None:
+                section = Config().section_name(cluster, service)
+            else:
+                section = Config().section_name(cluster, service, role)                
+            log_file_name = Config().get(section, "stdout-file")
+            log = Util().tail(log_file_name, lines)
+            return CommandHandler().respose(200, log)
+        
+        except Exception as err:
+            logger.error(err)
+            return CommandHandler().respose(400, "Cannot read file.")
+
+    def read_agent_log(self, lines):
+        try:
+            lines = int(lines)
+            log = Util().tail(LOG_FILE, lines)
+            return CommandHandler().respose(200, log)
+        
+        except Exception as err:
+            logger.error(err)
+            return CommandHandler().respose(400, "Cannot read file.")
+
+    def read_config(self, cluster, service, role):
+        try:
+            section = Config().section_name(cluster, service, role)
+            config_file_name = Config().get(section, "config-file")
+            with open(config_file_name) as config_file:
+                conf = "".join(str(x) for x in (list(config_file)))
+            
+            return CommandHandler().respose(200, conf)
+        
+        except Exception as err:
+            logger.error(err)
+            return CommandHandler().respose(400, "Cannot read file.")
+
+    def info(self, cluster, service, role):
+        try:
+            section = Config().section_name(cluster, service, role)
+            resp = json.dumps(Config().get_section(section))
+            return CommandHandler().respose(200, resp)
+        
+        except Exception as err:
+            logger.error(err)
+            return CommandHandler().respose(400, "Cannot read file.")
+
+    def read_ndbinfo(self, table):
+        res = MySQLConnector.read_ndbinfo(table)
+        return CommandHandler().respose(200, res)
+                
+    def execute(self, cluster, service, role, command, params):
+        try:
+            if role == None:
+                section = Config().section_name(cluster, service)
+            else:    
+                section = Config().section_name(cluster, service, role)
+            script = Config().get(section, "command-script")
+            logger.info("Script name executing is: {0}".format(script))
+            env = Config().get(section, "command-env")
+            command = env + " " + script + " " + params
+            command = re.sub(r'([\"])', r'\\\1', command)
+            as_user = Config().get(section, "command-user")
+# TODO: could check if as_user == "root" or as_user == "sudo" here...
+            if not as_user:
+                logger.warn("No user supplied to execute command: {0}".format(command))
+                raise Exception("Not allowed execute command as user: {0}".format(as_user))
+            if as_user:
+                command = "su - " + as_user + " -c \"" + command + "\""
+# TODO: shell=True is insecure when using untrused input
+# as an attacker can input "hdfs dfs -ls / ; rm -rf /"
+            p = Popen(command , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            out, err = p.communicate()        
+            return CommandHandler().respose(200, out)
+        
+        except Exception as err:
+            logger.error(err)
+            return CommandHandler().respose(400, "Could not execute.")                
+                
+    def refresh(self):
+        Heartbeat.send(False);
+        return CommandHandler().respose(200, "OK")
+
+
+class Authentication():
+    def check(self):
+        result = False
+        try:
+            username = request.params['username']  
+            password = request.params['password']  
+            if (username, password) == (user, password):
+                return True
+        except Exception:
+            result = False
+
+        if result == False:
+            logger.info("Authentication failed: Invalid username/password: {0}/{1}".format(username, password))
+        return result
+    
+    def failed(self):
+        return HTTPResponse(status=400, output="Invalid username/password")
+
+
+class Cert():
+    @staticmethod
+    def get_dir():
+        return os.path.dirname(os.path.abspath(__file__)) 
+    
+    @staticmethod
+    def exist():
+        cert_dir = Cert.get_dir() 
+        return exists(join(cert_dir, CERT_FILE)) and exists(join(cert_dir, KEY_FILE)) 
+    
+    @staticmethod    
+    def create_key_and_csr():
+        """
+        Create key-pair and certificate sign request (CSR)
+        """    
+        # create a key pair
+        pkey = crypto.PKey()
+        pkey.generate_key(crypto.TYPE_RSA, 1024)
+        # create certificate sign request
+        req = crypto.X509Req()    
+        req.get_subject().C = "SE"
+        req.get_subject().ST = "Sweden"
+        req.get_subject().L = "Stockholm"
+        req.get_subject().O = "BiobankCloud"
+        req.get_subject().OU = "KTH"
+        req.get_subject().CN = hostname
+        req.set_pubkey(pkey)
+        req.sign(pkey, 'sha1')
+        csr = crypto.dump_certificate_request(crypto.FILETYPE_PEM, req)
+        private_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey)
+        return csr, private_key  
+
+    @staticmethod
+    def store(cert, key):
+        """
+        Write certificate and private key in current directory
+        """           
+        cert_dir = Cert.get_dir() 
+        with open(join(cert_dir, CERT_FILE), "wt") as f:
+            f.write(cert)
+        with open(join(cert_dir, KEY_FILE), "wt") as f:
+            f.write(key)
+        logger.info("Writing Cert/Key pair to {0}/{1}.".format(CERT_FILE, KEY_FILE))
+
+
+class SSLCherryPy(ServerAdapter):  
+    def run(self, handler):  
+        from cherrypy import wsgiserver  
+        server = wsgiserver.CherryPyWSGIServer((self.host, self.port), handler)  
+        # Certificate file. If a valid path, SSL will be used. Set to None to disable SSL  
+        server.ssl_certificate = CERT_FILE
+        server.ssl_private_key = KEY_FILE
+        try:  
+            server.start()  
+        finally:  
+            server.stop()
+
+def start_spark_shell(cluster, service, command):
+    global spark_process
+    section = Config().section_name(cluster, service)    
+    script = Config().get(section, "command-" + command)
+    spark_process = pexpect.spawn(script)
+    spark_process.expect ('scala>')       
+    return spark_process.before
+
+def continue_spark_shell(cluster, service, command, params):  
+    global spark_process
+    spark_process.sendline(command + " " + params)    
+    result = {}        
+    i = spark_process.expect(['scala>'])         
+    if i==0:
+        msg = spark_process.before.replace(" " + var + "\r\n", "")
+        result['before'] = msg        
+    return json.dumps(result)
+
+
+if __name__ == '__main__':
+    
+    agent_pid = str(os.getpid())
+    file(agent_pidfile, 'w').write(agent_pid)
+    logger.info("HOPS-Agent PID: {0}".format(agent_pid))
+    logger.setLevel(Util().logging_level(logging_level))
+        
+    if not Cert.exist():    
+        (csr, key) = Cert.create_key_and_csr()
+        Register(csr=csr, key=key) # Registering with the dashboard
+    else:
+        logger.info('Certificate files exist. Already registered. Skipping registration phase.')
+        
+    # Heartbeat, process watch (alerts) and REST API are available after the agent registers successfully 
+    thread.start_new_thread(Heartbeat, ()) 
+        
+    for s in services.sections():
+        cluster = Config().get(s, "cluster")
+        service = Config().get(s, "service")       
+        if services.has_option(s, "role"):
+            role = Config().get(s, "role")             
+            thread.start_new_thread(ExtProcess.watch, (cluster, service, role,))
+        else:
+            logger.info("Not watching {0}/{1}".format(cluster, service))
+                            
+    server_names['sslcherrypy'] = SSLCherryPy  
+    app = Bottle()
+    @get('/ping')
+    def ping():
+        logger.info('Incoming REST Request:  GET /ping')       
+        return "HOPS-Agent: Pong"
+        
+    @get('/do/<cluster>/<service>/<role>/<command>')
+    def do(cluster, service, role, command):
+        logger.info('Incoming REST Request:  GET /do/{0}/{1}/{2}/{3}'.format(cluster, service, role, command))
+        if not Authentication().check():
+            return Authentication().failed()
+        section = Config().section_name(cluster, service, role)
+        logger.info("Section is {0}".format(section))
+        if not services.has_section(section):
+            logger.error("Couldn't find command {0} in {1}/{2} in section {3}".format(command, service, role, section))
+            return HTTPResponse(status=400, output='Invalid command.')            
+
+        serviceInServicesFile = Config().get(section, "service")
+        roleInServicesFile = Config().get(section, "role")
+        commandInServicesFile = Config().get(section, "{0}-script".format(command))
+
+        if (not service == serviceInServicesFile) or (not role == roleInServicesFile) or (not commandInServicesFile):
+            logger.error("Couldn't find command {0} in {1}/{2}".format(command, service, role))
+            return HTTPResponse(status=400, output='Invalid command.')            
+        
+        if command == "start":
+            return CommandHandler().start(cluster, service, role);
+        elif command == "stop":
+            return CommandHandler().stop(cluster, service, role);                
+        elif command == "init":
+            return CommandHandler().init(cluster, service, role); 
+        else:
+            return HTTPResponse(status=400, output='Invalid command.')        
+
+
+    @get('/log/<cluster>/<service>/<role>/<lines>')
+    def log(cluster, service, role, lines):
+        logger.info('Incoming REST Request:  GET /log/{0}/{1}/{2}'.format(cluster, service, role, lines))
+        if not Authentication().check():
+            return Authentication().failed()
+        
+        if not services.has_section(Config().section_name(cluster, service, role)):
+            return HTTPResponse(status=400, output='Cluster/Service/Role not available.')
+
+        return CommandHandler().read_log(cluster, service, role, lines);
+
+
+    @get('/log/<cluster>/<service>/<lines>')
+    def log(cluster, service, lines):
+        logger.info('Incoming REST Request:  GET /log/{0}/{1}'.format(cluster, service))
+        if not Authentication().check():
+            return Authentication().failed()
+        
+        if not services.has_section(Config().section_name(cluster, service)):
+            return HTTPResponse(status=400, output='Cluster/Service not available.')
+
+        return CommandHandler().read_log(cluster, service, None, lines);
+
+
+    @get('/agentlog/<lines>')
+    def agentlog(lines):
+        logger.info('Incoming REST Request:  GET /agentlog/{0}'.format(lines))
+        if not Authentication().check():
+            return Authentication().failed()
+                                    
+        return CommandHandler().read_agent_log(lines);
+
+    @get('/config/<cluster>/<service>/<role>')
+    def config(cluster, service, role):
+        logger.info('Incoming REST Request:  GET /log/{0}/{1}/{2}'.format(cluster, service, role))
+        if not Authentication().check():
+            return Authentication().failed()
+        
+        if not services.has_section(Config().section_name(cluster, service, role)):
+            return HTTPResponse(status=400, output='Cluster/Service/Role not available.')
+            
+        return CommandHandler().read_config(cluster, service, role);
+
+    @get('/info/<cluster>/<service>/<role>')
+    def info(cluster, service, role):
+        logger.info('Incoming REST Request:  GET /status/{0}/{1}'.format(cluster, service, role))
+        if not Authentication().check():
+            return Authentication().failed()
+        
+        if not services.has_section(Config().section_name(cluster, service, role)):
+            return HTTPResponse(status=400, output='Cluster/Service/Role not available.')
+            
+        return CommandHandler().info(cluster, service, role);
+
+    @get('/refresh')  # request heartbeat
+    def refresh():
+        logger.info('Incoming REST Request:  GET /refresh')
+        if not Authentication().check():
+            return Authentication().failed()
+             
+        return CommandHandler().refresh();
+
+    @get('/mysql/ndbinfo/<table>')
+    def mysql_read(table):
+        logger.info('Incoming REST Request:  GET /mysql/ndbinfo/{0}'.format(table))
+        if not Authentication().check():
+            return Authentication().failed()
+            
+        return CommandHandler().read_ndbinfo(table)
+    
+    @post('/execute/<state>/<cluster>/<service>/<role>/<command>')
+    def execute_hdfs(state, cluster, service, role, command):
+        logger.info('Incoming REST Request:  POST /execute/{0}/{1}/{2}/{3}/{4}'.format(state, cluster, service, role, command))
+        if not Authentication().check():
+            return Authentication().failed()            
+        if request.body.readlines():
+            params =  request.body.readlines()[0]
+        else:
+            params = ""                        
+        if state == "run" :
+            if role == "-":
+                return CommandHandler().execute(cluster, service, None, command, params);
+            else:       
+                return CommandHandler().execute(cluster, service, role, command, params);
+        if state == "start":
+            out = start_spark_shell(cluster, service, command)
+            return CommandHandler().respose(200, out)
+        if state == "continue":
+            out = continue_spark_shell(cluster, service, command, params)
+            return CommandHandler().respose(200, out)   
+        return CommandHandler().respose(404, "Error")  
+                
+
+    logger.info("RESTful service started.")
+    run(host='0.0.0.0', port=agent_restport, server='sslcherrypy')
+
+

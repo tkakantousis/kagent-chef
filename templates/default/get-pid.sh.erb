@@ -1,0 +1,11 @@
+echo ""
+echo "Checking if the agent is running...."
+echo ""
+PID_FILE=<%= node[:kagent][:pid_file] %>
+PID=""
+if [ -e $PID_FILE ] ; then
+  PID=`cat $PID_FILE`
+fi
+echo "PID is $PID"
+echo ""
+kill -0 $PID 2> /dev/null

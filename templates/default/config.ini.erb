@@ -1,0 +1,24 @@
+[server]
+url = <%= @rest_url %>
+path-register: /rest/agent/register
+path-heartbeat: /rest/agent/heartbeat
+path-alert: /rest/agent/alert
+username = <%= node[:kagent][:dashboard][:user] %>
+password = <%= node[:kagent][:dashboard][:password] %>
+
+[agent]
+host-id = <%= @private_ip %>
+restport = <%= node[:kagent][:port] %>
+heartbeat-interval = <%= node[:kagent][:heartbeat_interval] %>
+watch-interval = <%= node[:kagent][:watch_interval] %>
+pid-file = <%= node[:kagent][:pid_file] %>
+logging-level = <%= node[:kagent][:logging_level] %>
+max-log-size = <%= node[:kagent][:max_log_size] %>
+username = <%= node[:kagent][:rest_api][:user] %>
+password = <%= node[:kagent][:rest_api][:password] %>
+public-ip = <%= @public_ip %>
+private-ip = <%= @private_ip %>
+mysql-socket = <%= node[:ndb][:mysql_socket] %>
+hostname = <%= node['hostname'] %>
+network-interface = <%= node[:kagent][:network][:interface] %>
+group-name = <%= node[:kagent][:group_name] %>
