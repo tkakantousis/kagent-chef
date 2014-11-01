@@ -62,6 +62,6 @@ default[:kagent][:private_ips]          = ['10.0.2.15']
 default[:download_url]                    = "http://193.10.67.171/hops"
 
 default['java']['bouncycastle_url']       = "#{node[:download_url]}/bcprov-jdk16-146.jar"
-#default['java']['bouncycastle_url']      = "http://downloads.bouncycastle.org/java/bcprov-jdk16-146.jar"
 
+default[:kagent][:allow_kmon_ssh_access]  = "false"
 default[:vagrant]                         = "false"

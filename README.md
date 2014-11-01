@@ -1,8 +1,8 @@
 Description
 ===========
 
-This cookbook installs the Hops agent, impelemented in python, that is responsible
-for managing services installed on the node.
+This cookbook installs the Karamel agent (kagent), impelemented in python, that is responsible
+for monitoring and managing services installed on the node.
 
 
 Requirements
