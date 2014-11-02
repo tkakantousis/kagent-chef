@@ -1,6 +1,6 @@
 action :add do
   ini_file = IniFile.load(node[:hop][:services], :comment => ';#')
-  cluster = "#{node[:hop][:cluster]}"
+  cluster = "#{node[:kagent][:cluster]}"
   service = "#{new_resource.service}"
   role = "#{new_resource.role}"
   section="#{cluster}-#{service}-#{role}"

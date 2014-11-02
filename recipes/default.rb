@@ -19,8 +19,7 @@ template"#{node[:kagent][:base_dir]}/agent.py" do
   notifies :enable, "service[kagent]"
 end
 
-['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh', 
-'collectd-start.sh', 'collectd-stop.sh', 'collectd-server-start.sh', 'collectd-server-stop.sh'].each do |script|
+['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'].each do |script|
   Chef::Log.info "Installing #{script}"
   template "#{node[:kagent][:base_dir]}/#{script}" do
     source "#{script}.erb"
