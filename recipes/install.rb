@@ -189,7 +189,7 @@ directory node[:kagent][:base_dir] do
   recursive true
 end
 
-file node.default[:hop][:services] do
+file node.default[:kagent][:services] do
   owner "root"
   group "root"
   mode 00755
