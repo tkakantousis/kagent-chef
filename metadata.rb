@@ -16,20 +16,13 @@ depends 'openssh'
 depends 'sudo'
 depends 'hostsfile'
 
-recipe "kagent::default", "Installs and configures the Hops agent"
-recipe "kagent::restart", "Restarts the Hops agent"
+recipe "kagent::default", "Installs and configures the Karamel agent"
 
 attribute "kagent/dashboard/ip_port",
 :display_name => "Dashboard Ip:port",
 :description => " Ip address and port for Dashboard REST API",
 :type => 'string',
 :default => "10.0.2.15:8080"
-
-attribute "hadoop/cluster",
-:display_name => "Cluster",
-:description => " Name of the Cluster being deployed",
-:type => 'string',
-:default => "CLUSTER_NAME"
 
 attribute "hop/hostid",
 :display_name => "HostId",
