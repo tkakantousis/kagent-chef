@@ -44,7 +44,9 @@ public_ip = my_public_ip()
 
 dashboard_endpoint = node[:kagent][:dashboard][:ip_port]
 if dashboard_endpoint.eql? ""
-  dashboard_endpoint = private_cookbook_ip("kmon")  + ":8080"
+  if node.attribute? "kmon"
+    dashboard_endpoint = private_cookbook_ip("kmon")  + ":8080"
+  end
 end
 
 template "#{node[:kagent][:base_dir]}/config.ini" do
@@ -104,14 +106,17 @@ end
 
 if node[:kagent][:allow_kmon_ssh_access] == 'true'
 
-  bash "add_dashboards_public_key" do
-   user "root"
-   code <<-EOF
-    mkdir -p /root/.ssh
-    chmod 700 /root/.ssh
-    cat #{node[:kmon][:public_key]} >> /root/.ssh/authorized_keys
-   EOF
-   not_if "test -f /root/.ssh/authorized_keys"
+  if node.attribute? "kmon"
+    if node[:kmon].attribute? "public_key"
+      bash "add_dashboards_public_key" do
+        user "root"
+        code <<-EOF
+         mkdir -p /root/.ssh
+         chmod 700 /root/.ssh
+         cat #{node[:kmon][:public_key]} >> /root/.ssh/authorized_keys
+        EOF
+        not_if "test -f /root/.ssh/authorized_keys"
+      end
+    end
   end
-
 end

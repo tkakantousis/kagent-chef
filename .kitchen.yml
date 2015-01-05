@@ -10,8 +10,9 @@ provisioner:
   name: chef_solo
 
 platforms:
-  - name: ubuntu-14.04
-  - name: centos-6.5
+  - name: ubuntu-12.04
+#  - name: ubuntu-14.04
+#  - name: centos-6.5
 
 suites:
   - name: default
@@ -31,9 +32,9 @@ suites:
                password: "hopagent"
             private_ips: ["10.0.2.15"]
             public_ips: ["10.0.2.15"]
-         kmon:
-            private_ips: ["10.0.2.15"]
-            public_ips: ["10.0.2.15"]
+#         kmon:
+#            private_ips: ["10.0.2.15"]
+#            public_ips: ["10.0.2.15"]
          private_ips: ["10.0.2.15"]
          public_ips: ["10.0.2.15"]
          vagrant: "enabled"
