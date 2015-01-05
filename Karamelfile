@@ -1,0 +1,5 @@
+dependencies: 
+  - recipe: kagent::install,
+  - recipe: kagent::default,
+    local:  
+      - kagent::install
