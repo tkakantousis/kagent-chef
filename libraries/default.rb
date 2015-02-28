@@ -1,5 +1,9 @@
 require 'resolv'
 
+# http://serverfault.com/questions/331936/setting-the-hostname-fqdn-or-short-name
+# http://hardoop.blogspot.se/2013/02/hadoop-and-fqdn.html
+# hostname -fqdn   is used by the tasktracker
+
 module Hop
     def my_public_ip()
       node[:public_ips][0]
