@@ -3,26 +3,32 @@ require 'resolv'
 module Hop
     def my_public_ip()
       node[:public_ips][0]
+      return dns_lookup(ip)
     end
 
     def my_private_ip()
       node[:private_ips][0]
+      return dns_lookup(ip)
     end
 
     def public_cookbook_ip(cookbook)
-      node[cookbook][:public_ips][0]
+      ip = node[cookbook][:public_ips][0]
+      return dns_lookup(ip)
     end
 
     def public_recipe_ip(cookbook, recipe)
-      node[cookbook][recipe][:public_ips][0]
+      ip = node[cookbook][recipe][:public_ips][0]
+      return dns_lookup(ip)
     end
 
     def private_cookbook_ip(cookbook)
-      node[cookbook][:private_ips][0]
+      ip = node[cookbook][:private_ips][0]
+      return dns_lookup(ip)
     end
 
     def private_recipe_ip(cookbook, recipe)
-      node[cookbook][recipe][:private_ips][0]
+      ip = node[cookbook][recipe][:private_ips][0]
+      return dns_lookup(ip)
     end
 
     def private_recipe_hostnames(cookbook, recipe)
@@ -93,6 +99,20 @@ module Hop
 
     end
 
+  # lookup fqdn of node using  dns.
+  # return ip address if dns fails after 6 seconds
+  def dns_lookup ip
+    Chef::Log.debug("Resolving IP #{ip}")
+    fqdn = ip
+    begin
+      # set DNS resolution timeout to 6 seconds, otherwise it will take about 80s then throws exception when DNS server is not reachable
+      fqdn = Timeout.timeout(6) { Resolv.getname(ip) }
+      Chef::Log.info("Resolved IP #{ip} to FQDN #{fqdn}")
+    rescue StandardError => e
+      Chef::Log.warn("Unable to resolve IP #{ip} to FQDN due to #{e}")
+    end
+    return fqdn
+  end
 
     # get ndb_mgmd_connectstring, or list of mysqld endpoints
     def service_endpoints(cookbook, recipe, port)
@@ -121,7 +141,8 @@ module Hop
        # to other mysqlds
       jdbcUrl = "localhost:#{node[:ndb][:mysql_port]},"
       for n in node[:ndb][:mysqld][:private_ips]
-        jdbcUrl += "#{n}:#{node[:ndb][:mysql_port]},"
+        fqdn = dns_lookup(n)
+        jdbcUrl += "#{fqdn}:#{node[:ndb][:mysql_port]},"
       end
       jdbcUrl = jdbcUrl.chop
       node.normal[:ndb][:mysql][:jdbc_url] = "jdbc:mysql://" + jdbcUrl + "/"
