@@ -7,32 +7,32 @@ require 'resolv'
 module Hop
     def my_public_ip()
       node[:public_ips][0]
-      return dns_lookup(ip)
+#      return dns_lookup(ip)
     end
 
     def my_private_ip()
       node[:private_ips][0]
-      return dns_lookup(ip)
+#      return dns_lookup(ip)
     end
 
     def public_cookbook_ip(cookbook)
       ip = node[cookbook][:public_ips][0]
-      return dns_lookup(ip)
+#      return dns_lookup(ip)
     end
 
     def public_recipe_ip(cookbook, recipe)
       ip = node[cookbook][recipe][:public_ips][0]
-      return dns_lookup(ip)
+#      return dns_lookup(ip)
     end
 
     def private_cookbook_ip(cookbook)
       ip = node[cookbook][:private_ips][0]
-      return dns_lookup(ip)
+#      return dns_lookup(ip)
     end
 
     def private_recipe_ip(cookbook, recipe)
       ip = node[cookbook][recipe][:private_ips][0]
-      return dns_lookup(ip)
+#      return dns_lookup(ip)
     end
 
     def private_recipe_hostnames(cookbook, recipe)
