@@ -1,4 +1,4 @@
-default[:hadoop][:version]                = "2.2.0"
+default[:hadoop][:version]                = "2.4.0"
 
 # Default values for configuration parameters
 default[:kagent][:run_as_user]            = "root"
@@ -52,7 +52,8 @@ default[:kagent][:private_ips]            = ['10.0.2.15']
 # Base URL used to download hop binaries
 default[:download_url]                    = "http://193.10.67.171/hops"
 
-default['java']['bouncycastle_url']       = "#{node[:download_url]}/bcprov-jdk16-146.jar"
+#default['java']['bouncycastle_url']       = "#{node[:download_url]}/bcprov-jdk16-146.jar"
+default['java']['bouncycastle_url']       = "#{node[:download_url]}/bcprov-jdk15on-149.jar"
 
 default[:kagent][:allow_kmon_ssh_access]  = "false"
 default[:vagrant]                         = "false"
