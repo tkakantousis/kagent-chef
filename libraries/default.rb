@@ -135,7 +135,7 @@ module Hop
       end
       # Remove the last ','
       connectString = connectString.chop
-      node.normal[:ndb][:connect_string] = connectString
+      node.normal[:ndb][:connectstring] = connectString
     end
     
     def jdbc_url()
