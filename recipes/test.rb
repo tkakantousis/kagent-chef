@@ -1,13 +1,6 @@
 require 'json'
 
 kagent_param "/tmp" do
-  cookbook "kagent"
-  recipe "test"
-  param "param"
-  value "value"
-end
-
-kagent_param "/tmp" do
   executing_cookbook "#{cookbook_name}"
   executing_recipe "#{recipe_name}"
   cookbook "kagent"
