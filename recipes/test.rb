@@ -8,6 +8,8 @@ kagent_param "/tmp" do
 end
 
 kagent_param "/tmp" do
+  executing_cookbook "#{cookbook_name}"
+  executing_recipe "#{recipe_name}"
   cookbook "kagent"
   recipe "test"
   param "param2"
@@ -15,6 +17,8 @@ kagent_param "/tmp" do
 end
 
 kagent_param "/tmp" do
+  executing_cookbook "kagent2"
+  executing_recipe "test2"
   cookbook "ndb"
   recipe "mgmd"
   param "opensshkey"
