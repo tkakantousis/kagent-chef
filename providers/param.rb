@@ -9,15 +9,22 @@ action :add do
   path = "#{new_resource.path}"
   cookbook = "#{new_resource.cookbook}"
   recipe = "#{new_resource.recipe}"
+  subrecipe = "#{new_resource.subrecipe}"
+  subsubrecipe = "#{new_resource.subsubrecipe}"
   param = "#{new_resource.param}"
   value = "#{new_resource.value}"
   executing_cookbook = "#{new_resource.executing_cookbook}"
   executing_recipe = "#{new_resource.executing_recipe}"
 
 # The result will be written to file in this json format
-  entry_hash = {"#{cookbook}" => { "#{recipe}" => { "#{param}" => "#{value}" }}}
-
-  filename = "#{path}/#{executing_cookbook}__#{executing_recipe}__output.json"
+  if subrecipe.empty?
+     entry_hash = {"#{cookbook}" => { "#{recipe}" => { "#{param}" => "#{value}" }}}
+  elsif subsubrecipe.empty?
+     entry_hash = {"#{cookbook}" => { "#{recipe}" => { "#{subrecipe}" => { "#{param}" => "#{value}" }}}}
+  else
+     entry_hash = {"#{cookbook}" => { "#{recipe}" => { "#{subrecipe}" => { "#{subsubrecipe}" => { "#{param}" => "#{value}" }}}}}
+  end
+  filename = "#{path}/#{executing_cookbook}__#{executing_recipe}__out.json"
 # 'w+' : Read and write access. Pointer is positioned at start of file.
 # We will overwrite the file with a new json object.
   file = ::File.new(filename, "w+")

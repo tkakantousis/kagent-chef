@@ -1,4 +1,3 @@
-require 'json'
 
 kagent_param "/tmp" do
   executing_cookbook "#{cookbook_name}"
@@ -14,6 +13,27 @@ kagent_param "/tmp" do
   executing_recipe "test2"
   cookbook "ndb"
   recipe "mgmd"
+  param "opensshkey"
+  value "xxxxxxxxxxxxxxxxxxxx"
+end
+
+kagent_param "/tmp" do
+  executing_cookbook "kagent3"
+  executing_recipe "test"
+  cookbook "ndb"
+  recipe "mgmd"
+  subrecipe "public"
+  param "opensshkey"
+  value "xxxxxxxxxxxxxxxxxxxx"
+end
+
+kagent_param "/tmp" do
+  executing_cookbook "kagent4"
+  executing_recipe "test2"
+  cookbook "ndb"
+  recipe "mgmd"
+  subrecipe "public"
+  subrecipe "another"
   param "opensshkey"
   value "xxxxxxxxxxxxxxxxxxxx"
 end
