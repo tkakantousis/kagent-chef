@@ -33,7 +33,7 @@ kagent_param "/tmp" do
   cookbook "ndb"
   recipe "mgmd"
   subrecipe "public"
-  subrecipe "another"
+  subsubrecipe "another" 
   param "opensshkey"
   value "xxxxxxxxxxxxxxxxxxxx"
 end
