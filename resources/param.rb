@@ -1,3 +1,5 @@
+require 'json'
+
 actions :add
 
 attribute :path, :kind_of => String, :name_attribute => true, :required => true

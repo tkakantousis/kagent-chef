@@ -1,4 +1,4 @@
-require 'json'
+#require 'json'
 
 kagent_param "/tmp" do
   cookbook "kagent"
