@@ -2,9 +2,11 @@ require 'resolv'
 
 # http://serverfault.com/questions/331936/setting-the-hostname-fqdn-or-short-name
 # http://hardoop.blogspot.se/2013/02/hadoop-and-fqdn.html
+# https://github.com/caskdata/hadoop_cookbook/blob/master/libraries/helpers.rb
 # hostname -fqdn   is used by the tasktracker
 
-module Hop
+module Hadoop
+  module Helpers  
     def my_public_ip()
       node[:public_ips][0]
 #      return dns_lookup(ip)
@@ -151,6 +153,8 @@ module Hop
       jdbcUrl = jdbcUrl.chop
       node.normal[:ndb][:mysql][:jdbc_url] = "jdbc:mysql://" + jdbcUrl + "/"
     end
+  end
 end
 
-Chef::Recipe.send(:include, Hop)
+Chef::Recipe.send(:include, Hadoop::Helpers)
+Chef::Resource.send(:include, Hadoop::Helpers)
