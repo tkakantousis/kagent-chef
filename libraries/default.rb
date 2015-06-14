@@ -5,7 +5,7 @@ require 'resolv'
 # https://github.com/caskdata/hadoop_cookbook/blob/master/libraries/helpers.rb
 # hostname -fqdn   is used by the tasktracker
 
-module Hadoop
+module Kagent 
   module Helpers  
     def my_public_ip()
       node[:public_ips][0]
@@ -156,5 +156,5 @@ module Hadoop
   end
 end
 
-Chef::Recipe.send(:include, Hadoop::Helpers)
-Chef::Resource.send(:include, Hadoop::Helpers)
+Chef::Recipe.send(:include, Kagent::Helpers)
+Chef::Resource.send(:include, Kagent::Helpers)
