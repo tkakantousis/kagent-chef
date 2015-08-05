@@ -38,11 +38,11 @@ module Kagent
     end
 
     def private_recipe_ips(cookbook, recipe)
-      node[cookbook][recipe][:private_ips]
+      return node[cookbook][recipe][:private_ips]
     end
 
     def private_cookbook_ips(cookbook)
-      node[cookbook][:private_ips]
+      return node[cookbook][:private_ips]
     end
     
     def private_recipe_hostnames(cookbook, recipe)
