@@ -17,18 +17,8 @@ module Kagent
 #      return dns_lookup(ip)
     end
 
-    def public_cookbook_ip(cookbook)
-      ip = node[cookbook][:public_ips][0]
-#      return dns_lookup(ip)
-    end
-
     def public_recipe_ip(cookbook, recipe)
       ip = node[cookbook][recipe][:public_ips][0]
-#      return dns_lookup(ip)
-    end
-
-    def private_cookbook_ip(cookbook)
-      ip = node[cookbook][:private_ips][0]
 #      return dns_lookup(ip)
     end
 
@@ -41,10 +31,6 @@ module Kagent
       node[cookbook][recipe][:private_ips]
     end
 
-    def private_cookbook_ips(cookbook)
-      node[cookbook][:private_ips]
-    end
-    
     def private_recipe_hostnames(cookbook, recipe)
       hostf = Resolv::Hosts.new
       dns = Resolv::DNS.new
