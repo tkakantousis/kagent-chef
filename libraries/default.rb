@@ -14,24 +14,41 @@ module Kagent
 
     def my_private_ip()
       node[:private_ips][0]
-#      return dns_lookup(ip)
     end
 
+    def valid_cookbook(cookbook)
+      if node.attribute?(cookbook) == false 
+          Chef::Log.error "Invalid cookbook name: #{cookbook}"
+          raise ArgumentError, "Invalid Cookbook name", cookbook
+      end
+    end
+
+    def valid_recipe(cookbook, recipe)
+      valid_cookbook(cookbook)
+      if node[cookbook].attribute?(recipe) == false 
+          Chef::Log.error "Invalid cookbook/recipe name: #{cookbook}/#{recipe}"
+          raise ArgumentError, "Invalid Recipe fo cookbook #{cookbook}", recipe
+      end
+    end
+
+
     def public_recipe_ip(cookbook, recipe)
+      valid_recipe(cookbook,recipe)
       ip = node[cookbook][recipe][:public_ips][0]
-#      return dns_lookup(ip)
     end
 
     def private_recipe_ip(cookbook, recipe)
+      valid_recipe(cookbook,recipe)
       ip = node[cookbook][recipe][:private_ips][0]
-#      return dns_lookup(ip)
     end
 
     def private_recipe_ips(cookbook, recipe)
-      node[cookbook][recipe][:private_ips]
+      valid_recipe(cookbook,recipe)
+      return node[cookbook][recipe][:private_ips]
     end
 
     def private_recipe_hostnames(cookbook, recipe)
+      valid_recipe(cookbook,recipe)
       hostf = Resolv::Hosts.new
       dns = Resolv::DNS.new
 
