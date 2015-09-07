@@ -72,8 +72,8 @@ module Kagent
               #   unique    true
               #   action    :create
               # end
-              #h = host
-              h = "localhost"
+              h = host
+              #h = "10.0.2.15"
             else 
               raise "You need to supply a valid list  of ips for #{cookbook}/#{recipe}"
             end
@@ -87,7 +87,8 @@ module Kagent
     def set_my_hostname()
       my_ip = my_private_ip()
       hostsfile_entry "#{my_ip}" do
-        hostname  node['hostname']
+      #  hostname  node['hostname']
+        hostname  node['fqdn']
         unique    true
         action    :append
       end
@@ -110,6 +111,7 @@ module Kagent
         hostsfile_entry "#{host}" do
           hostname  "#{h}"
           action    :append
+          unique    true
         end
 
       end
