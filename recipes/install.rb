@@ -196,4 +196,4 @@ file node.default[:kagent][:services] do
   action :create_if_missing
 end
 
-set_my_hostname
+# set_my_hostname

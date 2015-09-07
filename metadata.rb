@@ -14,7 +14,7 @@ depends 'python'
 depends 'openssl'
 depends 'openssh'
 depends 'sudo'
-depends 'hostsfile'
+#depends 'hostsfile'
 
 recipe "kagent::default", "Installs and configures the Karamel agent"
 
