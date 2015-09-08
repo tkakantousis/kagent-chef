@@ -112,8 +112,10 @@ module Kagent
           h = dns.getname("#{host}")
         rescue
           # gsub() returns a copy of the modified str with replacements, leaves original string intact.
-          hostName = host.gsub("\.","_")
-          h = "#{recipe}_#{hostName}"
+          # Hostname should not contain '-','_', capital letters
+          # http://hortonworks.com/community/forums/topic/not-able-to-start-namenode-via-ambari/
+          hostName = host.gsub("\.","")
+          h = "#{recipe}#{hostName}"
         end
         hostsfile_entry "#{host}" do
           hostname  "#{h}"
