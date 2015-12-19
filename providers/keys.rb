@@ -4,7 +4,7 @@ action :generate do
   cb_group = "#{new_resource.cb_group}"
 
   bash "generate-ssh-keypair-for-#{homedir}" do
-    user cb_owner
+    user cb_user
     group cb_group
     code <<-EOF
      ssh-keygen -b 2048 -f #{homedir}/.ssh/id_rsa -t rsa -q -N ''
@@ -60,7 +60,7 @@ action :get_publickey do
   guard = ".#{cb}_#{recipeName}_key_authorized"
   Chef::Log.debug "Public key read is: #{key_contents}"
   bash "add_#{cb}_#{recipeName}_public_key" do
-    user cb_owner
+    user cb_user
     group cb_group
     code <<-EOF
       set -e
