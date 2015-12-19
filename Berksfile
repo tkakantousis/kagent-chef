@@ -6,6 +6,6 @@ cookbook 'python', "~> 1.4.4"
 cookbook 'sudo', "~> 2.5.2"
 cookbook 'openssh', "~> 1.3.4"
 cookbook 'openssl', "~> 1.1.0"
-#cookbook 'hostsfile'
+cookbook 'hostsfile'
 
 metadata
