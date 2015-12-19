@@ -26,7 +26,7 @@ action :return_publickey do
  cb_user = "#{new_resource.cookbook_user}"
  cb_group = "#{new_resource.cookbook_group}"
 
- node.default[#{cb}][#{r}][:public_key] = "#{contents}" 
+ node.default["#{cb}"]["#{r}"][:public_key] = contents
 # This works for chef-solo - we are executing this recipe.rb file.
 # recipeName = "#{__FILE__}".gsub(/.*\//, "")
 # recipeName = "#{recipeName}".gsub(/\.rb/, "")
