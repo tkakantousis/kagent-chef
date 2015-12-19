@@ -1,7 +1,7 @@
 action :generate do
   homedir = "#{new_resource.homedir}"
-  cb_user = "#{new_resource.cookbook_user}"
-  cb_group = "#{new_resource.cookbook_group}"
+  cb_user = "#{new_resource.cb_user}"
+  cb_group = "#{new_resource.cb_group}"
 
   bash "generate-ssh-keypair-for-#{homedir}" do
     user cb_owner
@@ -21,10 +21,10 @@ action :return_publickey do
  raise if contents.empty?
  
  Chef::Log.info "Public key read is: #{contents}"
- cb = "#{new_resource.cookbook_name}"
- recipeName = "#{new_resource.cookbook_recipe}"
- cb_user = "#{new_resource.cookbook_user}"
- cb_group = "#{new_resource.cookbook_group}"
+ cb = "#{new_resource.cb_name}"
+ recipeName = "#{new_resource.cb_recipe}"
+ cb_user = "#{new_resource.cb_user}"
+ cb_group = "#{new_resource.cb_group}"
 
  node.default["#{cb}"]["#{r}"][:public_key] = contents
 # This works for chef-solo - we are executing this recipe.rb file.
@@ -51,10 +51,10 @@ end
 
 action :get_publickey do
   homedir = "#{new_resource.homedir}"
-  cb = "#{new_resource.cookbook_name}"
-  recipeName = "#{new_resource.cookbook_recipe}"
-  cb_user = "#{new_resource.cookbook_user}"
-  cb_group = "#{new_resource.cookbook_group}"
+  cb = "#{new_resource.cb_name}"
+  recipeName = "#{new_resource.cb_recipe}"
+  cb_user = "#{new_resource.cb_user}"
+  cb_group = "#{new_resource.cb_group}"
 
   key_contents = node["#{cb}"]["#{recipeName}"][:public_key]
   guard = ".#{cb}_#{recipeName}_key_authorized"
