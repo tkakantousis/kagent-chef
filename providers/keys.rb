@@ -21,8 +21,8 @@ action :return_publickey do
  raise if contents.empty?
  
  Chef::Log.info "Public key read is: #{contents}"
- cb = "#{new_resource.cookbook_name}"
- recipeName = "#{new_resource.recipe_name}"
+ cb = "#{new_resource.cb_name}"
+ recipeName = "#{new_resource.cb_recipe}"
  cb_user = "#{new_resource.cb_user}"
  cb_group = "#{new_resource.cb_group}"
 
@@ -47,8 +47,8 @@ end
 
 action :get_publickey do
   homedir = "#{new_resource.homedir}"
-  cb = "#{new_resource.cookkbok_name}" 
-  recipeName = "#{new_resource.recipe_name}"
+  cb = "#{new_resource.cb_name}" 
+  recipeName = "#{new_resource.cb_recipe}"
   cb_user = "#{new_resource.cb_user}"
   cb_group = "#{new_resource.cb_group}"
 
