@@ -2,7 +2,8 @@ default[:hadoop][:version]                = "2.4.0"
 
 # Default values for configuration parameters
 default[:kagent][:run_as_user]            = "root"
-default[:kagent][:base_dir]               = "/var/lib/kagent"
+default[:kagent][:dir]                    = "/var/lib"
+default[:kagent][:base_dir]               = "#{node[:kagent][:dir]}/kagent"
 
 default[:kagent][:group_name]             = "group1"
 
@@ -27,7 +28,7 @@ default[:kagent][:dashboard_app]          = "hop-dashboard"
 default[:kagent][:port]                   = 8090
 default[:kagent][:heartbeat_interval]     = 10
 default[:kagent][:watch_interval]         = 2
-default[:kagent][:pid_file]               = "/var/lib/kagent/hop-agent.pid"
+default[:kagent][:pid_file]               = node[:kagent][:base_dir] + "/hop-agent.pid"
 default[:kagent][:logging_level]          = "INFO"
 default[:kagent][:max_log_size]           = "10000000"
 
@@ -35,7 +36,7 @@ default[:kagent][:network][:interface]    = "eth0"
 
 
 # services file contains locally installed services
-default[:kagent][:services]               = "/var/lib/kagent/services"
+default[:kagent][:services]               = node[:kagent][:base_dir] + "/services"
 # name of cluster as shown in Dashboard
 default[:kagent][:cluster]                = "Hops"
 

@@ -21,16 +21,12 @@ action :return_publickey do
  raise if contents.empty?
  
  Chef::Log.info "Public key read is: #{contents}"
- cb = "#{new_resource.cb_name}"
- recipeName = "#{new_resource.cb_recipe}"
+ cb = "#{new_resource.cookbook_name}"
+ recipeName = "#{new_resource.recipe_name}"
  cb_user = "#{new_resource.cb_user}"
  cb_group = "#{new_resource.cb_group}"
 
- node.default["#{cb}"]["#{r}"][:public_key] = contents
-# This works for chef-solo - we are executing this recipe.rb file.
-# recipeName = "#{__FILE__}".gsub(/.*\//, "")
-# recipeName = "#{recipeName}".gsub(/\.rb/, "")
-
+ node.default["#{cb}"]["#{recipeName}"][:public_key] = contents
 
   template "#{homedir}/.ssh/config" do
     source "ssh_config.erb" 
@@ -51,8 +47,8 @@ end
 
 action :get_publickey do
   homedir = "#{new_resource.homedir}"
-  cb = "#{new_resource.cb_name}"
-  recipeName = "#{new_resource.cb_recipe}"
+  cb = "#{new_resource.cookkbok_name}" 
+  recipeName = "#{new_resource.recipe_name}"
   cb_user = "#{new_resource.cb_user}"
   cb_group = "#{new_resource.cb_group}"
 

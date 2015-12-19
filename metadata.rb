@@ -19,10 +19,8 @@ depends 'hostsfile'
 recipe "kagent::default", "Installs and configures the Karamel agent"
 
 attribute "kagent/dashboard/ip_port",
-:display_name => "Dashboard Ip:port",
 :description => " Ip address and port for Dashboard REST API",
-:type => 'string',
-:default => "10.0.2.15:8080"
+:type => 'string'
 
 attribute "hop/hostid",
 :display_name => "HostId",
@@ -30,8 +28,22 @@ attribute "hop/hostid",
 :type => 'string'
 
 attribute "kagent/name",
-:display_name => "name",
 :description => "Cookbook name",
-:type => 'string',
-:default => "kagent"
+:type => 'string'
+
+attribute "kagent/rest_api/user",
+:description => "kagent REST API username",
+:type => "string"
+
+attribute "kagent/rest_api/password",
+:description => "kagent REST API  password",
+:type => "string"
+
+attribute "kagent/dashboard/user",
+:description => "kagent username to register with server",
+:type => "string"
+
+attribute "kagent/dashboard/password",
+:description => "kagent password to register with server",
+:type => "string"
 
