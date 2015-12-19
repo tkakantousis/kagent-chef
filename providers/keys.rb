@@ -33,7 +33,7 @@ action :return_publickey do
     owner cb_user
     group cb_group
     mode 0600
-    coookbook "kagent"
+    cookbook "kagent"
   end
  
  kagent_param "/tmp" do
