@@ -18,9 +18,7 @@ action :return_publickey do
  homedir = "#{new_resource.homedir}"
  contents = ::IO.read("#{homedir}/.ssh/id_rsa.pub")
 
- if contents.isEmpty?
-   # throw exception
- end
+ raise if contents.empty?
  
  Chef::Log.info "Public key read is: #{contents}"
  cb = "#{new_resource.cookbook_name}"
