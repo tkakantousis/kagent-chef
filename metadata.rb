@@ -47,3 +47,6 @@ attribute "kagent/dashboard/password",
 :description => "kagent password to register with server",
 :type => "string"
 
+attribute "ndb/mysql_port",
+:description => "Port for the mysql server",
+:type => "string"
