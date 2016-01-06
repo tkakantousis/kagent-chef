@@ -50,3 +50,7 @@ attribute "kagent/dashboard/password",
 attribute "ndb/mysql_port",
 :description => "Port for the mysql server",
 :type => "string"
+
+attribute "ndb/mysql_socket",
+:description => "Socket for the mysql server",
+:type => "string"
