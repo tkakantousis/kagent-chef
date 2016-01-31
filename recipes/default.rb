@@ -17,7 +17,14 @@ template "/etc/init.d/#{service_name}" do
   notifies :start, "service[#{service_name}]"
 end
 
-template "/usr/lib/systemd/system/#{service_name}.service" do
+case node[:platform_family]
+  when "debian"
+systemd_script = "/lib/systemd/system/#{service_name}.service"
+  when "rhel"
+systemd_script = "/usr/lib/systemd/system/#{service_name}.service" 
+end
+
+template systemd_script do
     only_if { node[:kagent][:use_systemd] == "true" }
     source "#{service_name}.service.erb"
     owner node[:kagent][:run_as_user]
