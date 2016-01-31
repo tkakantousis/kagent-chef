@@ -1,4 +1,3 @@
-
 service_name = "kagent"
 
 
@@ -18,22 +17,19 @@ template "/etc/init.d/#{service_name}" do
   notifies :start, "service[#{service_name}]"
 end
 
-# template "#{node[:kagent][:base_dir]}/#{service_name}.service" do
-template "/etc/systemd/system/#{service_name}.service" do
+template "/usr/lib/systemd/system/#{service_name}.service" do
     only_if { node[:kagent][:use_systemd] == "true" }
     source "#{service_name}.service.erb"
     owner node[:kagent][:run_as_user]
     group node[:kagent][:run_as_user]
     mode 0650
-    notifies :enable, "service[#{service_name}]"
-    notifies :start, "service[#{service_name}]"
 end
 
-# link "/etc/systemd/system/#{service_name}.service" do
-#   only_if { node[:kagent][:use_systemd] == "true" }
-#   owner "root"
-#   to "#{node[:kagent][:base_dir]}/#{service_name}.service" 
-# end
+link "/etc/systemd/system/#{service_name}.service" do
+  only_if { node[:kagent][:use_systemd] == "true" }
+  owner "root"
+  to "#{node[:kagent][:base_dir]}/#{service_name}.service" 
+end
 
 
 
@@ -42,7 +38,6 @@ template"#{node[:kagent][:base_dir]}/agent.py" do
   owner node[:kagent][:run_as_user]
   group node[:kagent][:run_as_user]
   mode 0655
-  notifies :enable, "service[#{service_name}]"
 end
 
 
@@ -76,6 +71,18 @@ if dashboard_endpoint.eql? ""
   end
 end
 
+network_if = node[:kagent][:network][:interface]
+
+# If the network i/f name not set by the user, set default values for ubuntu and centos
+if node[:kagent][:network][:interface] == ""
+  case node[:platform_family]
+  when "debian"
+    network_if = "eth0"
+  when "rhel"
+    network_if = "enp0s3"
+  end
+end
+
 template "#{node[:kagent][:base_dir]}/config.ini" do
   source "config.ini.erb"
   owner node[:kagent][:run_as_user]
@@ -85,9 +92,11 @@ template "#{node[:kagent][:base_dir]}/config.ini" do
               :rest_url => "http://#{dashboard_endpoint}/#{node[:kagent][:dashboard_app]}",
               :rack => '/default',
               :public_ip => public_ip,
-              :private_ip => private_ip
+              :private_ip => private_ip,
+              :network_if => network_if
             })
-  notifies :restart, "service[kagent]"
+  notifies :enable, "service[#{service_name}]"
+  notifies :start, "service[#{service_name}]"
 end
 
 # TODO install MONIT to restart the agent if it crashes

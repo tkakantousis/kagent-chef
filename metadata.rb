@@ -58,3 +58,7 @@ attribute "ndb/mysql_socket",
 attribute "kagent/use_systemd",
 :description => "Use systemd startup scripts, default 'false'",
 :type => "string"
+
+attribute "kagent/network/interface",
+:description => "Define the network intefaces (eth0, enp0s3)",
+:type => "string"

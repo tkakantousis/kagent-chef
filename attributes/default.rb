@@ -32,7 +32,7 @@ default[:kagent][:pid_file]               = node[:kagent][:base_dir] + "/hop-age
 default[:kagent][:logging_level]          = "INFO"
 default[:kagent][:max_log_size]           = "10000000"
 
-default[:kagent][:network][:interface]    = "eth0"
+default[:kagent][:network][:interface]    = ""
 
 
 # services file contains locally installed services
