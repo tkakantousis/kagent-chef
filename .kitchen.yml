@@ -11,8 +11,9 @@ provisioner:
 
 platforms:
 #  - name: ubuntu-12.04
-  - name: ubuntu-14.04
-#  - name: centos-6.5
+#  - name: ubuntu-14.04
+  - name: ubuntu-15.04
+#  - name: centos-7.0
 
 suites:
   - name: default
@@ -34,6 +35,7 @@ suites:
             private_ips: ["10.0.2.15"]
             public_ips: ["10.0.2.15"]
             dir: "/tmp"
+            use_systemd: "true"
          private_ips: ["10.0.2.15"]
          public_ips: ["10.0.2.15"]
          vagrant: "enabled"

@@ -1,23 +1,50 @@
 
-service "kagent" do
+service_name = "kagent"
+
+
+service "#{service_name}" do
   supports :restart => true, :start => true, :stop => true, :enable => true
+  action :nothing
 end
 
-template "/etc/init.d/kagent" do
-  source "kagent.erb"
+
+template "/etc/init.d/#{service_name}" do
+  only_if { node[:kagent][:use_systemd] != "true" }
+  source "#{service_name}.erb"
   owner node[:kagent][:run_as_user]
   group node[:kagent][:run_as_user]
-  mode 0655
-  notifies :enable, "service[kagent]"
+  mode 0650
+  notifies :enable, "service[#{service_name}]"
+  notifies :start, "service[#{service_name}]"
 end
+
+# template "#{node[:kagent][:base_dir]}/#{service_name}.service" do
+template "/etc/systemd/system/#{service_name}.service" do
+    only_if { node[:kagent][:use_systemd] == "true" }
+    source "#{service_name}.service.erb"
+    owner node[:kagent][:run_as_user]
+    group node[:kagent][:run_as_user]
+    mode 0650
+    notifies :enable, "service[#{service_name}]"
+    notifies :start, "service[#{service_name}]"
+end
+
+# link "/etc/systemd/system/#{service_name}.service" do
+#   only_if { node[:kagent][:use_systemd] == "true" }
+#   owner "root"
+#   to "#{node[:kagent][:base_dir]}/#{service_name}.service" 
+# end
+
+
 
 template"#{node[:kagent][:base_dir]}/agent.py" do
   source "agent.py.erb"
   owner node[:kagent][:run_as_user]
   group node[:kagent][:run_as_user]
   mode 0655
-  notifies :enable, "service[kagent]"
+  notifies :enable, "service[#{service_name}]"
 end
+
 
 ['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'].each do |script|
   Chef::Log.info "Installing #{script}"
@@ -65,11 +92,8 @@ end
 
 # TODO install MONIT to restart the agent if it crashes
 
-bash "start_kagent" do
-  user "root"
-  code <<-EOF
-   service kagent restart
- EOF
+kagent_kagent "restart-kagent" do
+  action :restart
 end
 
 case node[:platform_family]

@@ -1,0 +1,16 @@
+[Unit]
+Description = Kagent, monitors/controls Hops services
+After = syslog.target network.target remote-fs.target
+
+[Service]
+User = <%= node.kagent.run_as_user %>
+
+ExecStart = <%= "#{node[:kagent][:base_dir]}/start-agent.sh" %>
+ExecStop = <%= "#{node[:kagent][:base_dir]}/stop-agent.sh" %>
+ExecReload = <%= "#{node[:kagent][:base_dir]}/restart-agent.sh" %>
+
+
+Type = forking
+
+[Install]
+WantedBy = multi-user.target
