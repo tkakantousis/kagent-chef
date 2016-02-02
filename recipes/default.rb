@@ -2,6 +2,9 @@ service_name = "kagent"
 
 
 service "#{service_name}" do
+  if node[:kagent][:use_systemd] == "true"
+    provider Chef::Provider::Service::Systemd
+  end
   supports :restart => true, :start => true, :stop => true, :enable => true
   action :nothing
 end

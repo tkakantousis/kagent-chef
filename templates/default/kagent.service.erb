@@ -5,6 +5,7 @@ After = syslog.target network.target remote-fs.target
 [Service]
 User = <%= node.kagent.run_as_user %>
 
+PIDFile = <%= node[:kagent][:pid_file] %>
 ExecStart = <%= "#{node[:kagent][:base_dir]}/start-agent.sh" %>
 ExecStop = <%= "#{node[:kagent][:base_dir]}/stop-agent.sh" %>
 ExecReload = <%= "#{node[:kagent][:base_dir]}/restart-agent.sh" %>
