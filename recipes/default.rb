@@ -1,9 +1,17 @@
 service_name = "kagent"
 
+case node.platform
+when "ubuntu"
+ if node.platform_version.to_f <= 14.04
+   node.default.systemd = "false"
+ end
+end
 
 service "#{service_name}" do
-  if node[:kagent][:use_systemd] == "true"
+  if node.systemd == "true"
     provider Chef::Provider::Service::Systemd
+  else
+    provider Chef::Provider::Service::Init::Debian
   end
   supports :restart => true, :start => true, :stop => true, :enable => true
   action :nothing
@@ -11,7 +19,7 @@ end
 
 
 template "/etc/init.d/#{service_name}" do
-  only_if { node[:kagent][:use_systemd] != "true" }
+  only_if { node.systemd != "true" }
   source "#{service_name}.erb"
   owner node[:kagent][:run_as_user]
   group node[:kagent][:run_as_user]
@@ -28,7 +36,7 @@ systemd_script = "/usr/lib/systemd/system/#{service_name}.service"
 end
 
 template systemd_script do
-    only_if { node[:kagent][:use_systemd] == "true" }
+    only_if { node.systemd == "true" }
     source "#{service_name}.service.erb"
     owner node[:kagent][:run_as_user]
     group node[:kagent][:run_as_user]
@@ -36,7 +44,7 @@ template systemd_script do
 end
 
 link "/etc/systemd/system/#{service_name}.service" do
-  only_if { node[:kagent][:use_systemd] == "true" }
+  only_if { node.systemd == "true" }
   owner "root"
   to "#{node[:kagent][:base_dir]}/#{service_name}.service" 
 end

@@ -59,4 +59,4 @@ default['java']['bouncycastle_url']       = "#{node[:download_url]}/bcprov-jdk15
 default[:kagent][:allow_kmon_ssh_access]  = "false"
 default[:vagrant]                         = "false"
 
-default[:kagent][:use_systemd]            = "true"
+default[:systemd]                         = "true"

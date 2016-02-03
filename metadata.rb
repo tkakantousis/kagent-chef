@@ -55,8 +55,8 @@ attribute "ndb/mysql_socket",
 :description => "Socket for the mysql server",
 :type => "string"
 
-attribute "kagent/use_systemd",
-:description => "Use systemd startup scripts, default 'false'",
+attribute "systemd",
+:description => "Use systemd startup scripts, default 'true'",
 :type => "string"
 
 attribute "kagent/network/interface",
