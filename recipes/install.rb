@@ -197,3 +197,13 @@ file node.default[:kagent][:services] do
 end
 
 # set_my_hostname
+
+
+if node.vagrant == "true" then
+
+  hostsfile_entry '10.0.2.15' do
+    hostname  'vagrant-private-host'
+    unique    true
+  end
+
+end
