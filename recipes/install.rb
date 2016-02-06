@@ -198,11 +198,12 @@ end
 
 # set_my_hostname
 if node.vagrant == "true" then
+
 host = 'vagrant-private-host'
 case node[:platform_family]
 when "debian"
 host = 'vagrant-private-host'
-when "debian"
+when "rhel"
 host = "default-centos-70.vagrantup.com"
 end
 
