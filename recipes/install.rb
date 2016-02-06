@@ -197,12 +197,18 @@ file node.default[:kagent][:services] do
 end
 
 # set_my_hostname
-
-
 if node.vagrant == "true" then
+case node[:platform_family]
+when "debian"
+hostname = 'vagrant-private-host'
+when "debian"
+hostname = "default-centos-70.vagrantup.com"
+end
+
+
 
   hostsfile_entry '10.0.2.15' do
-    hostname  'vagrant-private-host'
+    hostname  hostname
     unique    true
   end
 
