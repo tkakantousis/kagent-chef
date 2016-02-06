@@ -199,16 +199,16 @@ end
 # set_my_hostname
 if node.vagrant == "true" then
 
-host = 'vagrant-private-host'
+myHost = 'vagrant-private-host'
 case node[:platform_family]
 when "debian"
-host = 'vagrant-private-host'
+myHost = 'vagrant-private-host'
 when "rhel"
-host = "default-centos-70.vagrantup.com"
+myHost = "default-centos-70.vagrantup.com"
 end
 
   hostsfile_entry '10.0.2.15' do
-    hostname  host
+    hostname  myHost
     unique    true
   end
 
