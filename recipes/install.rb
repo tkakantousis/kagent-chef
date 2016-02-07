@@ -197,19 +197,27 @@ file node.default[:kagent][:services] do
 end
 
 # set_my_hostname
-if node.vagrant == "true" then
+if node.vagrant === "true" || node.vagrant == true 
 
-myHost = 'vagrant-private-host'
-case node[:platform_family]
-when "debian"
-myHost = 'vagrant-private-host'
-when "rhel"
-myHost = "default-centos-70.vagrantup.com"
-end
+  case node[:platform_family]
+  when "debian"
 
-  hostsfile_entry '10.0.2.15' do
-    hostname  myHost
-    unique    true
+    my_ip = my_private_ip()
+    hostsfile_entry "#{my_ip}" do
+      hostname  node['fqdn']
+      action    :create
+      unique    true
+    end
+    hostsfile_entry "#{my_ip}" do
+      hostname  node['hostname']
+      action    :create
+      unique    true
+    end
+  when "rhel"
+    hostsfile_entry '10.0.2.15' do
+      hostname  "default-centos-70.vagrantup.com"
+      unique    true
+    end
   end
 
 end
