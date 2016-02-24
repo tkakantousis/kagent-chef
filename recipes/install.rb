@@ -27,7 +27,6 @@ when "rhel"
   end
 end
 
-#include_recipe "openssh"
 include_recipe "python"
 # The openssl::upgrade recipe doesn't install openssl-dev/libssl-dev, needed by python-ssl
 # Now using packages in ubuntu/centos.

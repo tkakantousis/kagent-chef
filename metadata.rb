@@ -12,7 +12,6 @@ end
 
 depends 'python'
 depends 'openssl'
-depends 'openssh'
 depends 'sudo'
 depends 'hostsfile'
 
