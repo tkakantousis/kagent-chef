@@ -1,10 +1,8 @@
-source "https://api.berkshelf.com"
-
+source 'https://supermarket.chef.io'
 
 metadata
-# 1.4.6+ of python is broken for chef 10.x
-cookbook 'python'
-cookbook 'sudo', "~> 2.5.2"
-cookbook 'hostsfile'
-cookbook 'openssl'
+cookbook 'python', '~> 1.4.6'
+#cookbook 'openssl', '~> 4.4.0'
+cookbook 'hostsfile', '~> 2.4.5'
+
 

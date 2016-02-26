@@ -1,18 +1,18 @@
 maintainer       "Jim Dowling"
 maintainer_email "jdowling@kth.se"
 name             "kagent"
-license          "GPL 3.0"
+license          "GPL 2.0"
 description      "Installs/Configures the Hops agent"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          "0.1"
+version          "0.1.0"
 
 %w{ ubuntu debian centos }.each do |os|
   supports os
 end
 
 depends 'python'
-depends 'openssl'
-depends 'sudo'
+#depends 'openssl'
+#depends 'sudo'
 depends 'hostsfile'
 
 recipe "kagent::default", "Installs and configures the Karamel agent"

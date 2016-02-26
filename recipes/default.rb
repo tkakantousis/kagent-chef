@@ -146,12 +146,12 @@ if node[:instance_role] == 'vagrant'
 end
 
 # Fix sudoers to allow root exec shell commands for Centos
-node.default['authorization']['sudo']['include_sudoers_d']=true
+#node.default['authorization']['sudo']['include_sudoers_d']=true
 # default 'commands' attribute for this LWRP is 'ALL'
-sudo 'root' do
-  user      "root"
-  runas     'ALL:ALL'
-end
+#sudo 'root' do
+#  user      "root"
+#  runas     'ALL:ALL'
+#end
 
 end
 
