@@ -1,6 +1,6 @@
 action :add do
-  ini_file = IniFile.load(node[:kagent][:services], :comment => ';#')
-  cluster = "#{node[:kagent][:cluster]}"
+  ini_file = IniFile.load(node.kagent.services, :comment => ';#')
+  cluster = "#{node.kagent.cluster}"
   service = "#{new_resource.service}"
   role = "#{new_resource.role}"
   section="#{cluster}-#{service}-#{role}"

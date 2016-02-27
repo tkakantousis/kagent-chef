@@ -21,14 +21,14 @@ end
 template "/etc/init.d/#{service_name}" do
   only_if { node.systemd != "true" }
   source "#{service_name}.erb"
-  owner node[:kagent][:run_as_user]
-  group node[:kagent][:run_as_user]
+  owner node.kagent.run_as_user
+  group node.kagent.run_as_user
   mode 0650
   notifies :enable, "service[#{service_name}]"
   notifies :start, "service[#{service_name}]"
 end
 
-case node[:platform_family]
+case node.platform_family
   when "debian"
 systemd_script = "/lib/systemd/system/#{service_name}.service"
   when "rhel"
@@ -38,43 +38,43 @@ end
 template systemd_script do
     only_if { node.systemd == "true" }
     source "#{service_name}.service.erb"
-    owner node[:kagent][:run_as_user]
-    group node[:kagent][:run_as_user]
+    owner node.kagent.run_as_user
+    group node.kagent.run_as_user
     mode 0650
 end
 
 link "/etc/systemd/system/#{service_name}.service" do
   only_if { node.systemd == "true" }
   owner "root"
-  to "#{node[:kagent][:base_dir]}/#{service_name}.service" 
+  to "#{node.kagent.base_dir}/#{service_name}.service" 
 end
 
 
 
-template"#{node[:kagent][:base_dir]}/agent.py" do
+template"#{node.kagent.base_dir}/agent.py" do
   source "agent.py.erb"
-  owner node[:kagent][:run_as_user]
-  group node[:kagent][:run_as_user]
+  owner node.kagent.run_as_user
+  group node.kagent.run_as_user
   mode 0655
 end
 
 
-['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'].each do |script|
+['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'.each do |script|
   Chef::Log.info "Installing #{script}"
-  template "#{node[:kagent][:base_dir]}/#{script}" do
+  template "#{node.kagent.base_dir}/#{script}" do
     source "#{script}.erb"
-    owner node[:kagent][:run_as_user]
-    group node[:kagent][:run_as_user]
+    owner node.kagent.run_as_user
+    group node.kagent.run_as_user
     mode 0655
   end
 end 
 
 ['services'].each do |conf|
   Chef::Log.info "Installing #{conf}"
-  template "#{node[:kagent][:base_dir]}/#{conf}" do
+  template "#{node.kagent.base_dir}/#{conf}" do
     source "#{conf}.erb"
-    owner node[:kagent][:run_as_user]
-    group node[:kagent][:run_as_user]
+    owner node.kagent.run_as_user
+    group node.kagent.run_as_user
     mode 0644
   end
 end
@@ -82,18 +82,18 @@ end
 private_ip = my_private_ip()
 public_ip = my_public_ip()
 
-dashboard_endpoint = node[:kagent][:dashboard][:ip_port]
+dashboard_endpoint = node.kagent.dashboard.ip_port
 if dashboard_endpoint.eql? ""
   if node.attribute? "kmon"
     dashboard_endpoint = private_cookbook_ip("kmon")  + ":8080"
   end
 end
 
-network_if = node[:kagent][:network][:interface]
+network_if = node.kagent.network.interface
 
 # If the network i/f name not set by the user, set default values for ubuntu and centos
-if node[:kagent][:network][:interface] == ""
-  case node[:platform_family]
+if node.kagent.network.interface == ""
+  case node.platform_family
   when "debian"
     network_if = "eth0"
   when "rhel"
@@ -101,13 +101,13 @@ if node[:kagent][:network][:interface] == ""
   end
 end
 
-template "#{node[:kagent][:base_dir]}/config.ini" do
+template "#{node.kagent.base_dir}/config.ini" do
   source "config.ini.erb"
-  owner node[:kagent][:run_as_user]
-  group node[:kagent][:run_as_user]
+  owner node.kagent.run_as_user
+  group node.kagent.run_as_user
   mode 0600
   variables({
-              :rest_url => "http://#{dashboard_endpoint}/#{node[:kagent][:dashboard_app]}",
+              :rest_url => "http://#{dashboard_endpoint}/#{node.kagent.dashboard_app}",
               :rack => '/default',
               :public_ip => public_ip,
               :private_ip => private_ip,
@@ -123,7 +123,7 @@ kagent_kagent "restart-kagent" do
   action :restart
 end
 
-case node[:platform_family]
+case node.platform_family
 when "rhel"
 
   bash "disable-iptables" do
@@ -133,7 +133,7 @@ when "rhel"
     only_if "test -f /etc/init.d/iptables && service iptables status"
   end
 
-if node[:instance_role] == 'vagrant'
+if node.instance_role == 'vagrant'
   bash "fix-sudoers-for-vagrant" do
     code <<-EOH
     echo "" >> /etc/sudoers
@@ -146,7 +146,7 @@ if node[:instance_role] == 'vagrant'
 end
 
 # Fix sudoers to allow root exec shell commands for Centos
-#node.default['authorization']['sudo']['include_sudoers_d']=true
+#node.default.authorization.sudo.include_sudoers_d = true
 # default 'commands' attribute for this LWRP is 'ALL'
 #sudo 'root' do
 #  user      "root"
@@ -155,16 +155,16 @@ end
 
 end
 
-if node[:kagent][:allow_kmon_ssh_access] == 'true'
+if node.kagent.allow_kmon_ssh_access == 'true'
 
   if node.attribute? "kmon"
-    if node[:kmon].attribute? "public_key"
+    if node.kmon.attribute? "public_key"
       bash "add_dashboards_public_key" do
         user "root"
         code <<-EOF
          mkdir -p /root/.ssh
          chmod 700 /root/.ssh
-         cat #{node[:kmon][:public_key]} >> /root/.ssh/authorized_keys
+         cat #{node.kmon.public_key} >> /root/.ssh/authorized_keys
         EOF
         not_if "test -f /root/.ssh/authorized_keys"
       end
