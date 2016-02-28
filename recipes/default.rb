@@ -59,7 +59,7 @@ template"#{node.kagent.base_dir}/agent.py" do
 end
 
 
-['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'.each do |script|
+['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'].each do |script|
   Chef::Log.info "Installing #{script}"
   template "#{node.kagent.base_dir}/#{script}" do
     source "#{script}.erb"

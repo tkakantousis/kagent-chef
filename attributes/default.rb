@@ -1,4 +1,4 @@
-default.hadoop.version                = "2.4.0"
+node.default.hadoop.version                = "2.4.0"
 
 # Default values for configuration parameters
 default.kagent.run_as_user            = "root"
@@ -39,22 +39,19 @@ default.kagent.services               = node.kagent.base_dir + "/services"
 # name of cluster as shown in Dashboard
 default.kagent.cluster                = "Hops"
 
-default.mysql.root.password           = "kthfs"
-default.ndb.mysql_socket              = "/tmp/mysql.sock"
-default.ndb.mysql.jdbc_url            = ""
-default.ndb.mysql_port                = "3306"
-
 default.kagent.hostid                 = 100
 
 default.kagent.public_ips             = ['10.0.2.15']
 default.kagent.private_ips            = ['10.0.2.15']
+default.kagent.allow_kmon_ssh_access  = "false"
 
 # Base URL used to download binaries in depedent cookbooks
-default.download_url                  = "http://193.10.67.171/hops"
+node.default.download_url                  = "http://193.10.67.171/hops"
+node.default.java.bouncycastle_url         = "#{node.download_url}/bcprov-jdk15on-149.jar"
+node.default.systemd                       = "true"
+node.default.ndb.mysql_socket              = "/tmp/mysql.sock"
+node.default.ndb.mysql.jdbc_url            = ""
+node.default.ndb.mysql_port                = "3306"
 
-default.java.bouncycastle_url         = "#{node.download_url}/bcprov-jdk15on-149.jar"
-
-default.kagent.allow_kmon_ssh_access  = "false"
-default.vagrant                       = "false"
-
-default.systemd                       = "true"
+node.default.vagrant                       = "false"
+#node.default.mysql.root.password           = "kthfs"

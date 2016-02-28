@@ -39,17 +39,17 @@ module Kagent
 
     def public_recipe_ip(cookbook, recipe)
       valid_recipe(cookbook,recipe)
-      ip = node[cookbook][recipe].public_ips][0]
+      ip = node[cookbook][recipe][:public_ips][0]
     end
 
     def private_recipe_ip(cookbook, recipe)
       valid_recipe(cookbook,recipe)
-      ip = node[cookbook][recipe].private_ips][0]
+      ip = node[cookbook][recipe][:private_ips][0]
     end
 
     def private_recipe_ips(cookbook, recipe)
       valid_recipe(cookbook,recipe)
-      return node[cookbook][recipe].private_ips]
+      return node[cookbook][recipe][:private_ips]
     end
 
     def private_recipe_hostnames(cookbook, recipe)
@@ -58,7 +58,7 @@ module Kagent
       dns = Resolv::DNS.new
 
       hostnames = Array.new
-      for host in node[cookbook][recipe].private_ips]
+      for host in node[cookbook][recipe][:private_ips]
         # resolve the hostname first in /etc/hosts, then using DNS
         # If not found, then write an entry for it in /etc/hosts
         begin
@@ -103,7 +103,7 @@ module Kagent
       hostf = Resolv::Hosts.new
       dns = Resolv::DNS.new
       hostnames = Array.new
-      for host in node[cookbook][recipe].private_ips]
+      for host in node[cookbook][recipe][:private_ips]
         # resolve the hostname first in /etc/hosts, then using DNS
         # If not found, then write an entry for it in /etc/hosts
         begin
@@ -143,7 +143,7 @@ module Kagent
     # get ndb_mgmd_connectstring, or list of mysqld endpoints
     def service_endpoints(cookbook, recipe, port)
       str = ""
-      for n in node[cookbook][recipe].private_ips]
+      for n in node[cookbook][recipe][:private_ips]
         str += n + ":" + "#{port}" + ","
       end
       str = str.chop
