@@ -2,7 +2,7 @@ maintainer       "Jim Dowling"
 maintainer_email "jdowling@kth.se"
 name             "kagent"
 license          "GPL 2.0"
-description      "Installs/Configures the Hops agent"
+description      "Installs/Configures the Karamel agent used by Hops"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          "0.1.1"
 
