@@ -1,8 +1,11 @@
 #!/bin/bash
 
-cb=kagent
-#version= $(grep ^version metadata.rb | perl -pi -e 's/"//g' |  perl -pi -e "s/version\s*//g")
-#echo "Releasing version: $version of $cb  to Chef supermarket"
+cb=$(grep "^name\s*" metadata.rb | perl -p -e 's/"//g' |  perl -p -e "s/name\s*//g")
+
+echo "Releasing cookbook: $cb to Chef supermarket"
+if [ $cb == "" ] ; then
+ echo "Couldnt determine cookbook name. Exiting..."
+fi
 
 rm -rf /tmp/cookbooks
 berks vendor /tmp/cookbooks
