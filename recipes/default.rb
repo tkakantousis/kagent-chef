@@ -133,17 +133,17 @@ when "rhel"
     only_if "test -f /etc/init.d/iptables && service iptables status"
   end
 
-if node.instance_role == 'vagrant'
-  bash "fix-sudoers-for-vagrant" do
-    code <<-EOH
-    echo "" >> /etc/sudoers
-    echo "#includedir /etc/sudoers.d" >> /etc/sudoers
-    echo "" >> /etc/sudoers
-    touch /etc/sudoers.d/.vagrant_fix
-  EOH
-    only_if "test -f /etc/sudoers.d/.vagrant_fix"
-  end
-end
+# if node.vagrant  == 'true'
+#   bash "fix-sudoers-for-vagrant" do
+#     code <<-EOH
+#     echo "" >> /etc/sudoers
+#     echo "#includedir /etc/sudoers.d" >> /etc/sudoers
+#     echo "" >> /etc/sudoers
+#     touch /etc/sudoers.d/.vagrant_fix
+#   EOH
+#     only_if "test -f /etc/sudoers.d/.vagrant_fix"
+#   end
+# end
 
 # Fix sudoers to allow root exec shell commands for Centos
 #node.default.authorization.sudo.include_sudoers_d = true
