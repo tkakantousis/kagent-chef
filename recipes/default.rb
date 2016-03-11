@@ -14,6 +14,13 @@ if node.systemd == "true"
     action :nothing
   end
 
+  case node.platform_family
+  when "rhel"
+    systemd_script = "/usr/lib/systemd/system/#{service_name}.service" 
+  else # debian
+    systemd_script = "/lib/systemd/system/#{service_name}.service"
+  end
+
   template systemd_script do
     source "#{service_name}.service.erb"
     owner node.kagent.run_as_user
@@ -21,12 +28,6 @@ if node.systemd == "true"
     mode 0650
   end
 
-  case node.platform_family
-  when "debian"
-    systemd_script = "/lib/systemd/system/#{service_name}.service"
-  when "rhel"
-    systemd_script = "/usr/lib/systemd/system/#{service_name}.service" 
-  end
   link "/etc/systemd/system/#{service_name}.service" do
     only_if { node.systemd == "true" }
     owner "root"
