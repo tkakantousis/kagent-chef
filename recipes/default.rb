@@ -7,46 +7,49 @@ when "ubuntu"
  end
 end
 
-service "#{service_name}" do
-  if node.systemd == "true"
+if node.systemd == "true"
+  service "#{service_name}" do
     provider Chef::Provider::Service::Systemd
-  else
-    provider Chef::Provider::Service::Init::Debian
+    supports :restart => true, :start => true, :stop => true, :enable => true
+    action :nothing
   end
-  supports :restart => true, :start => true, :stop => true, :enable => true
-  action :nothing
-end
 
-
-template "/etc/init.d/#{service_name}" do
-  only_if { node.systemd != "true" }
-  source "#{service_name}.erb"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
-  mode 0650
-  notifies :enable, "service[#{service_name}]"
-  notifies :start, "service[#{service_name}]"
-end
-
-case node.platform_family
-  when "debian"
-systemd_script = "/lib/systemd/system/#{service_name}.service"
-  when "rhel"
-systemd_script = "/usr/lib/systemd/system/#{service_name}.service" 
-end
-
-template systemd_script do
-    only_if { node.systemd == "true" }
+  template systemd_script do
     source "#{service_name}.service.erb"
     owner node.kagent.run_as_user
     group node.kagent.run_as_user
     mode 0650
-end
+  end
 
-link "/etc/systemd/system/#{service_name}.service" do
-  only_if { node.systemd == "true" }
-  owner "root"
-  to "#{node.kagent.base_dir}/#{service_name}.service" 
+  case node.platform_family
+  when "debian"
+    systemd_script = "/lib/systemd/system/#{service_name}.service"
+  when "rhel"
+    systemd_script = "/usr/lib/systemd/system/#{service_name}.service" 
+  end
+  link "/etc/systemd/system/#{service_name}.service" do
+    only_if { node.systemd == "true" }
+    owner "root"
+    to "#{node.kagent.base_dir}/#{service_name}.service" 
+  end
+
+else # sysv
+
+  service "#{service_name}" do
+    provider Chef::Provider::Service::Init::Debian
+    supports :restart => true, :start => true, :stop => true, :enable => true
+    action :nothing
+  end
+
+  template "/etc/init.d/#{service_name}" do
+    source "#{service_name}.erb"
+    owner node.kagent.run_as_user
+    group node.kagent.run_as_user
+    mode 0650
+    notifies :enable, "service[#{service_name}]"
+    notifies :start, "service[#{service_name}]"
+  end
+
 end
 
 
