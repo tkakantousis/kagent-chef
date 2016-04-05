@@ -197,11 +197,9 @@ end
 
 # set_my_hostname
 if node.vagrant === "true" || node.vagrant == true 
-
+    my_ip = my_private_ip()
   case node.platform_family
   when "debian"
-
-    my_ip = my_private_ip()
     hostsfile_entry "#{my_ip}" do
       hostname  node.fqdn
       action    :create
@@ -213,7 +211,7 @@ if node.vagrant === "true" || node.vagrant == true
       unique    true
     end
   when "rhel"
-    hostsfile_entry '10.0.2.15' do
+    hostsfile_entry "#{my_ip}" do
       hostname  "default-centos-70.vagrantup.com"
       unique    true
     end
