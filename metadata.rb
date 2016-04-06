@@ -5,6 +5,8 @@ license          "GPL 2.0"
 description      "Installs/Configures the Karamel agent used by Hops"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          "0.1.2"
+source_url       "https://github.com/karamelchef/kagent-chef"
+
 
 %w{ ubuntu debian centos }.each do |os|
   supports os
