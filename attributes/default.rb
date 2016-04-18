@@ -19,7 +19,7 @@ default.kagent.dashboard.password     = "kthfsagent"
 default.kagent.certificate_file       = "server.pem"
 
 # dashboard ip:port endpoint
-default.kagent.dashboard.ip_port      = "" 
+default.kagent.dashboard.port         = "" 
 default.kagent.dashboard_app          = "hopsworks"
 
 
@@ -43,7 +43,7 @@ default.kagent.hostid                 = 100
 
 default.kagent.public_ips             = ['10.0.2.15']
 default.kagent.private_ips            = ['10.0.2.15']
-default.kagent.allow_kmon_ssh_access  = "false"
+default.kagent.allow_ssh_access       = "false"
 
 # Base URL used to download binaries in depedent cookbooks
 node.default.download_url                  = "http://193.10.67.171/hops"
@@ -54,4 +54,3 @@ node.default.ndb.mysql.jdbc_url            = ""
 node.default.ndb.mysql_port                = "3306"
 
 node.default.vagrant                       = "false"
-#node.default.mysql.root.password           = "kthfs"

@@ -86,17 +86,16 @@ end
 private_ip = my_private_ip()
 public_ip = my_public_ip()
 
-dashboard_endpoint = node.kagent.dashboard.ip_port
-if dashboard_endpoint.eql? ""
-  if node.attribute? "kmon"
-    dashboard_endpoint = private_cookbook_ip("kmon")  + ":8080"
-  end
+dashboard_endpoint = ""
+
+if node.attribute? "hopsworks"
+    dashboard_endpoint = private_cookbook_ip("hopsworks")  + ":" + node.kagent.dashboard.ip_port
 end
 
 network_if = node.kagent.network.interface
 
 # If the network i/f name not set by the user, set default values for ubuntu and centos
-if node.kagent.network.interface == ""
+if network_if == ""
   case node.platform_family
   when "debian"
     network_if = "eth0"
@@ -159,7 +158,7 @@ when "rhel"
 
 end
 
-if node.kagent.allow_kmon_ssh_access == 'true'
+if node.kagent.allow_ssh_access == 'true'
 
   if node.attribute? "kmon"
     if node.kmon.attribute? "public_key"
