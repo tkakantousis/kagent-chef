@@ -1,4 +1,4 @@
-actions :generate, :return_publickey, :get_publickey
+actions :generate, :return_publickey, :get_publickey, :csr
 
 attribute :homedir, :kind_of => String, :name_attribute => true, :required => true
 attribute :cb_name, :kind_of => String

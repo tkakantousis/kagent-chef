@@ -55,7 +55,7 @@ end
 
 
 
-template"#{node.kagent.base_dir}/agent.py" do
+template "#{node.kagent.base_dir}/agent.py" do
   source "agent.py.erb"
   owner node.kagent.run_as_user
   group node.kagent.run_as_user

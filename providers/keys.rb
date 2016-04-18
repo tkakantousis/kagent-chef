@@ -1,3 +1,21 @@
+action :csr do
+
+  signed = "#{node.kagent.base_dir}/.keystore_signed"
+
+  bash "sign-local-csr-key" do
+    user "root"
+    code <<-EOF
+      set -eo pipefail 
+      #{node.kagent.base_dir}/csr.py
+      touch #{signed}
+  EOF
+    not_if { ::File.exists?( "#{signed}" ) }
+  end
+  
+
+end
+
+
 action :generate do
   homedir = "#{new_resource.homedir}"
   cb_user = "#{new_resource.cb_user}"

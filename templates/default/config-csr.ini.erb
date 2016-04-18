@@ -1,0 +1,12 @@
+[server]
+url = <%= @rest_url %>
+path-register: /rest/agent/register
+username = <%= @username %>
+password = <%= @password %>
+
+[agent]
+logging-level = <%= node[:kagent][:logging_level] %>
+max-log-size = <%= node[:kagent][:max_log_size] %>
+public-ip = <%= @public_ip %>
+private-ip = <%= @private_ip %>
+heartbeat-interval = <%= node[:kagent][:heartbeat_interval] %>
