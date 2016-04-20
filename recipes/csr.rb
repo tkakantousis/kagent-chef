@@ -4,6 +4,9 @@ template"#{node.kagent.base_dir}/csr.py" do
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
   mode 0655
+  variables({
+     cert "kafka"
+})
 end
 
 private_ip = my_private_ip()

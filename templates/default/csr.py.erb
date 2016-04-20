@@ -34,90 +34,18 @@ from IPy import IP
 import pexpect
 import re
 
-var="~#@#@!#@!#!@#@!#"
-
-config_mutex = Lock()
-
-HTTP_OK = 200
-
-CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config-csr.ini"
-LOG_FILE = "<%= node[:kagent][:base_dir] %>/csr.log"
-CERT_FILE = "<%= node[:kagent][:base_dir] %>/<% @cert %>.pem"
-KEY_FILE = "<%= node[:kagent][:base_dir] %>/<% @cert %>.key"
-
-
-# reading config
-try:
-    config = ConfigParser.ConfigParser()
-    config.read(CONFIG_FILE)
-    server_url = config.get('server', 'url')
-    register_url = server_url + config.get('server', 'path-register')
-    server_username = config.get('server', 'username')
-    server_password = config.get('server', 'password')
-    
-    heartbeat_interval = config.getfloat('agent', 'heartbeat-interval')    
-    logging_level = config.get('agent', 'logging-level').upper()
-    max_log_size = config.getint('agent', 'max-log-size')    
-    user = config.get('agent', 'username')
-    password = config.get('agent', 'password')          
-    agent_restport = config.getint('agent', 'restport')
-    network_interface = config.get('agent', 'network-interface')          
-    group_name = config.get('agent', 'group-name')          
-
-# TODO find public/private IP addresses 
-    public_ip = None
-    private_ip = None 
-    eth0_ip = netifaces.ifaddresses(network_interface)[netifaces.AF_INET][0]['addr'] 
-    if (IP(eth0_ip).iptype() == "PUBLIC"):
-        public_ip = eth0_ip
-    else:
-        private_ip = eth0_ip
-    
-    hostname = socket.gethostbyaddr(eth0_ip)[0]
-        
-    if (config.has_option("agent", "host-id")):
-        host_id = config.get("agent", "host-id")
-    else:
-        host_id = hostname
-
-    
-except Exception, e:
-    print "Exception while reading {0}: {1}".format(CONFIG_FILE, e)
-    sys.exit(1)
-
-# logging
-try:
-    os.remove(LOG_FILE + '.1')
-except:
-    pass    
-with open(LOG_FILE, 'w'):  # clear log file
-    pass
-logger = logging.getLogger('agent')
-logger_formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-logger_file_handler = logging.handlers.RotatingFileHandler(LOG_FILE, "w", maxBytes=max_log_size, backupCount=1)
-logger_stream_handler = logging.StreamHandler()
-logger_file_handler.setFormatter(logger_formatter)
-logger_stream_handler.setFormatter(logger_formatter)
-logger.addHandler(logger_file_handler)
-logger.addHandler(logger_stream_handler)
-logger.setLevel(logging.INFO)
-
-logger.info("Hops Csr-Agent started.")
-logger.info("Register URL: {0}".format(register_url))
-logger.info("Public IP: {0}".format(public_ip))
-logger.info("Private IP: {0}".format(private_ip))
 
 class Util():
     
     def logging_level(self, level):
         return {
-                'INFO': logging.INFO,
-                'WARN': logging.WARN,
-                'WARNING': logging.WARNING,
-                'ERROR': logging.ERROR,
-                'DEBUG' : logging.DEBUG,
-                'CRITICAL': logging.CRITICAL,
-                }.get(level, logging.NOTSET)
+            'INFO': logging.INFO,
+            'WARN': logging.WARN,
+            'WARNING': logging.WARNING,
+            'ERROR': logging.ERROR,
+            'DEBUG' : logging.DEBUG,
+            'CRITICAL': logging.CRITICAL,
+        }.get(level, logging.NOTSET)
 
 class Register():
     def __init__(self, csr, key):
@@ -126,29 +54,29 @@ class Register():
             if cert != None:
                 Cert.store(cert, key) 
                 break
-            time.sleep(heartbeat_interval)
-        
+                time.sleep(heartbeat_interval)
+                
     @staticmethod
     def register(csr, key):
-            try:     
-                headers = {'content-type': 'application/json'}
-                payload = {}
-                payload["csr"] = csr
-                if (public_ip != None):
-                    payload["public-ip"] = public_ip                      
+        try:     
+            headers = {'content-type': 'application/json'}
+            payload = {}
+            payload["csr"] = csr
+            if (public_ip != None):
+                payload["public-ip"] = public_ip                      
                 if (private_ip != None):
                     payload["private-ip"] = private_ip 
-                logger.info("Registering with HopsWorks...")
-                auth = (server_username, server_password)
-                resp = requests.put(register_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)
-                if not resp.status_code == HTTP_OK:
-                    raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0}).'.format(resp.status_code))
-                cert = resp.content               
-                logger.info("Registered successfully.")                
-                return cert
-            except Exception as err:
-                logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
-                return None 
+                    logger.info("Registering with HopsWorks...")
+                    auth = (server_username, server_password)
+                    resp = requests.put(register_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)
+                    if not resp.status_code == HTTP_OK:
+                        raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0}).'.format(resp.status_code))
+                        cert = resp.content               
+                        logger.info("Registered successfully.")                
+                        return cert
+                    except Exception as err:
+                        logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
+                        return None 
 
 class Config(): 
 
@@ -157,7 +85,7 @@ class Config():
             return "{0}-{1}".format(cluster, service)
         else:
             return "{0}-{1}-{2}".format(cluster, service, role)   
-        
+            
     # select items so that the key does not contain 'file' or 'script'
     def read_all_for_heartbeat(self):
         services_list = []
@@ -169,31 +97,31 @@ class Config():
                     for key, val in services.items(s):
                         if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
                             item[key] = val
-                    services_list.append(item)                
-        finally:
-            config_mutex.release()
-            return services_list
-        
+                            services_list.append(item)                
+                        finally:
+                            config_mutex.release()
+                            return services_list
+                            
     def get_section(self, section):
         items = {}
         config_mutex.acquire()
         try:
             for key, val in services.items(section):
                 items[key] = val
-        finally:
-            config_mutex.release()
-            return items
-    
+            finally:
+                config_mutex.release()
+                return items
+                
     def add(self, section, options):
         config_mutex.acquire()
         try:
             services.add_section(section)
             for k, v in options.iteritems():
                 services.set(section, k, v)
-            services.write(open(SERVICES_FILE, 'w'))      
-        finally:
-            config_mutex.release()  
- 
+                services.write(open(SERVICES_FILE, 'w'))      
+            finally:
+                config_mutex.release()  
+                
     def remove(self, section):
         config_mutex.acquire()
         try:
@@ -201,17 +129,17 @@ class Config():
             services.write(open(SERVICES_FILE, 'w'))
         finally:
             config_mutex.release()   
-               
+            
     def edit(self, section, options_to_set, options_to_remove):
         config_mutex.acquire()
         try:
             for k, v in options_to_set.iteritems():
                 services.set(section, k, v)
-            for k in options_to_remove:
-                services.remove_option(section, k)               
-            services.write(open(SERVICES_FILE, 'w'))      
-        finally:
-            config_mutex.release()
+                for k in options_to_remove:
+                    services.remove_option(section, k)               
+                    services.write(open(SERVICES_FILE, 'w'))      
+                finally:
+                    config_mutex.release()
 
     def get(self, section, option):
         val = ""
@@ -230,13 +158,13 @@ class Authentication():
             password = request.params['password']  
             if (username, password) == (user, password):
                 return True
-        except Exception:
-            result = False
+            except Exception:
+                result = False
 
         if result == False:
             logger.info("Authentication failed: Invalid username/password: {0}/{1}".format(username, password))
-        return result
-    
+            return result
+            
     def failed(self):
         return HTTPResponse(status=400, output="Invalid username/password")
 
@@ -245,12 +173,12 @@ class Cert():
     @staticmethod
     def get_dir():
         return os.path.dirname(os.path.abspath(__file__)) 
-    
+        
     @staticmethod
     def exist():
         cert_dir = Cert.get_dir() 
         return exists(join(cert_dir, CERT_FILE)) and exists(join(cert_dir, KEY_FILE)) 
-    
+        
     @staticmethod    
     def create_key_and_csr():
         """
@@ -281,18 +209,89 @@ class Cert():
         cert_dir = Cert.get_dir() 
         with open(join(cert_dir, CERT_FILE), "wt") as f:
             f.write(cert)
-        with open(join(cert_dir, KEY_FILE), "wt") as f:
-            f.write(key)
-        logger.info("Writing Cert/Key pair to {0}/{1}.".format(CERT_FILE, KEY_FILE))
+            with open(join(cert_dir, KEY_FILE), "wt") as f:
+                f.write(key)
+                logger.info("Writing Cert/Key pair to {0}/{1}.".format(CERT_FILE, KEY_FILE))
 
 
 if __name__ == '__main__':
-    
     agent_pid = str(os.getpid())
     file(agent_pidfile, 'w').write(agent_pid)
     logger.info("Hops-CSR-Agent PID: {0}".format(agent_pid))
     logger.setLevel(Util().logging_level(logging_level))
+
+    var="~#@#@!#@!#!@#@!#"
+    config_mutex = Lock()
+    HTTP_OK = 200
+    #TODO - check correct num of args, length of name > 2
+    name=sys.argv[1]
+    CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config-csr.ini"
+    LOG_FILE = "<%= node[:kagent][:base_dir] %>/csr.log"
+    CERT_FILE = "<%= node[:kagent][:base_dir] %>/" + name + ".pem"
+    KEY_FILE = "<%= node[:kagent][:base_dir] %>/" + name + ".key"
+    
+    
+    # reading config
+    try:
+        config = ConfigParser.ConfigParser()
+        config.read(CONFIG_FILE)
+        server_url = config.get('server', 'url')
+        register_url = server_url + config.get('server', 'path-register')
+        server_username = config.get('server', 'username')
+        server_password = config.get('server', 'password')
         
+        heartbeat_interval = config.getfloat('agent', 'heartbeat-interval')    
+        logging_level = config.get('agent', 'logging-level').upper()
+        max_log_size = config.getint('agent', 'max-log-size')    
+        user = config.get('agent', 'username')
+        password = config.get('agent', 'password')          
+        agent_restport = config.getint('agent', 'restport')
+        network_interface = config.get('agent', 'network-interface')          
+        group_name = config.get('agent', 'group-name')          
+    
+        # TODO find public/private IP addresses 
+        public_ip = None
+        private_ip = None 
+        eth0_ip = netifaces.ifaddresses(network_interface)[netifaces.AF_INET][0]['addr'] 
+        if (IP(eth0_ip).iptype() == "PUBLIC"):
+            public_ip = eth0_ip
+        else:
+            private_ip = eth0_ip
+        
+        hostname = socket.gethostbyaddr(eth0_ip)[0]
+        
+        if (config.has_option("agent", "host-id")):
+            host_id = config.get("agent", "host-id")
+        else:
+            host_id = hostname
+    
+    except Exception, e:
+        print "Exception while reading {0}: {1}".format(CONFIG_FILE, e)
+        sys.exit(1)
+    
+    # logging
+    try:
+        os.remove(LOG_FILE + '.1')
+    except:
+        pass    
+    with open(LOG_FILE, 'w'):  # clear log file
+        pass
+
+    logger = logging.getLogger('agent')
+    logger_formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    logger_file_handler = logging.handlers.RotatingFileHandler(LOG_FILE, "w", maxBytes=max_log_size, backupCount=1)
+    logger_stream_handler = logging.StreamHandler()
+    logger_file_handler.setFormatter(logger_formatter)
+    logger_stream_handler.setFormatter(logger_formatter)
+    logger.addHandler(logger_file_handler)
+    logger.addHandler(logger_stream_handler)
+    logger.setLevel(logging.INFO)
+    
+    logger.info("Hops Csr-Agent started.")
+    logger.info("Register URL: {0}".format(register_url))
+    logger.info("Public IP: {0}".format(public_ip))
+    logger.info("Private IP: {0}".format(private_ip))
+
     if not Cert.exist():    
         (csr, key) = Cert.create_key_and_csr()
         Register(csr=csr, key=key) # Registering with the dashboard
