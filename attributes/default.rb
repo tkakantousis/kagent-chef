@@ -12,8 +12,8 @@ default.kagent.rest_api.user          = "kagent@sics.se"
 default.kagent.rest_api.password      = "kagent"
 
 # Username/Password for the dashboard connecting to this agent
-default.kagent.dashboard.user         = "kthfsagent@sics.se"
-default.kagent.dashboard.password     = "kthfsagent"
+default.kagent.dashboard.user         = "agent@hops.io"
+default.kagent.dashboard.password     = "admin"
 
 # Agent's local certificate for SSL connections
 default.kagent.certificate_file       = "server.pem"
@@ -45,9 +45,6 @@ default.kagent.public_ips             = ['10.0.2.15']
 default.kagent.private_ips            = ['10.0.2.15']
 default.kagent.allow_ssh_access       = "false"
 
-# Base URL used to download binaries in depedent cookbooks
-node.default.download_url                  = "http://193.10.67.171/hops"
-node.default.java.bouncycastle_url         = "#{node.download_url}/bcprov-jdk15on-149.jar"
 node.default.systemd                       = "true"
 node.default.ndb.mysql_socket              = "/tmp/mysql.sock"
 node.default.ndb.mysql.jdbc_url            = ""
