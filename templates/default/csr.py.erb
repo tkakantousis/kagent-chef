@@ -193,7 +193,7 @@ class Cert():
         req.get_subject().ST = "Sweden"
         req.get_subject().L = "Stockholm"
         req.get_subject().O = "HopsWorks"
-        req.get_subject().OU = "KTH"
+        req.get_subject().OU = <%= @cert %>
         req.get_subject().CN = hostname
         req.set_pubkey(pkey)
         req.sign(pkey, 'sha256')
