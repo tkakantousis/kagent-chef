@@ -45,6 +45,7 @@ default.kagent.public_ips             = ['10.0.2.15']
 default.kagent.private_ips            = ['10.0.2.15']
 default.kagent.allow_ssh_access       = "false"
 
+node.default.download_url                  = "http://193.10.67.171/hops"
 node.default.systemd                       = "true"
 node.default.ndb.mysql_socket              = "/tmp/mysql.sock"
 node.default.ndb.mysql.jdbc_url            = ""
