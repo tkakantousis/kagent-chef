@@ -19,7 +19,8 @@ default.kagent.dashboard.password     = "admin"
 default.kagent.certificate_file       = "server.pem"
 
 # dashboard ip:port endpoint
-default.kagent.dashboard.port         = "" 
+# default.kagent.dashboard.port         = ""
+default.kagent.dashboard.port         = "14009"  
 default.kagent.dashboard_app          = "hopsworks"
 
 

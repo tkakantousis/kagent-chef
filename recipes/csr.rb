@@ -12,11 +12,13 @@ end
 private_ip = my_private_ip()
 public_ip = my_public_ip()
 
-dashboard_endpoint = ""
+# dashboard_endpoint = ""
+dashboard_endpoint = "bbc1.sics.se:14009"
 
-if node.attribute? "hopsworks"
-    dashboard_endpoint = private_cookbook_ip("hopsworks")  + ":" + node.kagent.dashboard.ip_port
-end
+# UNCOMMENT LATER 
+# if node.attribute? "hopsworks"
+#    dashboard_endpoint = private_cookbook_ip("hopsworks")  + ":" + node.kagent.dashboard.ip_port
+# end
 
 network_if = node.kagent.network.interface
 
