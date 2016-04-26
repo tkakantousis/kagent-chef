@@ -90,9 +90,9 @@ public_ip = my_public_ip()
 dashboard_endpoint = "bbc1.sics.se:14009"
 
 # UNCOMMENT LATER 
-# if node.attribute? "hopsworks"
-#    dashboard_endpoint = private_cookbook_ip("hopsworks")  + ":" + node.kagent.dashboard.ip_port
-# end
+ if node.attribute? "hopsworks"
+    dashboard_endpoint = private_recipe_ip("hopsworks")  + ":" + node.kagent.dashboard.ip_port
+ end
 
 network_if = node.kagent.network.interface
 
