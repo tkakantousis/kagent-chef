@@ -91,7 +91,7 @@ dashboard_endpoint = "bbc1.sics.se:14009"
 
 # UNCOMMENT LATER 
  if node.attribute? "hopsworks"
-    dashboard_endpoint = private_recipe_ip("hopsworks")  + ":" + node.kagent.dashboard.ip_port
+    dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node.kagent.dashboard.ip_port
  end
 
 network_if = node.kagent.network.interface
