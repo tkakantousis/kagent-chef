@@ -1,6 +1,7 @@
 [server]
 url = <%= @rest_url %>
-path-register: /rest/agent/register
+path-login: <%= @login %>
+path-register: <%= @register %>
 username = <%= @username %>
 password = <%= @password %>
 
@@ -12,4 +13,3 @@ public-ip = <%= @public_ip %>
 private-ip = <%= @private_ip %>
 pid-file = <%= node[:kagent][:pid_file] %>
 network-interface = <%= @network_if %>
-

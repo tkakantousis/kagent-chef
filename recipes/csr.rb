@@ -4,9 +4,6 @@ template"#{node.kagent.base_dir}/csr.py" do
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
   mode 0655
-  variables({
-     :cert => "kafka"
-})
 end
 
 private_ip = my_private_ip()
@@ -37,10 +34,11 @@ template "#{node.kagent.base_dir}/config-csr.ini" do
   mode 0600
   variables({
               :rest_url => "http://#{dashboard_endpoint}/#{node.kagent.dashboard_app}",
-              :rack => '/default',
               :public_ip => public_ip,
               :private_ip => private_ip,
               :network_if => network_if,
+              :login => node.kagent.dashboard.api.login
+              :register => node.kagent.dashboard.api.register
               :username => node.kagent.dashboard.user,
               :password => node.kagent.dashboard.password 
             })

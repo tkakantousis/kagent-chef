@@ -25,6 +25,21 @@ import socket
 from os.path import exists, join
 import netifaces
 from IPy import IP
+import logging
+
+try:
+    import http.client as http_client
+except ImportError:
+    # Python 2
+    import httplib as http_client
+http_client.HTTPConnection.debuglevel = 1
+
+logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
+requests_log = logging.getLogger("requests.packages.urllib3")
+requests_log.setLevel(logging.DEBUG)
+requests_log.propagate = True
+
 
 class Util():
 
@@ -51,17 +66,15 @@ class Register():
     @staticmethod
     def register(csr, key):
             try:
-                headers = {'content-type': 'application/json'}
-                payload = {}
+		        json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
+                form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
+		        payload = {}
                 payload["csr"] = csr
-                if (public_ip != None):
-                    payload["public-ip"] = public_ip
-                if (private_ip != None):
-                    payload["private-ip"] = private_ip
                 logger.info("Registering with HopsWorks...")
-                auth = (server_username, server_password)
-                resp = requests.put(register_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)
-                if not resp.status_code == HTTP_OK:
+		        session = requests.Session()
+		        session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
+		        resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
+		        if not resp.status_code == HTTP_OK:
                     raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0}).'.format(resp.status_code))
                 cert = resp.content
                 logger.info("Registered successfully.")
@@ -121,10 +134,10 @@ config_mutex = Lock()
 
 HTTP_OK = 200
 
-CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config-csr.ini"
-LOG_FILE = "<%= node[:kagent][:base_dir] %>/csr.log"
-CERT_FILE = "<%= node[:kagent][:base_dir] %>/<% @cert %>.pem"
-KEY_FILE = "<%= node[:kagent][:base_dir] %>/<% @cert %>.key"
+CONFIG_FILE = "/var/lib/kagent/config-csr.ini"
+LOG_FILE = "/var/lib/kagent/csr.log"
+CERT_FILE = "/var/lib/kagent/pub.pem"
+KEY_FILE = "/var/lib/kagent/priv.key"
 
 
 # reading config
@@ -133,6 +146,7 @@ try:
     config.read(CONFIG_FILE)
     server_url = config.get('server', 'url')
     register_url = server_url + config.get('server', 'path-register')
+    login_url = server_url + config.get('server', 'path-login')
     server_username = config.get('server', 'username')
     server_password = config.get('server', 'password')
 
@@ -196,7 +210,6 @@ if __name__ == '__main__':
 
     if not Cert.exist():
         (csr, key) = Cert.create_key_and_csr()
-        Register(csr=csr, key=key) # Registering with the dashboard
+	Register(csr, key) # Registering with the dashboard
     else:
         logger.info('Certificate files exist. Already registered. Skipping registration phase.')
-

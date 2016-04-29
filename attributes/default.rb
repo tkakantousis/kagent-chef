@@ -11,6 +11,10 @@ default.kagent.group_name             = "group1"
 default.kagent.rest_api.user          = "kagent@sics.se"
 default.kagent.rest_api.password      = "kagent"
 
+# API calls
+default.kagent.dashboard.api.register = "/api/agent/register"
+default.kagent.dashboard.api.login 	  = "/api/auth/login"
+
 # Username/Password for the dashboard connecting to this agent
 default.kagent.dashboard.user         = "agent@hops.io"
 default.kagent.dashboard.password     = "admin"
@@ -20,7 +24,7 @@ default.kagent.certificate_file       = "server.pem"
 
 # dashboard ip:port endpoint
 # default.kagent.dashboard.port         = ""
-default.kagent.dashboard.port         = "14009"  
+default.kagent.dashboard.port         = "8080"  
 default.kagent.dashboard_app          = "hopsworks"
 
 
