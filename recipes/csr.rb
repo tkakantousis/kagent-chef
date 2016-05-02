@@ -37,8 +37,8 @@ template "#{node.kagent.base_dir}/config-csr.ini" do
               :public_ip => public_ip,
               :private_ip => private_ip,
               :network_if => network_if,
-              :login => node.kagent.dashboard.api.login
-              :register => node.kagent.dashboard.api.register
+              :login => node.kagent.dashboard.api.login,
+              :register => node.kagent.dashboard.api.register,
               :username => node.kagent.dashboard.user,
               :password => node.kagent.dashboard.password 
             })
