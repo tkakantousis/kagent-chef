@@ -43,3 +43,10 @@ template "#{node.kagent.base_dir}/config-csr.ini" do
               :password => node.kagent.dashboard.password 
             })
 end
+
+template "#{node.kagent.base_dir}/keystore.sh" do
+  source "keystore.sh.erb"
+  owner node.kagent.run_as_user
+  group node.kagent.run_as_user
+  mode 0700
+end

@@ -67,7 +67,7 @@ class Register():
     def register(csr, key):
             try:
 		json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
-        form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
+        	form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
 		payload = {}
                 payload["csr"] = csr
                 logger.info("Registering with HopsWorks...")
@@ -80,8 +80,8 @@ class Register():
                 # Loads (Load String) takes a Json file and converts into python data structure (dict or list, depending on JSON)
                 # jData = json.loads(myResponse.content)
                 jData = json.loads(resp.content)
-                cert = jData.pubAgentCert
-                caCert = jData.caPubCert
+                cert = jData['pubAgentCert']
+                caCert = jData['caPubCert']
 
                 cert_dir = os.path.dirname(os.path.abspath(__file__))
                 with open(join(cert_dir, CA_FILE), "wt") as f:
