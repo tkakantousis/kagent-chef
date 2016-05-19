@@ -76,7 +76,17 @@ class Register():
 		resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
 		if not resp.status_code == HTTP_OK:
                		raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0}).'.format(resp.status_code))
-                cert = resp.content
+                
+                # Loads (Load String) takes a Json file and converts into python data structure (dict or list, depending on JSON)
+                jData = json.loads(myResponse.content)
+                cert = jData.pubAgentCert
+                caCert = jData.caPubCert
+
+                cert_dir = os.path.dirname(os.path.abspath(__file__))
+                with open(join(cert_dir, CA_FILE), "wt") as f:
+                    f.write(cert)
+                logger.info("Writing Ca Public key to {0}.".format(CA_FILE))
+
                 logger.info("Registered successfully.")
                 return cert
             except Exception as err:
@@ -135,8 +145,9 @@ config_mutex = Lock()
 HTTP_OK = 200
 
 CONFIG_FILE = "/var/lib/kagent/config-csr.ini"
-LOG_FILE = "/var/lib/kagent/csr.log"
+LOG_FILE = "<%= node[:kagent][:base_dir] %>/kagent/csr.log"
 CERT_FILE = "/var/lib/kagent/pub.pem"
+CA_FILE = "/var/lib/kagent/ca_pub.pem"
 KEY_FILE = "/var/lib/kagent/priv.key"
 
 
