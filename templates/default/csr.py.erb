@@ -67,7 +67,7 @@ class Register():
     def register(csr, key):
             try:
 		json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
-                form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
+        form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
 		payload = {}
                 payload["csr"] = csr
                 logger.info("Registering with HopsWorks...")
@@ -78,13 +78,14 @@ class Register():
                		raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0}).'.format(resp.status_code))
                 
                 # Loads (Load String) takes a Json file and converts into python data structure (dict or list, depending on JSON)
-                jData = json.loads(myResponse.content)
+                # jData = json.loads(myResponse.content)
+                jData = json.loads(resp.content)
                 cert = jData.pubAgentCert
                 caCert = jData.caPubCert
 
                 cert_dir = os.path.dirname(os.path.abspath(__file__))
                 with open(join(cert_dir, CA_FILE), "wt") as f:
-                    f.write(cert)
+                    f.write(caCert)
                 logger.info("Writing Ca Public key to {0}.".format(CA_FILE))
 
                 logger.info("Registered successfully.")
@@ -144,11 +145,11 @@ config_mutex = Lock()
 
 HTTP_OK = 200
 
-CONFIG_FILE = "/var/lib/kagent/config-csr.ini"
-LOG_FILE = "<%= node[:kagent][:base_dir] %>/kagent/csr.log"
-CERT_FILE = "/var/lib/kagent/pub.pem"
-CA_FILE = "/var/lib/kagent/ca_pub.pem"
-KEY_FILE = "/var/lib/kagent/priv.key"
+CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config-csr.ini"
+LOG_FILE = "<%= node[:kagent][:base_dir] %>/csr.log"
+CERT_FILE = "<%= node[:kagent][:base_dir] %>/pub.pem"
+CA_FILE = "<%= node[:kagent][:base_dir] %>/ca_pub.pem"
+KEY_FILE = "<%= node[:kagent][:base_dir] %>/priv.key"
 
 
 # reading config
