@@ -86,8 +86,7 @@ end
 private_ip = my_private_ip()
 public_ip = my_public_ip()
 
-# dashboard_endpoint = ""
-dashboard_endpoint = "bbc1.sics.se:14009"
+dashboard_endpoint = ""
 
 # UNCOMMENT LATER 
  if node.attribute? "hopsworks"
@@ -176,3 +175,4 @@ if node.kagent.allow_ssh_access == 'true'
     end
   end
 end
+
