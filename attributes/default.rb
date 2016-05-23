@@ -16,7 +16,7 @@ default.kagent.dashboard.api.register = "/api/agent/register"
 default.kagent.dashboard.api.login 	  = "/api/auth/login"
 
 # Username/Password for the dashboard connecting to this agent
-default.kagent.dashboard.user         = "agent@hops.io"
+default.kagent.dashboard.user         = "admin@kth.se"
 default.kagent.dashboard.password     = "admin"
 
 # Agent's local certificate for SSL connections
