@@ -188,7 +188,7 @@ directory node.kagent.base_dir do
   recursive true
 end
 
-directory default.kagent.keystore_dir do
+directory node.kagent.keystore_dir do
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
   mode "755"
