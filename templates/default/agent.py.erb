@@ -42,8 +42,6 @@ import pexpect
 import re
 
 global mysql_process
-global spark_process
-spark_process = None
 mysql_process = None
 var="~#@#@!#@!#!@#@!#"
 
@@ -351,7 +349,7 @@ class Config():
         config_mutex.acquire()            
         try:
             for s in services.sections():
-                if services.has_option(s, "role") or services.get(s, "service") == "SPARK" :
+                if services.has_option(s, "role") :
                     item = {}
                     for key, val in services.items(s):
                         if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
@@ -714,25 +712,6 @@ class SSLCherryPy(ServerAdapter):
         finally:  
             server.stop()
 
-def start_spark_shell(cluster, service, command):
-    global spark_process
-    section = Config().section_name(cluster, service)    
-    script = Config().get(section, "command-" + command)
-    spark_process = pexpect.spawn(script)
-    spark_process.expect ('scala>')       
-    return spark_process.before
-
-def continue_spark_shell(cluster, service, command, params):  
-    global spark_process
-    spark_process.sendline(command + " " + params)    
-    result = {}        
-    i = spark_process.expect(['scala>'])         
-    if i==0:
-        msg = spark_process.before.replace(" " + var + "\r\n", "")
-        result['before'] = msg        
-    return json.dumps(result)
-
-
 if __name__ == '__main__':
     
     agent_pid = str(os.getpid())
@@ -878,12 +857,6 @@ if __name__ == '__main__':
                 return CommandHandler().execute(cluster, service, None, command, params);
             else:       
                 return CommandHandler().execute(cluster, service, role, command, params);
-        if state == "start":
-            out = start_spark_shell(cluster, service, command)
-            return CommandHandler().respose(200, out)
-        if state == "continue":
-            out = continue_spark_shell(cluster, service, command, params)
-            return CommandHandler().respose(200, out)   
         return CommandHandler().respose(404, "Error")  
                 
 
