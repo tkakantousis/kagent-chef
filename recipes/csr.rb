@@ -49,4 +49,8 @@ template "#{node.kagent.base_dir}/keystore.sh" do
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
   mode 0700
+   variables({
+              :directory => default.kagent.keystore_dir,
+              :keystorepass => node.hopsworks.master.password 
+            })
 end

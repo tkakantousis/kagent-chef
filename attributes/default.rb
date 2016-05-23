@@ -46,6 +46,8 @@ default.kagent.cluster                = "Hops"
 
 default.kagent.hostid                 = 100
 
+default.kagent.keystore_dir 		 = node.kagent.base_dir + "/keystores"
+
 default.kagent.public_ips             = ['10.0.2.15']
 default.kagent.private_ips            = ['10.0.2.15']
 default.kagent.allow_ssh_access       = "false"
