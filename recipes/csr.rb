@@ -9,11 +9,11 @@ end
 private_ip = my_private_ip()
 public_ip = my_public_ip()
 
-dashboard_endpoint = ""
-#dashboard_endpoint = "bbc1.sics.se:14009"
- if node.attribute? "hopsworks"
-    dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node.kagent.dashboard.port
- end
+dashboard_endpoint = "10.0.2.15:8080"
+if node.attribute? "hopsworks"
+#  dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node.hopsworks.port
+  dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node.kagent.dashboard.port
+end
 
 network_if = node.kagent.network.interface
 
@@ -33,7 +33,7 @@ template "#{node.kagent.base_dir}/config-csr.ini" do
   group node.kagent.run_as_user
   mode 0600
   variables({
-              :rest_url => "http://127.0.0.1:8080/hopsworks",
+              :rest_url => "http://#{dashboard_endpoint}/#{node.kagent.dashboard_app}",
               :public_ip => public_ip,
               :private_ip => private_ip,
               :network_if => network_if,
