@@ -4,18 +4,15 @@ template"#{node.kagent.base_dir}/csr.py" do
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
   mode 0655
-  variables({
-     cert "kafka"
-})
 end
 
 private_ip = my_private_ip()
 public_ip = my_public_ip()
 
-dashboard_endpoint = ""
-
+dashboard_endpoint = "10.0.2.15:8080"
 if node.attribute? "hopsworks"
-    dashboard_endpoint = private_cookbook_ip("hopsworks")  + ":" + node.kagent.dashboard.ip_port
+#  dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node.hopsworks.port
+  dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node.kagent.dashboard.port
 end
 
 network_if = node.kagent.network.interface
@@ -37,11 +34,29 @@ template "#{node.kagent.base_dir}/config-csr.ini" do
   mode 0600
   variables({
               :rest_url => "http://#{dashboard_endpoint}/#{node.kagent.dashboard_app}",
-              :rack => '/default',
               :public_ip => public_ip,
               :private_ip => private_ip,
               :network_if => network_if,
+              :login => node.kagent.dashboard.api.login,
+              :register => node.kagent.dashboard.api.register,
               :username => node.kagent.dashboard.user,
               :password => node.kagent.dashboard.password 
             })
+end
+
+template "#{node.kagent.base_dir}/keystore.sh" do
+  source "keystore.sh.erb"
+  owner node.kagent.run_as_user
+  group node.kagent.run_as_user
+  mode 0700
+   variables({
+              :directory => node.kagent.keystore_dir,
+              :keystorepass => node.hopsworks.master.password 
+            })
+end
+
+execute 'certificates' do
+ user "root"
+ cwd '/var/lib/kagent/'
+ command "python csr.py"
 end

@@ -88,9 +88,10 @@ public_ip = my_public_ip()
 
 dashboard_endpoint = ""
 
-if node.attribute? "hopsworks"
-    dashboard_endpoint = private_cookbook_ip("hopsworks")  + ":" + node.kagent.dashboard.ip_port
-end
+# UNCOMMENT LATER 
+ if node.attribute? "hopsworks"
+    dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node.kagent.dashboard.port
+ end
 
 network_if = node.kagent.network.interface
 
@@ -174,3 +175,4 @@ if node.kagent.allow_ssh_access == 'true'
     end
   end
 end
+

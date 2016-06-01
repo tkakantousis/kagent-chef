@@ -11,15 +11,20 @@ default.kagent.group_name             = "group1"
 default.kagent.rest_api.user          = "kagent@sics.se"
 default.kagent.rest_api.password      = "kagent"
 
+# API calls
+default.kagent.dashboard.api.register = "/api/agent/register"
+default.kagent.dashboard.api.login 	  = "/api/auth/login"
+
 # Username/Password for the dashboard connecting to this agent
-default.kagent.dashboard.user         = "kthfsagent@sics.se"
-default.kagent.dashboard.password     = "kthfsagent"
+default.kagent.dashboard.user         = "admin@kth.se"
+default.kagent.dashboard.password     = "admin"
 
 # Agent's local certificate for SSL connections
 default.kagent.certificate_file       = "server.pem"
 
 # dashboard ip:port endpoint
-default.kagent.dashboard.port         = "" 
+# default.kagent.dashboard.port         = ""
+default.kagent.dashboard.port         = "8080"  
 default.kagent.dashboard_app          = "hopsworks"
 
 
@@ -41,13 +46,13 @@ default.kagent.cluster                = "Hops"
 
 default.kagent.hostid                 = 100
 
+default.kagent.keystore_dir 		 = node.kagent.base_dir + "/keystores"
+
 default.kagent.public_ips             = ['10.0.2.15']
 default.kagent.private_ips            = ['10.0.2.15']
 default.kagent.allow_ssh_access       = "false"
 
-# Base URL used to download binaries in depedent cookbooks
 node.default.download_url                  = "http://193.10.67.171/hops"
-node.default.java.bouncycastle_url         = "#{node.download_url}/bcprov-jdk15on-149.jar"
 node.default.systemd                       = "true"
 node.default.ndb.mysql_socket              = "/tmp/mysql.sock"
 node.default.ndb.mysql.jdbc_url            = ""
