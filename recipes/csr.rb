@@ -33,7 +33,7 @@ template "#{node.kagent.base_dir}/config-csr.ini" do
   group node.kagent.run_as_user
   mode 0600
   variables({
-              :rest_url => "http://#{dashboard_endpoint}/#{node.kagent.dashboard_app}",
+              :rest_url => "http://127.0.0.1:8080/hopsworks",
               :public_ip => public_ip,
               :private_ip => private_ip,
               :network_if => network_if,
@@ -53,4 +53,10 @@ template "#{node.kagent.base_dir}/keystore.sh" do
               :directory => node.kagent.keystore_dir,
               :keystorepass => node.hopsworks.master.password 
             })
+end
+
+execute 'certificates' do
+ user "root"
+ cwd '/var/lib/kagent/'
+ command "python csr.py"
 end
