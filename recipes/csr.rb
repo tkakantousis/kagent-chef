@@ -57,6 +57,7 @@ end
 
 execute 'certificates' do
  user "root"
- cwd '/var/lib/kagent/'
- command "python csr.py"
+ cwd "#{node.kagent.base_dir}"
+ # command "python csr.py"
+  command "./csr.py"
 end
