@@ -55,9 +55,13 @@ template "#{node.kagent.base_dir}/keystore.sh" do
             })
 end
 
-execute 'certificates' do
- user "root"
- cwd "#{node.kagent.base_dir}"
- # command "python csr.py"
-  command "./csr.py"
+# execute 'certificates' do
+#  user "root"
+#  cwd "#{node.kagent.base_dir}"
+#  # command "python csr.py"
+#   command "./csr.py"
+# end
+
+kagent_keys "sign-certs" do
+ action :csr
 end
