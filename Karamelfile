@@ -1,7 +1,5 @@
 dependencies: 
   - recipe: kagent::default
     global:  
-      - hopsworks::certificateauthority
-  - recipe: kagent::csr
-    global:  
-      - hopsworks::certificateauthority
+      - hopsworks::default
+
