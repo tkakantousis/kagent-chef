@@ -86,12 +86,16 @@ end
 private_ip = my_private_ip()
 public_ip = my_public_ip()
 
-dashboard_endpoint = ""
+dashboard_endpoint = "10.0.2.15:8080"
 
-# UNCOMMENT LATER 
- if node.attribute? "hopsworks"
-    dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node.kagent.dashboard.port
- end
+if node.attribute? "hopsworks"
+  begin
+    dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node.kagent.dashboard.port    
+  rescue
+    dashboard_endpoint =
+    Chef::Log.warn "could not find the hopsworks server ip to register kagent to!"
+  end
+end
 
 network_if = node.kagent.network.interface
 
@@ -121,8 +125,6 @@ template "#{node.kagent.base_dir}/config.ini" do
   notifies :start, "service[#{service_name}]"
 end
 
-# TODO install MONIT to restart the agent if it crashes
-
 kagent_kagent "restart-kagent" do
   action :restart
 end
@@ -136,26 +138,6 @@ when "rhel"
   EOH
     only_if "test -f /etc/init.d/iptables && service iptables status"
   end
-
-# if node.vagrant  == 'true'
-#   bash "fix-sudoers-for-vagrant" do
-#     code <<-EOH
-#     echo "" >> /etc/sudoers
-#     echo "#includedir /etc/sudoers.d" >> /etc/sudoers
-#     echo "" >> /etc/sudoers
-#     touch /etc/sudoers.d/.vagrant_fix
-#   EOH
-#     only_if "test -f /etc/sudoers.d/.vagrant_fix"
-#   end
-# end
-
-# Fix sudoers to allow root exec shell commands for Centos
-#node.default.authorization.sudo.include_sudoers_d = true
-# default 'commands' attribute for this LWRP is 'ALL'
-#sudo 'root' do
-#  user      "root"
-#  runas     'ALL:ALL'
-#end
 
 end
 
@@ -174,5 +156,51 @@ if node.kagent.allow_ssh_access == 'true'
       end
     end
   end
+end
+
+
+
+#
+# Certificate Signing code - Needs Hopsworks dashboard
+#
+
+
+template"#{node.kagent.base_dir}/csr.py" do
+  source "csr.py.erb"
+  owner node.kagent.run_as_user
+  group node.kagent.run_as_user
+  mode 0655
+end
+
+template "#{node.kagent.base_dir}/config-csr.ini" do
+  source "config-csr.ini.erb"
+  owner node.kagent.run_as_user
+  group node.kagent.run_as_user
+  mode 0600
+  variables({
+              :rest_url => "http://#{dashboard_endpoint}/#{node.kagent.dashboard_app}",
+              :public_ip => public_ip,
+              :private_ip => private_ip,
+              :network_if => network_if,
+              :login => node.kagent.dashboard.api.login,
+              :register => node.kagent.dashboard.api.register,
+              :username => node.kagent.dashboard.user,
+              :password => node.kagent.dashboard.password 
+            })
+end
+
+template "#{node.kagent.base_dir}/keystore.sh" do
+  source "keystore.sh.erb"
+  owner node.kagent.run_as_user
+  group node.kagent.run_as_user
+  mode 0700
+   variables({
+              :directory => node.kagent.keystore_dir,
+              :keystorepass => node.hopsworks.master.password 
+            })
+end
+
+kagent_keys "sign-certs" do
+ action :csr
 end
 

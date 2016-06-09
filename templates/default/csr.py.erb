@@ -142,7 +142,7 @@ class Cert():
             f.write(cert)
         with open(join(cert_dir, KEY_FILE), "wt") as f:
             f.write(key)
-        logger.info("Writing Cert/Key pair to {0}/{1}.".format(CERT_FILE, KEY_FILE))
+        logger.info("Writing Cert/Key pair to {0} - {1}.".format(CERT_FILE, KEY_FILE))
 
 var="~#@#@!#@!#!@#@!#"
 
