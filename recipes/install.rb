@@ -43,7 +43,7 @@ end
 # end
 
 inifile_gem = "inifile-2.0.2.gem"
-cookbook_file "#{Chef::Config.file_cache_path}/#{inifile_gem}" do
+cookbook_file "/tmp/binary/#{inifile_gem}" do
   source "#{inifile_gem}"
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
@@ -52,7 +52,7 @@ cookbook_file "#{Chef::Config.file_cache_path}/#{inifile_gem}" do
 end
 
 requests="requests-1.0.3"
-cookbook_file "#{Chef::Config.file_cache_path}/#{requests}.tar.gz" do
+cookbook_file "/tmp/binary/#{requests}.tar.gz" do
   source "#{requests}.tar.gz"
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
@@ -61,7 +61,7 @@ cookbook_file "#{Chef::Config.file_cache_path}/#{requests}.tar.gz" do
 end
 
 bottle="bottle-0.11.4"
-cookbook_file "#{Chef::Config.file_cache_path}/#{bottle}.tar.gz" do
+cookbook_file "/tmp/binary/#{bottle}.tar.gz" do
   source "#{bottle}.tar.gz"
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
@@ -70,7 +70,7 @@ cookbook_file "#{Chef::Config.file_cache_path}/#{bottle}.tar.gz" do
 end
 
 cherry="CherryPy-3.2.2"
-cookbook_file "#{Chef::Config.file_cache_path}/#{cherry}.tar.gz" do
+cookbook_file "/tmp/binary/#{cherry}.tar.gz" do
   source "#{cherry}.tar.gz"
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
@@ -78,7 +78,7 @@ cookbook_file "#{Chef::Config.file_cache_path}/#{cherry}.tar.gz" do
 end
 
 openSsl="pyOpenSSL-0.13"
-cookbook_file "#{Chef::Config.file_cache_path}/#{openSsl}.tar.gz" do
+cookbook_file "/tmp/binary/#{openSsl}.tar.gz" do
   source "#{openSsl}.tar.gz"
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
@@ -103,7 +103,7 @@ else
 end
 
 netifaces="netifaces-0.8"
-cookbook_file "#{Chef::Config.file_cache_path}/#{netifaces}.tar.gz" do
+cookbook_file "/tmp/binary/#{netifaces}.tar.gz" do
   source "#{netifaces}.tar.gz"
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
@@ -112,7 +112,7 @@ cookbook_file "#{Chef::Config.file_cache_path}/#{netifaces}.tar.gz" do
 end
 
 ipy="IPy-0.81"
-cookbook_file "#{Chef::Config.file_cache_path}/#{ipy}.tar.gz" do
+cookbook_file "/tmp/binary/#{ipy}.tar.gz" do
   source "#{ipy}.tar.gz"
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
@@ -121,7 +121,7 @@ cookbook_file "#{Chef::Config.file_cache_path}/#{ipy}.tar.gz" do
 end
 
 pexpect="pexpect-2.3"
-cookbook_file "#{Chef::Config.file_cache_path}/#{pexpect}.tar.gz" do
+cookbook_file "/tmp/binary/#{pexpect}.tar.gz" do
   source "#{pexpect}.tar.gz"
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
@@ -133,7 +133,7 @@ end
 bash "install_python" do
   user "root"
   code <<-EOF
-  cd #{Chef::Config.file_cache_path}
+  cd /tmp/binary
   tar zxf "#{bottle}.tar.gz"
   cd #{bottle}
   python setup.py install
@@ -161,9 +161,9 @@ bash "install_python" do
   tar zxf "#{pexpect}.tar.gz"
   cd #{pexpect}
   python setup.py install
-  touch #{Chef::Config.file_cache_path}/.python_libs_installed
+  touch /tmp/binary/.python_libs_installed
  EOF
-  not_if "test -f #{Chef::Config.file_cache_path}/.python_libs_installed"
+  not_if "test -f /tmp/binary/.python_libs_installed"
 end
 
 
@@ -176,7 +176,7 @@ bash "make_gemrc_file" do
 end
 
 gem_package "inifile" do
-  source "#{Chef::Config.file_cache_path}/#{inifile_gem}"
+  source "/tmp/binary/#{inifile_gem}"
   action :install
 end
 
