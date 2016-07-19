@@ -12,10 +12,10 @@ source_url       "https://github.com/karamelchef/kagent-chef"
   supports os
 end
 
-depends 'python'
+#depends 'python'
 #depends 'openssl'
 #depends 'sudo'
-depends 'hostsfile'
+#depends 'hostsfile'
 
 recipe "kagent::default", "Installs and configures the Karamel agent"
 
@@ -63,3 +63,9 @@ attribute "systemd",
 attribute "kagent/network/interface",
 :description => "Define the network intefaces (eth0, enp0s3)",
 :type => "string"
+
+attribute "ntp/install",
+:description => "Install Network Time Protocol (default: false)",
+:type => "string"
+
+

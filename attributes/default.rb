@@ -59,3 +59,9 @@ node.default.ndb.mysql.jdbc_url            = ""
 node.default.ndb.mysql_port                = "3306"
 
 node.default.vagrant                       = "false"
+
+
+node.default.ntp.install                            = "false"
+# Servers to sync ntp time with
+node.normal.ntp.servers                             = ['0.europe.pool.ntp.org', '1.europe.pool.ntp.org', '2.europe.pool.ntp.org', '3.europe.pool.ntp.org']
+#node.normal.ntp.peers                               = ['time0.int.example.org', 'time1.int.example.org']

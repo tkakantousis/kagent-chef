@@ -225,3 +225,8 @@ if node.vagrant === "true" || node.vagrant == true
   end
 
 end
+
+
+if node.ntp.install == "true"
+  include_recipe "ntp"
+end
