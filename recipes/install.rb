@@ -229,5 +229,5 @@ end
 
 
 if node.ntp.install == "true"
-  include_recipe "ntp"
+  include_recipe "ntp::default"
 end
