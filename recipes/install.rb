@@ -28,7 +28,10 @@ when "rhel"
 end
 
 
-include_recipe "python"
+#node.override['poise-python']['options']['pip_version'] = true
+
+#installs python 2
+include_recipe "poise-python"
 # The openssl::upgrade recipe doesn't install openssl-dev/libssl-dev, needed by python-ssl
 # Now using packages in ubuntu/centos.
 #include_recipe "openssl::upgrade"
@@ -98,7 +101,7 @@ elsif platform?("centos","redhat","fedora")
     action :install
   end
 else
-  python_pip "MySQL-python" do
+  python_package "MySQL-python" do
     action :install
   end
 end

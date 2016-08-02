@@ -21,6 +21,10 @@ default.kagent.dashboard.api.login 	  = "/api/auth/login"
 default.kagent.dashboard.user         = "admin@kth.se"
 default.kagent.dashboard.password     = "admin"
 
+# Username/Password for the keystore
+
+default.hopsworks.master.password     = "changeit"
+
 # Agent's local certificate for SSL connections
 default.kagent.certificate_file       = "server.pem"
 
