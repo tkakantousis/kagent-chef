@@ -7,6 +7,8 @@ default.kagent.base_dir               = "#{node.kagent.dir}/kagent"
 
 default.kagent.group_name             = "group1"
 
+default.kagent.enabled                = "false"
+
 # Username/Password for connecting to the HopDashboard
 default.kagent.rest_api.user          = "kagent@sics.se"
 default.kagent.rest_api.password      = "kagent"
