@@ -123,23 +123,6 @@ template"#{node.kagent.base_dir}/csr.py" do
   mode 0655
 end
 
-template "#{node.kagent.base_dir}/config-csr.ini" do
-  source "config-csr.ini.erb"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
-  mode 0600
-  variables({
-              :rest_url => "http://#{dashboard_endpoint}/#{node.kagent.dashboard_app}",
-              :public_ip => public_ip,
-              :private_ip => private_ip,
-              :network_if => network_if,
-              :login => node.kagent.dashboard.api.login,
-              :register => node.kagent.dashboard.api.register,
-              :username => node.kagent.dashboard.user,
-              :password => node.kagent.dashboard.password 
-            })
-end
-
 template "#{node.kagent.base_dir}/keystore.sh" do
   source "keystore.sh.erb"
   owner node.kagent.run_as_user
