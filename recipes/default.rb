@@ -134,10 +134,6 @@ template "#{node.kagent.base_dir}/keystore.sh" do
             })
 end
 
-kagent_keys "sign-certs" do
- action :csr
-end
-
 
 template "#{node.kagent.base_dir}/config.ini" do
   source "config.ini.erb"
@@ -153,6 +149,10 @@ template "#{node.kagent.base_dir}/config.ini" do
             })
   notifies :enable, "service[#{service_name}]"
   notifies :start, "service[#{service_name}]"
+end
+
+kagent_keys "sign-certs" do
+ action :csr
 end
 
 kagent_kagent "restart-kagent" do

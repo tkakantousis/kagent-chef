@@ -1,8 +1,8 @@
 [server]
 url = <%= @rest_url %>
-path-register: /rest/agent/register
-path-heartbeat: /rest/agent/heartbeat
-path-alert: /rest/agent/alert
+path-register: /rest/agentservice/register
+path-heartbeat: /rest/agentresource/heartbeat
+path-alert: /rest/agentresource/alert
 username = <%= node[:kagent][:dashboard][:user] %>
 password = <%= node[:kagent][:dashboard][:password] %>
 
