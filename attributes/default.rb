@@ -9,16 +9,16 @@ default.kagent.group_name             = "group1"
 
 default.kagent.enabled                = "false"
 
-# Username/Password for connecting to the HopDashboard
-default.kagent.rest_api.user          = "kagent@sics.se"
+# Username/Password for connecting to the agent
+default.kagent.rest_api.user          = "kagent@hops.io"
 default.kagent.rest_api.password      = "kagent"
 
 # API calls
 default.kagent.dashboard.api.register = "/api/agent/register"
 default.kagent.dashboard.api.login 	  = "/api/auth/login"
 
-# Username/Password for the dashboard connecting to this agent
-default.kagent.dashboard.user         = "admin@kth.se"
+# Username/Password for the dashboard connecting to Hopsworks
+default.kagent.dashboard.user         = "agent@hops.io"
 default.kagent.dashboard.password     = "admin"
 
 # Username/Password for the keystore
