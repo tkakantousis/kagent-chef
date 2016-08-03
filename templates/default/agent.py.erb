@@ -67,6 +67,7 @@ try:
     config = ConfigParser.ConfigParser()
     config.read(CONFIG_FILE)
     server_url = config.get('server', 'url')
+    login_url = server_url + config.get('server', 'path-login')
     register_url = server_url + config.get('server', 'path-register')
     heartbeat_url = server_url + config.get('server', 'path-heartbeat')
     alert_url = server_url + config.get('server', 'path-alert')
@@ -183,18 +184,31 @@ class Heartbeat():
 
     @staticmethod
     def login():
-        session = requests.Session()
-        session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
-        resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
-        if not resp.status_code == HTTP_OK:
+        json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
+        form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
+        payload = {}
+        global loggedIn
+        global session
+        try:
+            session = requests.Session()
+            session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
+            resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
+            if not resp.status_code == HTTP_OK:
+                loggedIn = False
+                logger.warn('Could not login agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
+            else:
+                logger.info('Successful login of agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
+                loggedIn = True
+        except Exception as err:
+            logger.warn('Could not login agent to Hopsworks {0}'.format(err))
             loggedIn = False
-            logger.warn('Could not login agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
-        else:
-            loggedIn = True
 
     @staticmethod
     def send():
+            global loggedIn
+            global session
             if not loggedIn:
+                logger.info('Logging in to Hopsworks....')
                 Heartbeat.login()
             else:
                 try:
@@ -235,6 +249,7 @@ class Heartbeat():
                     resp = session.put(heartbeat_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)
                     if not resp.status_code == HTTP_OK:
                         raise Exception('Heartbeat could not be sent (Status code: {0})'.format(resp.status_code))
+                        loggedIn = False
                 except Exception as err:
                     logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
 
