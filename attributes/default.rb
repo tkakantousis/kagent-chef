@@ -14,9 +14,10 @@ default.kagent.rest_api.user          = "kagent@hops.io"
 default.kagent.rest_api.password      = "kagent"
 
 # API calls
-default.kagent.dashboard.api.register = "/api/agent/register"
-default.kagent.dashboard.api.login    = "/api/auth/login"
-
+default.kagent.dashboard.api.register  = "/api/agentservice/register"
+default.kagent.dashboard.api.login     = "/api/auth/login"
+default.kagent.dashboard.api.heartbeat = "/api/agentresource/heartbeat"
+default.kagent.dashboard.api.alert     = "/api/agentresource/alert"
 
 # Username/Password for the dashboard connecting to Hopsworks
 default.kagent.dashboard.user         = "agent@hops.io"
