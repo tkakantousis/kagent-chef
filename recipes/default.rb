@@ -86,7 +86,7 @@ end
 private_ip = my_private_ip()
 public_ip = my_public_ip()
 
-dashboard_endpoint = "10.0.2.15:8080"
+dashboard_endpoint = "10.0.2.15"  + ":" + node.kagent.dashboard.port 
 
 if node.attribute? "hopsworks"
   begin

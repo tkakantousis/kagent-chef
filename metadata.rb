@@ -20,8 +20,12 @@ depends 'ntp'
 
 recipe "kagent::default", "Installs and configures the Karamel agent"
 
-attribute "kagent/dashboard/ip_port",
-:description => " Ip address and port for Dashboard REST API",
+attribute "kagent/dashboard/ip",
+:description => " Ip address for Dashboard REST API",
+:type => 'string'
+
+attribute "kagent/dashboard/port",
+:description => " Port for Dashboard REST API",
 :type => 'string'
 
 attribute "hop/hostid",
