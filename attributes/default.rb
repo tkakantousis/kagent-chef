@@ -7,7 +7,7 @@ default.kagent.base_dir               = "#{node.kagent.dir}/kagent"
 
 default.kagent.group_name             = "group1"
 
-default.kagent.enabled                = "false"
+default.kagent.enabled                = "true"
 
 # Username/Password for connecting to the agent
 default.kagent.rest_api.user          = "kagent@hops.io"
