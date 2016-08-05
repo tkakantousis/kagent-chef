@@ -690,6 +690,7 @@ if __name__ == '__main__':
     logger.info("HOPS-Agent PID: {0}".format(agent_pid))
     logger.setLevel(Util().logging_level(logging_level))
     for s in services.sections():
+        cluster = Config().get(s, "cluster")       
         service = Config().get(s, "service")       
         if services.has_option(s, "role"):
             role = Config().get(s, "role")             
