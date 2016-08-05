@@ -3,7 +3,7 @@ action :add do
   cluster = "#{node.kagent.cluster}"
   service = "#{new_resource.service}"
   role = "#{new_resource.role}"
-  section="#{cluster}-#{service}-#{role}"
+  section="#{role}"
   Chef::Log.info "Loaded kagent services ini-file #{ini_file} with : #{section}"
 
   if ini_file.has_section?(section)
