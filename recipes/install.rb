@@ -234,3 +234,41 @@ end
 if node.ntp.install == "true"
   include_recipe "ntp::default"
 end
+
+
+
+template "#{node.kagent.base_dir}/agent.py" do
+  source "agent.py.erb"
+  owner node.kagent.run_as_user
+  group node.kagent.run_as_user
+  mode 0655
+end
+
+
+template"#{node.kagent.base_dir}/csr.py" do
+  source "csr.py.erb"
+  owner node.kagent.run_as_user
+  group node.kagent.run_as_user
+  mode 0655
+end
+
+
+['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'].each do |script|
+  Chef::Log.info "Installing #{script}"
+  template "#{node.kagent.base_dir}/#{script}" do
+    source "#{script}.erb"
+    owner node.kagent.run_as_user
+    group node.kagent.run_as_user
+    mode 0655
+  end
+end 
+
+['services'].each do |conf|
+  Chef::Log.info "Installing #{conf}"
+  template "#{node.kagent.base_dir}/#{conf}" do
+    source "#{conf}.erb"
+    owner node.kagent.run_as_user
+    group node.kagent.run_as_user
+    mode 0644
+  end
+end
