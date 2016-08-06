@@ -657,8 +657,8 @@ class Authentication():
         result = False
         try:
             username = request.params['username']  
-            password = request.params['password']  
-            if (username, password) == (user, password):
+            inPassword = request.params['password']  
+            if (username, inPassword) == (user, password):
                 return True
         except Exception:
             result = False

@@ -27,6 +27,9 @@ import netifaces
 from IPy import IP
 import logging
 import subprocess
+import string
+import random
+
 
 try:
     import http.client as http_client
@@ -54,6 +57,7 @@ class Util():
                 'CRITICAL': logging.CRITICAL,
                 }.get(level, logging.NOTSET)
 
+
 class Register():
 
     def __init__(self, csr, key):
@@ -71,6 +75,8 @@ class Register():
         	form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
 		payload = {}
                 payload["csr"] = csr
+                payload["agent-password"] = agent_password
+                payload["host-id"] = host_id            
                 logger.info("Registering with HopsWorks...")
 		session = requests.Session()
 		session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
@@ -175,6 +181,21 @@ try:
     agent_pidfile = config.get('agent', 'pid-file')
     network_interface = config.get('agent', 'network-interface')
 
+    if (config.has_option("agent", "hostname")):
+        hostname = config.get("agent", "hostname")
+    else:
+        hostname = socket.gethostbyaddr(eth0_ip)[0]
+        
+    if (config.has_option("agent", "host-id")):
+        host_id = config.get("agent", "host-id")
+    else:
+        host_id = hostname
+
+
+    agent_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8))    
+    config.set('agent', 'password', agent_password)
+    with open(CONFIG_FILE, 'wb') as configfile: 
+        config.write(configfile)
 
 # TODO find public/private IP addresses
     public_ip = None

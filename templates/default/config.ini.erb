@@ -16,7 +16,6 @@ pid-file = <%= node[:kagent][:pid_file] %>
 logging-level = <%= node[:kagent][:logging_level] %>
 max-log-size = <%= node[:kagent][:max_log_size] %>
 username = <%= node[:kagent][:rest_api][:user] %>
-password = <%= node[:kagent][:rest_api][:password] %>
 public-ip = <%= @public_ip %>
 private-ip = <%= @private_ip %>
 mysql-socket = <%= node[:ndb][:mysql_socket] %>
