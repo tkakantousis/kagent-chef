@@ -4,7 +4,7 @@ action :add do
   service = "#{new_resource.service}"
   role = "#{new_resource.role}"
 
-  if cluster.contains("-") || service.contains("-") || role.contains("-")
+  if cluster.include?("-") || service.include?("-") || role.include?("-")
     raise "Invalid cluster or service or role name. Cannot contain  '-'" 
   end
   section="#{cluster}-#{service}-#{role}"
