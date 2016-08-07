@@ -3,6 +3,10 @@ action :add do
   cluster = "#{node.kagent.cluster}"
   service = "#{new_resource.service}"
   role = "#{new_resource.role}"
+
+  if cluster.contains("-") || service.contains("-") || role.contains("-")
+    raise "Invalid cluster or service or role name. Cannot contain  '-'" 
+  end
   section="#{cluster}-#{service}-#{role}"
   Chef::Log.info "Loaded kagent services ini-file #{ini_file} with : #{section}"
 
