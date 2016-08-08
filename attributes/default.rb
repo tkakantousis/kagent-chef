@@ -11,7 +11,6 @@ default.kagent.enabled                = "true"
 
 # Username/Password for connecting to the agent
 default.kagent.rest_api.user          = "kagent@hops.io"
-default.kagent.rest_api.password      = "kagent"
 
 # API calls
 default.kagent.dashboard.api.register  = "/api/agentservice/register"
