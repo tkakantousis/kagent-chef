@@ -217,7 +217,7 @@ end
 directory node.kagent.certs_dir do
   owner node.kagent.user
   group node.kagent.certs_group
-  mode "740"
+  mode "750"
   action :create
   recursive true
 end
