@@ -36,3 +36,15 @@ action :add do
   new_resource.updated_by_last_action(true)
 end
 
+
+
+action :systemd_reload do
+  bash "start-if-not-running-#{new_resource.name}" do
+    user "root"
+    code <<-EOH
+     set -e
+     systemctl daemon-reload
+    EOH
+  end
+
+end

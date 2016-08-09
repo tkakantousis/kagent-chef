@@ -1,4 +1,4 @@
-actions :add
+actions :add, :systemd_reload
 
 attribute :role, :kind_of => String, :name_attribute => true, :required => true
 attribute :service, :kind_of => String, :required => true
