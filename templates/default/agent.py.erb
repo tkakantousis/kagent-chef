@@ -454,10 +454,9 @@ class Service:
             
     def start(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
-#        script = Config().get(section, "start-script")
-        script = "sudo " + BIN_DIR + "/start-service.sh " + role
+        script = BIN_DIR + "/start-service.sh"
         try:
-            p = Popen(script, shell=True, close_fds=True)
+            p = Popen(['sudo',script,role], close_fds=True)
             p.wait()
             returncode = p.returncode
             if not returncode == 0:
@@ -474,10 +473,9 @@ class Service:
         
     def stop(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
-#        script = Config().get(section, "stop-script")
-        script = "sudo " + BIN_DIR + "/stop-service.sh " + role
+        script = BIN_DIR + "/stop-service.sh"
         try:
-            subprocess.check_call(script)  # raises exception if not returncode == 0
+            subprocess.check_call(['sudo', script, role], close_fds=True)  # raises exception if not returncode == 0
             now = str(long(time.mktime(datetime.now().timetuple())))
             options_to_set = {'status':'Stopped', 'stop-time':now}
             options_to_remove = ['pid']
@@ -488,9 +486,9 @@ class Service:
             return False
 
     def restart(self, cluster, service, role):
-        script = "sudo " + BIN_DIR + "/restart-service.sh " + role
+        script = BIN_DIR + "/restart-service.sh"
         try:
-            p = Popen(script, shell=True, close_fds=True)
+            p = Popen(['sudo',script,role], close_fds=True)
             p.wait()
             returncode = p.returncode
             if not returncode == 0:
@@ -797,7 +795,7 @@ if __name__ == '__main__':
 
     @get('/stopRole/<cluster>/<service>/<role>')
     def stopRole(cluster, service, role):
-        logger.info('Incoming REST Request:  GET /stopRole/{0}/{1}'.format(cluster, service, role))
+        logger.info('Incoming REST Request:  GET /stopRole/{0}/{1}/{2}'.format(cluster, service, role))
         if not Authentication().check():
             return Authentication().failed()
         
