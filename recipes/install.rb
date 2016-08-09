@@ -51,6 +51,7 @@ user node.kagent.user do
   action :create
   system true
   shell "/bin/bash"
+  not_if "getent passwd #{node.kagent.user}"
 end
 
 group node.kagent.group do
