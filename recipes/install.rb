@@ -48,6 +48,7 @@ group node.kagent.certs_group do
 end
 
 user node.kagent.user do
+  gid node.kagent.group
   action :create
   system true
   shell "/bin/bash"
