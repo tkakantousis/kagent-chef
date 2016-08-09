@@ -228,10 +228,10 @@ link node.kagent.base_dir do
   only_if "test -L #{node.kagent.base_dir}"
 end
 
-link node.kagent.home do
+link node.kagent.base_dir do
   owner node.kagent.user
   group node.kagent.group
-  to node.kagent.base_dir
+  to node.kagent.home
 end
 
 
