@@ -299,7 +299,7 @@ template "#{node.kagent.base_dir}/agent.py" do
 end
 
 
-template"#{node.kagent.base_dir}/csr.py" do
+template"#{node.kagent.certs_dir}/csr.py" do
   source "csr.py.erb"
   owner node.kagent.user
   group node.kagent.group
