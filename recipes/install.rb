@@ -192,6 +192,15 @@ directory node.kagent.base_dir do
   recursive true
 end
 
+directory "#{node.kagent.base_dir}/bin" do
+  owner node.kagent.run_as_user
+  group node.kagent.run_as_user
+  mode "755"
+  action :create
+  recursive true
+end
+
+
 directory node.kagent.keystore_dir do
   owner node.kagent.run_as_user
   group node.kagent.run_as_user
@@ -272,3 +281,28 @@ end
     mode 0644
   end
 end
+
+['start-service.sh', 'stop-service.sh', 'restart-service.sh', 'status-service.sh'].each do |script|
+  template  "#{node.kagent.base_dir}/bin/#{script}" do
+    source "#{script}.erb"
+    owner node.kagent.run_as_user
+    group node.kagent.run_as_user
+    mode 0655
+  end
+end
+
+
+template "/etc/sudoers.d/kagent" do
+  source "kagent_sudoers.erb"
+  owner "root"
+  group "root"
+  mode "0440"
+  variables({
+                :user => node.kagent.run_as_user,
+                :start => "#{node.kagent.base_dir}/bin/start-service.sh",
+                :stop => "#{node.kagent.base_dir}/bin/stop-service.sh",
+                :restart => "#{node.kagent.base_dir}/bin/restart-service.sh",
+                :status => "#{node.kagent.base_dir}/bin/status-service.sh"
+              })
+  action :create
+end  
