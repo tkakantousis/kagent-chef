@@ -1,12 +1,12 @@
 action :csr do
 
-  signed = "#{node.kagent.base_dir}/.keystore_signed"
+  signed = "#{node.kagent.certs_dir}/.keystore_signed"
 
   bash "sign-local-csr-key" do
     user "root"
     code <<-EOF
       set -eo pipefail 
-      #{node.kagent.base_dir}/csr.py
+      #{node.kagent.certs_dir}/csr.py
       touch #{signed}
   EOF
     not_if { ::File.exists?( "#{signed}" ) }

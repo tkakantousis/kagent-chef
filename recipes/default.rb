@@ -24,7 +24,7 @@ if node.systemd == "true"
   template systemd_script do
     source "#{service_name}.service.erb"
     owner node.kagent.user
-    group node.kagent.user
+    group node.kagent.group
     mode 0650
   end
 
@@ -45,7 +45,7 @@ else # sysv
   template "/etc/init.d/#{service_name}" do
     source "#{service_name}.erb"
     owner node.kagent.user
-    group node.kagent.user
+    group node.kagent.group
     mode 0650
     notifies :enable, "service[#{service_name}]"
     notifies :start, "service[#{service_name}]"
@@ -91,7 +91,7 @@ end
 template "#{node.kagent.base_dir}/keystore.sh" do
   source "keystore.sh.erb"
   owner node.kagent.user
-  group node.kagent.user
+  group node.kagent.group
   mode 0700
    variables({
               :directory => node.kagent.keystore_dir,
@@ -103,7 +103,7 @@ end
 template "#{node.kagent.base_dir}/config.ini" do
   source "config.ini.erb"
   owner node.kagent.user
-  group node.kagent.user
+  group node.kagent.group
   mode 0600
   variables({
               :rest_url => "http://#{dashboard_endpoint}/#{node.kagent.dashboard_app}",

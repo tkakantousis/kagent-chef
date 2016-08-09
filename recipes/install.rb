@@ -36,15 +36,35 @@ include_recipe "poise-python"
 # Now using packages in ubuntu/centos.
 #include_recipe "openssl::upgrade"
 
+
+group node.kagent.group do
+  action :create
+  not_if "getent group #{node.kagent.group}"
+end
+
+group node.kagent.certs_group do
+  action :create
+  not_if "getent group #{node.kagent.certs_group}"
+end
+
 user node.kagent.user do
   action :create
   system true
   shell "/bin/bash"
 end
-  
-# package "rubygems" do
-#   action :install
-# end
+
+group node.kagent.group do
+  action :modify
+  members ["#{node.kagent.user}"]
+  append true
+end
+
+group node.kagent.certs_group do
+  action :modify
+  members ["#{node.kagent.user}"]
+  append true
+end
+
 
 inifile_gem = "inifile-2.0.2.gem"
 cookbook_file "/tmp/#{inifile_gem}" do
@@ -184,17 +204,40 @@ gem_package "inifile" do
   action :install
 end
 
-directory node.kagent.base_dir do
+directory node.kagent.home do
   owner node.kagent.user
-  group node.kagent.user
+  group node.kagent.group
   mode "755"
   action :create
   recursive true
 end
 
+directory node.kagent.certs_dir do
+  owner node.kagent.user
+  group node.kagent.certs_group
+  mode "740"
+  action :create
+  recursive true
+end
+
+
+file node.kagent.home do
+  owner "root"
+  action :delete
+end
+
+
+link node.kagent.home
+  owner node.kagent.user
+  group node.kagent.group
+  to node.kagent.base_dir
+end
+
+
+
 directory "#{node.kagent.base_dir}/bin" do
   owner node.kagent.user
-  group node.kagent.user
+  group node.kagent.group
   mode "755"
   action :create
   recursive true
@@ -203,15 +246,16 @@ end
 
 directory node.kagent.keystore_dir do
   owner node.kagent.user
-  group node.kagent.user
+  group node.kagent.group
   mode "755"
   action :create
+  recursive true
 end
 
 file node.default.kagent.services do
-  owner "root"
-  group "root"
-  mode 00755
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
   action :create_if_missing
 end
 
@@ -249,7 +293,7 @@ end
 template "#{node.kagent.base_dir}/agent.py" do
   source "agent.py.erb"
   owner node.kagent.user
-  group node.kagent.user
+  group node.kagent.group
   mode 0655
 end
 
@@ -257,7 +301,7 @@ end
 template"#{node.kagent.base_dir}/csr.py" do
   source "csr.py.erb"
   owner node.kagent.user
-  group node.kagent.user
+  group node.kagent.group
   mode 0655
 end
 
@@ -267,7 +311,7 @@ end
   template "#{node.kagent.base_dir}/#{script}" do
     source "#{script}.erb"
     owner node.kagent.user
-    group node.kagent.user
+    group node.kagent.group
     mode 0655
   end
 end 
@@ -277,7 +321,7 @@ end
   template "#{node.kagent.base_dir}/#{conf}" do
     source "#{conf}.erb"
     owner node.kagent.user
-    group node.kagent.user
+    group node.kagent.group
     mode 0644
   end
 end
@@ -286,7 +330,7 @@ end
   template  "#{node.kagent.base_dir}/bin/#{script}" do
     source "#{script}.erb"
     owner "root"
-    group node.kagent.user
+    group node.kagent.group
     mode 0650
   end
 end

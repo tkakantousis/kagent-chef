@@ -1,13 +1,17 @@
 node.default.hadoop.version                = "2.4.0"
 
 # Default values for configuration parameters
-default.kagent.user                   = "root"
+default.kagent.version                = "0.1.0"
+default.kagent.user                   = "kagent"
+default.kagent.group                  = node.kagent.user   
+default.kagent.certs_group            = "certs"
 default.kagent.dir                    = "/var/lib"
 default.kagent.base_dir               = "#{node.kagent.dir}/kagent"
-
-default.kagent.group_name             = "group1"
+default.kagent.home                   = "#{node.kagent.dir}/kagent-#{node.kagent.version}"
 
 default.kagent.enabled                = "true"
+
+default.kagent.certs_dir              = "#{node.kagent.dir}/kagent-certs"
 
 # Username/Password for connecting to the agent
 default.kagent.rest_api.user          = "kagent@hops.io"
@@ -54,7 +58,7 @@ default.kagent.cluster                = "Hops"
 
 default.kagent.hostid                 = 100
 
-default.kagent.keystore_dir 		 = node.kagent.base_dir + "/keystores"
+default.kagent.keystore_dir           = node.kagent.certs_dir + "/keystores"
 
 default.kagent.public_ips             = ['10.0.2.15']
 default.kagent.private_ips            = ['10.0.2.15']
