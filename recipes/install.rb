@@ -223,11 +223,10 @@ directory node.kagent.certs_dir do
 end
 
 
-file node.kagent.home do
-  owner "root"
+link node.kagent.base_dir do
   action :delete
+  only_if "test -L #{node.kagent.base_dir}"
 end
-
 
 link node.kagent.home do
   owner node.kagent.user
