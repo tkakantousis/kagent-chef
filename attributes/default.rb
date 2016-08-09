@@ -1,7 +1,7 @@
 node.default.hadoop.version                = "2.4.0"
 
 # Default values for configuration parameters
-default.kagent.run_as_user            = "root"
+default.kagent.user                   = "root"
 default.kagent.dir                    = "/var/lib"
 default.kagent.base_dir               = "#{node.kagent.dir}/kagent"
 

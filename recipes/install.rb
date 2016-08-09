@@ -36,7 +36,7 @@ include_recipe "poise-python"
 # Now using packages in ubuntu/centos.
 #include_recipe "openssl::upgrade"
 
-user node.kagent.run_as_user do
+user node.kagent.user do
   action :create
   system true
   shell "/bin/bash"
@@ -49,8 +49,8 @@ end
 inifile_gem = "inifile-2.0.2.gem"
 cookbook_file "/tmp/#{inifile_gem}" do
   source "#{inifile_gem}"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode 0755
   action :create_if_missing
 end
@@ -58,8 +58,8 @@ end
 requests="requests-1.0.3"
 cookbook_file "/tmp/#{requests}.tar.gz" do
   source "#{requests}.tar.gz"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode 0755
   action :create_if_missing
 end
@@ -67,8 +67,8 @@ end
 bottle="bottle-0.11.4"
 cookbook_file "/tmp/#{bottle}.tar.gz" do
   source "#{bottle}.tar.gz"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode 0755
   action :create_if_missing
 end
@@ -76,16 +76,16 @@ end
 cherry="CherryPy-3.2.2"
 cookbook_file "/tmp/#{cherry}.tar.gz" do
   source "#{cherry}.tar.gz"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode 0755
 end
 
 openSsl="pyOpenSSL-0.13"
 cookbook_file "/tmp/#{openSsl}.tar.gz" do
   source "#{openSsl}.tar.gz"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode 0755
   action :create_if_missing
 end
@@ -109,8 +109,8 @@ end
 netifaces="netifaces-0.8"
 cookbook_file "/tmp/#{netifaces}.tar.gz" do
   source "#{netifaces}.tar.gz"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode 0755
   action :create_if_missing
 end
@@ -118,8 +118,8 @@ end
 ipy="IPy-0.81"
 cookbook_file "/tmp/#{ipy}.tar.gz" do
   source "#{ipy}.tar.gz"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode 0755
   action :create_if_missing
 end
@@ -127,8 +127,8 @@ end
 pexpect="pexpect-2.3"
 cookbook_file "/tmp/#{pexpect}.tar.gz" do
   source "#{pexpect}.tar.gz"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode 0755
   action :create_if_missing
 end
@@ -185,16 +185,16 @@ gem_package "inifile" do
 end
 
 directory node.kagent.base_dir do
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode "755"
   action :create
   recursive true
 end
 
 directory "#{node.kagent.base_dir}/bin" do
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode "755"
   action :create
   recursive true
@@ -202,8 +202,8 @@ end
 
 
 directory node.kagent.keystore_dir do
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode "755"
   action :create
 end
@@ -248,16 +248,16 @@ end
 
 template "#{node.kagent.base_dir}/agent.py" do
   source "agent.py.erb"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode 0655
 end
 
 
 template"#{node.kagent.base_dir}/csr.py" do
   source "csr.py.erb"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.user
   mode 0655
 end
 
@@ -266,8 +266,8 @@ end
   Chef::Log.info "Installing #{script}"
   template "#{node.kagent.base_dir}/#{script}" do
     source "#{script}.erb"
-    owner node.kagent.run_as_user
-    group node.kagent.run_as_user
+    owner node.kagent.user
+    group node.kagent.user
     mode 0655
   end
 end 
@@ -276,8 +276,8 @@ end
   Chef::Log.info "Installing #{conf}"
   template "#{node.kagent.base_dir}/#{conf}" do
     source "#{conf}.erb"
-    owner node.kagent.run_as_user
-    group node.kagent.run_as_user
+    owner node.kagent.user
+    group node.kagent.user
     mode 0644
   end
 end
@@ -285,9 +285,9 @@ end
 ['start-service.sh', 'stop-service.sh', 'restart-service.sh', 'status-service.sh'].each do |script|
   template  "#{node.kagent.base_dir}/bin/#{script}" do
     source "#{script}.erb"
-    owner node.kagent.run_as_user
-    group node.kagent.run_as_user
-    mode 0655
+    owner "root"
+    group node.kagent.user
+    mode 0650
   end
 end
 
@@ -298,7 +298,7 @@ template "/etc/sudoers.d/kagent" do
   group "root"
   mode "0440"
   variables({
-                :user => node.kagent.run_as_user,
+                :user => node.kagent.user,
                 :start => "#{node.kagent.base_dir}/bin/start-service.sh",
                 :stop => "#{node.kagent.base_dir}/bin/stop-service.sh",
                 :restart => "#{node.kagent.base_dir}/bin/restart-service.sh",
