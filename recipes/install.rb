@@ -227,7 +227,7 @@ file node.kagent.home do
 end
 
 
-link node.kagent.home
+link node.kagent.home do
   owner node.kagent.user
   group node.kagent.group
   to node.kagent.base_dir
