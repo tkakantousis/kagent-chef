@@ -230,7 +230,6 @@ class Heartbeat():
                     payload["services"] = services_list            
                     payload["group-name"] = group_name
                     payload["hostname"] = hostname
-                    payload["host-id"] = host_id
                     if (public_ip != None):
                         payload["public-ip"] = public_ip                      
                     else:
@@ -263,8 +262,8 @@ class Alert:
             headers = {'content-type': 'application/json'}
             payload = {}
             payload["Provider"] = "Agent"            
-            payload["Host"] = hostname
-            payload["Time"] = str(time)
+            payload["host-id"] = host_id
+            payload["Time"] = time
             payload["Plugin"] = "Monitoring"
             payload["Type"] = "Role"
             payload["TypeInstance"] = "{0}/{1}/{2}".format(cluster, service, role)
@@ -476,7 +475,7 @@ class Service:
         script = BIN_DIR + "/stop-service.sh"
         try:
             subprocess.check_call(['sudo', script, role], close_fds=True)  # raises exception if not returncode == 0
-            now = str(long(time.mktime(datetime.now().timetuple())))
+            now = long(time.mktime(datetime.now().timetuple()))
             options_to_set = {'status':'Stopped', 'stop-time':now}
             options_to_remove = ['pid']
             Config().edit(section, options_to_set, options_to_remove)
@@ -506,7 +505,7 @@ class Service:
 
     def failed(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
-        now = str(long(time.mktime(datetime.now().timetuple())))
+        now = long(time.mktime(datetime.now().timetuple()))
         options_to_set = {'status':'Stopped', 'stop-time':now}
         options_to_remove = ['pid']
         Config().edit(section, options_to_set, options_to_remove)
@@ -514,7 +513,7 @@ class Service:
 
     def started(self, cluster, service, role, pid):
         section = Config().section_name(cluster, service, role)
-        now = str(long(time.mktime(datetime.now().timetuple())))
+        now = long(time.mktime(datetime.now().timetuple()))
         options_to_add = {'status':'Started', 'start-time':now}
         if not pid == None:
             options_to_add['pid'] = pid
