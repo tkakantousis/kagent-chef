@@ -26,6 +26,8 @@ if node.systemd == "true"
     owner node.kagent.user
     group node.kagent.group
     mode 0650
+    notifies :enable, "service[#{service_name}]"
+    notifies :restart, "service[#{service_name}]", :delayed
   end
 
   link "/etc/systemd/system/#{service_name}.service" do
@@ -48,7 +50,7 @@ else # sysv
     group node.kagent.group
     mode 0650
     notifies :enable, "service[#{service_name}]"
-    notifies :start, "service[#{service_name}]"
+    notifies :restart, "service[#{service_name}]", :delayed
   end
 
 end
