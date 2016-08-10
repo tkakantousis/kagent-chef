@@ -271,7 +271,7 @@ class Alert:
             payload["DataSource"] = "Agent"
             payload["CurrentValue"] = status
             if status == True:
-                payload["Severity"] = "OKAY"
+                payload["Severity"] = "OK"
                 payload["Message"] = "Role is running: {0}/{1}/{2}".format(cluster, service, role)
             else:
                 payload["Severity"] = "FAILURE"
