@@ -3,7 +3,7 @@ Description = Kagent, monitors/controls Hops services
 After = syslog.target network.target remote-fs.target
 
 [Service]
-User = <%= node.kagent.run_as_user %>
+User = <%= node.kagent.user %>
 
 PIDFile = <%= node[:kagent][:pid_file] %>
 ExecStart = <%= "#{node[:kagent][:base_dir]}/start-agent.sh" %>

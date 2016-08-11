@@ -504,8 +504,8 @@ class Service:
             options_to_set = {'status':'Stopped', 'stop-time':now}
             options_to_remove = ['pid']
             Config().edit(section, options_to_set, options_to_remove)
-            Alert.send(cluster, service, role, now, False)
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
+            Service().failed(cluster, service, role)
             sleep(heartbeat_interval)
             return True
         except Exception as err:
@@ -526,7 +526,7 @@ class Service:
                 pid = None
             Service().started(cluster, service, role, pid)
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
-            sleep(0.5)
+            sleep(heartbeat_interval)
             return pid
         except Exception as err:
             logger.error(err)
