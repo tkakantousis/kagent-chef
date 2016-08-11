@@ -376,8 +376,8 @@ class Config():
             return services_list
         
     def get_section(self, section):
-        items = {}
         config_mutex.acquire()
+        items = {}
         try:
             for key, val in services.items(section):
                 items[key] = val
@@ -415,8 +415,8 @@ class Config():
             config_mutex.release()
 
     def get(self, section, option):
-        val = ""
         config_mutex.acquire()
+        val = ""
         try:         
             val = services.get(section, option)
         finally:
