@@ -569,36 +569,30 @@ class CommandHandler():
             if res == False:
                 return CommandHandler().respose(400, 'Error: Cannot start the service.')
             else:
-                payload = {}
-                payload['pid'] = str(res)
-                payload['msg'] = 'Role started.'
-                return CommandHandler().respose(200, json.dumps(payload))
+                return CommandHandler().response(200, "Role started.")
 
     def stop(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
-            return CommandHandler().respose(400, 'Role not installed.')
+            return CommandHandler().response(400, 'Role not installed.')
         elif not services.get(section, 'status') == 'Started':
-            return CommandHandler().respose(400, 'Role is not running.')
+            return CommandHandler().response(400, 'Role is not running.')
         else:
             if Service().stop(cluster, service, role) == True:
-                return CommandHandler().respose(200, 'Role stopped.')
+                return CommandHandler().response(200, 'Role stopped.')
             else:
-                return CommandHandler().respose(400, 'Error: Cannot stop the service.')
+                return CommandHandler().response(400, 'Error: Cannot stop the service.')
 
     def restart(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
-            return CommandHandler().respose(400, 'Role not installed.')
+            return CommandHandler().response(400, 'Role not installed.')
         else:
             res = Service().restart(cluster, service, role)
             if res == False:
-                return CommandHandler().respose(400, 'Error: Cannot restart the service.')
+                return CommandHandler().response(400, 'Error: Cannot restart the service.')
             else:
-                payload = {}
-                payload['pid'] = str(res)
-                payload['msg'] = 'Role restarted.'
-                return CommandHandler().respose(200, json.dumps(payload))
+                return CommandHandler().response(200, "Role started.")
 
     def read_log(self, cluster, service, role, lines):
         try:
@@ -609,21 +603,21 @@ class CommandHandler():
                 section = Config().section_name(cluster, service, role)                
             log_file_name = Config().get(section, "stdout-file")
             log = Util().tail(log_file_name, lines)
-            return CommandHandler().respose(200, log)
+            return CommandHandler().response(200, log)
         
         except Exception as err:
             logger.error(err)
-            return CommandHandler().respose(400, "Cannot read file.")
+            return CommandHandler().response(400, "Cannot read file.")
 
     def read_agent_log(self, lines):
         try:
             lines = int(lines)
             log = Util().tail(LOG_FILE, lines)
-            return CommandHandler().respose(200, log)
+            return CommandHandler().response(200, log)
         
         except Exception as err:
             logger.error(err)
-            return CommandHandler().respose(400, "Cannot read file.")
+            return CommandHandler().response(400, "Cannot read file.")
 
     def read_config(self, cluster, service, role):
         try:
@@ -632,25 +626,25 @@ class CommandHandler():
             with open(config_file_name) as config_file:
                 conf = "".join(str(x) for x in (list(config_file)))
             
-            return CommandHandler().respose(200, conf)
+            return CommandHandler().response(200, conf)
         
         except Exception as err:
             logger.error(err)
-            return CommandHandler().respose(400, "Cannot read file.")
+            return CommandHandler().response(400, "Cannot read file.")
 
     def info(self, cluster, service, role):
         try:
             section = Config().section_name(cluster, service, role)
             resp = json.dumps(Config().get_section(section))
-            return CommandHandler().respose(200, resp)
+            return CommandHandler().response(200, resp)
         
         except Exception as err:
             logger.error(err)
-            return CommandHandler().respose(400, "Cannot read file.")
+            return CommandHandler().response(400, "Cannot read file.")
 
     def read_ndbinfo(self, table):
         res = MySQLConnector.read_ndbinfo(table)
-        return CommandHandler().respose(200, res)
+        return CommandHandler().response(200, res)
                 
     def execute(self, cluster, service, role, command, params):
         try:
@@ -674,15 +668,15 @@ class CommandHandler():
 # as an attacker can input "hdfs dfs -ls / ; rm -rf /"
             p = Popen(command , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             out, err = p.communicate()        
-            return CommandHandler().respose(200, out)
+            return CommandHandler().response(200, out)
         
         except Exception as err:
             logger.error(err)
-            return CommandHandler().respose(400, "Could not execute.")                
+            return CommandHandler().response(400, "Could not execute.")                
                 
     def refresh(self):
         Heartbeat.send(False);
-        return CommandHandler().respose(200, "OK")
+        return CommandHandler().response(200, "OK")
 
 
 class Authentication():
@@ -887,7 +881,7 @@ if __name__ == '__main__':
                 return CommandHandler().execute(cluster, service, None, command, params);
             else:       
                 return CommandHandler().execute(cluster, service, role, command, params);
-        return CommandHandler().respose(404, "Error")  
+        return CommandHandler().response(404, "Error")  
                 
 
     logger.info("RESTful service started.")
