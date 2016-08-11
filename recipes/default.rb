@@ -115,7 +115,7 @@ template "#{node.kagent.base_dir}/config.ini" do
               :network_if => network_if
             })
   notifies :enable, "service[#{service_name}]"
-  notifies :start, "service[#{service_name}]"
+  notifies :restart, "service[#{service_name}]", :delayed
 end
 
 kagent_keys "sign-certs" do
