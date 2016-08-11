@@ -7,6 +7,12 @@ source <%= node[:kagent][:base_dir] %>/get-pid.sh
 if [ $? -ne 0 ]; then
 	echo "Starting the agent..."
 	nohup <%= node[:kagent][:base_dir] %>/agent.py &> /dev/null &
+        sleep 1
+        PID_FILE=<%= node[:kagent][:pid_file] %>
+        if [ -e $PID_FILE ] ; then
+          PID=`cat $PID_FILE`
+          echo "PID is $PID"
+        fi
 else
     echo "Agent is already running with pid=$PID."
     exit 1
