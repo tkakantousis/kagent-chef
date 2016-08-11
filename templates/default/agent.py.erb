@@ -361,8 +361,8 @@ class Config():
         
     # select items so that the key does not contain 'file' or 'script'
     def read_all_for_heartbeat(self):
-        services_list = []
-        config_mutex.acquire()            
+        config_mutex.acquire()       
+        services_list = []     
         try:
             for s in services.sections():
                 if services.has_option(s, "role") :
