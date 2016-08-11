@@ -465,6 +465,8 @@ class Service:
             except:
                 pid = None
             Service().started(cluster, service, role, pid)
+            # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
+            sleep(0.5)
             return pid
         except Exception as err:
             logger.error(err)
@@ -479,6 +481,9 @@ class Service:
             options_to_set = {'status':'Stopped', 'stop-time':now}
             options_to_remove = ['pid']
             Config().edit(section, options_to_set, options_to_remove)
+            Alert.send(cluster, service, role, now, False)
+            # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
+            sleep(0.5)
             return True
         except Exception as err:
             logger.error(err)
@@ -497,6 +502,8 @@ class Service:
             except:
                 pid = None
             Service().started(cluster, service, role, pid)
+            # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
+            sleep(0.5)
             return pid
         except Exception as err:
             logger.error(err)
@@ -517,7 +524,6 @@ class Service:
         options_to_add = {'status':'Started', 'start-time':now}
         if not pid == None:
             options_to_add['pid'] = pid
-            
         options_to_remove = ['stop-time']
         Config().edit(section, options_to_add, options_to_remove)
         Alert.send(cluster, service, role, now, True)
