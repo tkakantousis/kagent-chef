@@ -327,29 +327,44 @@ class ExtProcess():  # external process
             return True
         
     @staticmethod        
-    def watch(cluster, service, role):
+    def watch():
         while True:
             try:
-                section = Config().section_name(cluster, service, role)
-                pid_file = Config().get(section, "pid-file")
-                pid = Util().read_pid(pid_file)
-                
-                if ExtProcess.is_running(pid) == True:
-                    if not Config().get(section, 'status') == 'Started':
-                        logger.info("Process started: {0}/{1}/{2} pid={3}".format(cluster, service, role, pid))
-                        Service().started(cluster, service, role, pid)
-                    if not Config().get(section, 'pid') == pid:
-                        Config().edit(section, {'pid': pid}, {})
-                else:
-                    raise Exception("Process {0} is not running for {1}/{2}/{3}".format(pid, cluster, service, role))
-            except :  # raised if cannot read pid file (IOError), or manually, if pid is not running
-                logger.warn("Proccess.watch: Process is not running: {0}/{1}/{2}".format(cluster, service, role))
-                if Config().get(section, 'status') == 'Started':
-                    logger.info("Process failed: {0}/{1}/{2}".format(cluster, service, role))
-                    Service().failed(cluster, service, role)
+                config_mutex.acquire()       
+                services = ConfigParser.ConfigParser()
+                services.read(SERVICES_FILE)
+            except : 
+                logger.warn("Cannot read services file: {0}".format(SERVICES_FILE))
+                continue
             finally:                    
-                sleep(watch_interval)
-                  
+                config_mutex.release()
+
+            for s in services.sections():
+                cluster = Config().get(s, "cluster")
+                service = Config().get(s, "service")
+                if services.has_option(s, "role"):
+                    try:
+                        role = Config().get(s, "role")
+                        logger.info("Checking {0}/{1}/{2}".format(cluster, service, role))
+                        section = Config().section_name(cluster, service, role)
+                        pid_file = Config().get(section, "pid-file")
+                        pid = Util().read_pid(pid_file)
+                        if ExtProcess.is_running(pid) == True:
+                            if not Config().get(section, 'status') == 'Started':
+                                logger.info("Process started: {0}/{1}/{2} pid={3}".format(cluster, service, role, pid))
+                                Service().started(cluster, service, role, pid)
+                            if not Config().get(section, 'pid') == pid:
+                               Config().edit(section, {'pid': pid}, {})
+                        else:
+                            raise Exception("Process {0} is not running for {1}/{2}/{3}".format(pid, cluster, service, role))
+                    except:  # raised if cannot read pid file (IOError), or manually, if pid is not running
+                        logger.warn("Proccess.watch: Process is not running: {0}/{1}/{2}".format(cluster, service, role))
+                        if Config().get(section, 'status') == 'Started':
+                            logger.info("Process failed: {0}/{1}/{2}".format(cluster, service, role))
+                            Service().failed(cluster, service, role)
+                else:
+                    logger.info("Not watching {0}/{1}".format(cluster, service))
+            sleep(watch_interval)
 
 class Config(): 
 
@@ -362,6 +377,8 @@ class Config():
     # select items so that the key does not contain 'file' or 'script'
     def read_all_for_heartbeat(self):
         config_mutex.acquire()       
+        services = ConfigParser.ConfigParser()
+        services.read(SERVICES_FILE)
         services_list = []     
         try:
             for s in services.sections():
@@ -391,7 +408,9 @@ class Config():
             services.add_section(section)
             for k, v in options.iteritems():
                 services.set(section, k, v)
-            services.write(open(SERVICES_FILE, 'w'))      
+            cfgfile = open(SERVICES_FILE, 'w')
+            services.write(cfgfile)      
+            cfgfile.close()
         finally:
             config_mutex.release()  
  
@@ -399,7 +418,9 @@ class Config():
         config_mutex.acquire()
         try:
             services.remove_section(section)
-            services.write(open(SERVICES_FILE, 'w'))
+            cfgfile = open(SERVICES_FILE, 'w')
+            services.write(cfgfile)      
+            cfgfile.close()
         finally:
             config_mutex.release()   
                
@@ -410,7 +431,9 @@ class Config():
                 services.set(section, k, v)
             for k in options_to_remove:
                 services.remove_option(section, k)               
-            services.write(open(SERVICES_FILE, 'w'))      
+            cfgfile = open(SERVICES_FILE, 'w')
+            services.write(cfgfile)      
+            cfgfile.close()
         finally:
             config_mutex.release()
 
@@ -466,7 +489,7 @@ class Service:
                 pid = None
             Service().started(cluster, service, role, pid)
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
-            sleep(0.5)
+            sleep(heartbeat_interval)
             return pid
         except Exception as err:
             logger.error(err)
@@ -483,7 +506,7 @@ class Service:
             Config().edit(section, options_to_set, options_to_remove)
             Alert.send(cluster, service, role, now, False)
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
-            sleep(0.5)
+            sleep(heartbeat_interval)
             return True
         except Exception as err:
             logger.error(err)
@@ -549,7 +572,7 @@ class MySQLConnector():
     
 class CommandHandler():
 
-    def respose(self, code, msg):
+    def response(self, code, msg):
         resp = HTTPResponse(status=code, output=msg)
         logger.info("{0}".format(resp))
         return resp
@@ -557,23 +580,23 @@ class CommandHandler():
     def init(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
-            return CommandHandler().respose(400, 'Role not installed.')
+            return CommandHandler().response(400, 'Role not installed.')
         else:
             if Service().init(cluster, service, role) == True:
-                return CommandHandler().respose(200, 'Role initialized.')
+                return CommandHandler().response(200, 'Role initialized.')
             else:
-                return CommandHandler().respose(400, 'Error: Cannot initialize the service.')
+                return CommandHandler().response(400, 'Error: Cannot initialize the service.')
     
     def start(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
-            return CommandHandler().respose(400, 'Role not installed.')
+            return CommandHandler().response(400, 'Role not installed.')
         elif services.get(section, 'status') == 'Started':
-            return CommandHandler().respose(400, 'Role already started.')
+            return CommandHandler().response(400, 'Role already started.')
         else:
             res = Service().start(cluster, service, role)
             if res == False:
-                return CommandHandler().respose(400, 'Error: Cannot start the service.')
+                return CommandHandler().response(400, 'Error: Cannot start the service.')
             else:
                 return CommandHandler().response(200, "Role started.")
 
@@ -631,7 +654,6 @@ class CommandHandler():
             config_file_name = Config().get(section, "config-file")
             with open(config_file_name) as config_file:
                 conf = "".join(str(x) for x in (list(config_file)))
-            
             return CommandHandler().response(200, conf)
         
         except Exception as err:
@@ -722,14 +744,7 @@ if __name__ == '__main__':
     file(agent_pidfile, 'w').write(agent_pid)
     logger.info("HOPS-Agent PID: {0}".format(agent_pid))
     logger.setLevel(Util().logging_level(logging_level))
-    for s in services.sections():
-        cluster = Config().get(s, "cluster")       
-        service = Config().get(s, "service")       
-        if services.has_option(s, "role"):
-            role = Config().get(s, "role")             
-            thread.start_new_thread(ExtProcess.watch, (cluster, service, role,))
-        else:
-            logger.info("Not watching {0}/{1}".format(cluster, service))
+    thread.start_new_thread(ExtProcess.watch,())
 
     # Heartbeat, process watch (alerts) and REST API are available after the agent registers successfully 
     thread.start_new_thread(Heartbeat, ()) 
