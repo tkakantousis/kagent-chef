@@ -334,7 +334,7 @@ end
     source "#{script}.erb"
     owner "root"
     group node.kagent.group
-    mode 0710
+    mode 0750
   end
 end
 

@@ -543,7 +543,8 @@ class Service:
             if not returncode == 0:
                 logger.error(err)
                 return False
-        except:
+        except Exception as err:
+            logger.error(err)
             return False
         return True
 
