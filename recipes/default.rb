@@ -122,6 +122,9 @@ kagent_keys "sign-certs" do
  action :csr
 end
 
+execute "service kagent stop"
+execute "rm -f #{node.kagent.pid_file}"
+
 case node.platform_family
 when "rhel"
 
