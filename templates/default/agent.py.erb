@@ -345,11 +345,12 @@ class ExtProcess():  # external process
                 if services.has_option(s, "role"):
                     try:
                         role = Config().get(s, "role")
-                        logger.info("Checking {0}/{1}/{2}".format(cluster, service, role))
+#                        logger.info("Checking {0}/{1}/{2}".format(cluster, service, role))
                         section = Config().section_name(cluster, service, role)
                         pid_file = Config().get(section, "pid-file")
                         pid = Util().read_pid(pid_file)
-                        if ExtProcess.is_running(pid) == True:
+#                        if ExtProcess.is_running(pid) == True:
+                        if Service().alive(cluster,service,role) == True:
                             if not Config().get(section, 'status') == 'Started':
                                 logger.info("Process started: {0}/{1}/{2} pid={3}".format(cluster, service, role, pid))
                                 Service().started(cluster, service, role, pid)
@@ -532,6 +533,19 @@ class Service:
             logger.error(err)
             return False
 
+    def alive(self, cluster, service, role):
+        section = Config().section_name(cluster, service, role)
+        script = BIN_DIR + "/status-service.sh"
+        try:
+            p = Popen(['sudo',script,role], close_fds=True)
+            p.wait()
+            returncode = p.returncode
+            if not returncode == 0:
+                logger.error(err)
+                return False
+        except:
+            return False
+        return True
 
     def failed(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
