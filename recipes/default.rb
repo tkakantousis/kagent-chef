@@ -122,10 +122,6 @@ kagent_keys "sign-certs" do
  action :csr
 end
 
-kagent_kagent "restart-kagent" do
-  action :restart
-end
-
 case node.platform_family
 when "rhel"
 

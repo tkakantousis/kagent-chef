@@ -7,6 +7,7 @@ action :csr do
     code <<-EOF
       set -eo pipefail 
       #{node.kagent.certs_dir}/csr.py
+      chown #{node.kagent.user}:#{node.kagent.group} #{node.kagent.base_dir}/csr.log
       touch #{signed}
   EOF
     not_if { ::File.exists?( "#{signed}" ) }

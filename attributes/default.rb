@@ -44,7 +44,7 @@ default.kagent.dashboard_app          = "hopsworks"
 default.kagent.port                   = 8090
 default.kagent.heartbeat_interval     = 3
 default.kagent.watch_interval         = 2
-default.kagent.pid_file               = node.kagent.base_dir + "/hop-agent.pid"
+default.kagent.pid_file               = node.kagent.base_dir + "/kagent.pid"
 default.kagent.logging_level          = "INFO"
 default.kagent.max_log_size           = "10000000"
 

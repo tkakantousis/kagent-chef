@@ -1,4 +1,4 @@
-actions :restart, :gems_install
+actions :gems_install
 
 def initialize( *args )
   super

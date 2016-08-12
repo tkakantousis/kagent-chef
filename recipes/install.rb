@@ -49,6 +49,8 @@ end
 
 user node.kagent.user do
   gid node.kagent.group
+  supports :manage_home => true
+  home "/home/#{node.kagent.user}"
   action :create
   system true
   shell "/bin/bash"
@@ -295,7 +297,7 @@ template "#{node.kagent.base_dir}/agent.py" do
   source "agent.py.erb"
   owner node.kagent.user
   group node.kagent.group
-  mode 0655
+  mode 0710
 end
 
 
@@ -303,7 +305,7 @@ template"#{node.kagent.certs_dir}/csr.py" do
   source "csr.py.erb"
   owner node.kagent.user
   group node.kagent.group
-  mode 0655
+  mode 0710
 end
 
 
@@ -313,7 +315,7 @@ end
     source "#{script}.erb"
     owner node.kagent.user
     group node.kagent.group
-    mode 0655
+    mode 0750
   end
 end 
 
@@ -332,7 +334,7 @@ end
     source "#{script}.erb"
     owner "root"
     group node.kagent.group
-    mode 0650
+    mode 0710
   end
 end
 
