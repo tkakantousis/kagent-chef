@@ -28,7 +28,6 @@ from subprocess import Popen
 import os
 import sys
 import ConfigParser
-from configobj import ConfigObj
 import requests
 import logging.handlers
 import json 
@@ -220,11 +219,14 @@ class Heartbeat():
                     memory_info = MemoryInfo()
                     load_info = LoadInfo()
                     services_list = Config().read_all_for_heartbeat()
+                    logger.info("services: {0}".format(services_list))
                     now = long(time.mktime(datetime.now().timetuple()))                
                     headers = {'content-type': 'application/json'}
                     payload = {}
                     payload["host-id"] = host_id            
+                    logger.info("host-id: {0}".format(host_id))
                     payload["agent-time"] = now
+                    logger.info("time: {0}".format(now))
                     payload["load1"] = load_info.load1
                     payload["load5"] = load_info.load5
                     payload["load15"] = load_info.load15
@@ -233,6 +235,7 @@ class Heartbeat():
                     payload["services"] = services_list            
                     payload["group-name"] = group_name
                     payload["hostname"] = hostname
+                    logger.info("hostname: {0}".format(hostname))
                     if (public_ip != None):
                         payload["public-ip"] = public_ip                      
                     else:
@@ -386,12 +389,12 @@ class Config():
         services_list = []     
 #       try:
         for s in services.sections():
-        if services.has_option(s, "role") :
-            item = {}
-            for key, val in services.items(s):
-                if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
-                    item[key] = val
-                services_list.append(item)                
+            if services.has_option(s, "role") :
+                item = {}
+                for key, val in services.items(s):
+                    if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
+                        item[key] = val
+                    services_list.append(item)                
 #        finally:
  #           config_mutex.release()
         return services_list
