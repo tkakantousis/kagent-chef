@@ -415,7 +415,7 @@ class Config():
             services.add_section(section)
             for k, v in options.iteritems():
                 services.set(section, k, v)
-            with open('SERVICES_FILE', 'wb') as configfile:
+            with open(SERVICES_FILE, 'wb') as configfile:
                 services.write(configfile)
         finally:
             config_mutex.release()  
@@ -424,7 +424,7 @@ class Config():
         config_mutex.acquire()
         try:
             services.remove_section(section)
-            with open('SERVICES_FILE', 'wb') as configfile:
+            with open(SERVICES_FILE, 'wb') as configfile:
                 services.write(configfile)
         finally:
             config_mutex.release()   
@@ -436,7 +436,7 @@ class Config():
                 services.set(section, k, v)
             for k in options_to_remove:
                 services.remove_option(section, k)               
-            with open('SERVICES_FILE', 'wb') as configfile:
+            with open(SERVICES_FILE, 'wb') as configfile:
                 services.write(configfile)
         finally:
             config_mutex.release()
