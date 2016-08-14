@@ -129,7 +129,7 @@ logger.addHandler(logger_file_handler)
 logger.addHandler(logger_stream_handler)
 logger.setLevel(logging.INFO)
 
-logger.info("HOPS-Agent started.")
+logger.info("Hops-Kagent started.")
 logger.info("Heartbeat URL: {0}".format(heartbeat_url))
 logger.info("Alert URL: {0}".format(alert_url))
 logger.info("Host Id: {0}".format(host_id))
@@ -149,11 +149,6 @@ loggedIn = False
  
 class Util():
     
-    # def read_pid(self, pid_file):
-    #     with open(pid_file, 'r') as f:
-    #         pid = str(f.readline()).strip()
-    #         return pid
-
     def logging_level(self, level):
         return {
                 'INFO': logging.INFO,
@@ -222,9 +217,9 @@ class Heartbeat():
                     headers = {'content-type': 'application/json'}
                     payload = {}
                     payload["host-id"] = host_id            
-                    logger.info("host-id: {0}".format(host_id))
+#                    logger.info("host-id: {0}".format(host_id))
                     payload["agent-time"] = now
-                    logger.info("time: {0}".format(now))
+#                    logger.info("time: {0}".format(now))
                     payload["load1"] = load_info.load1
                     payload["load5"] = load_info.load5
                     payload["load15"] = load_info.load15
@@ -233,7 +228,7 @@ class Heartbeat():
                     payload["services"] = services_list            
                     payload["group-name"] = group_name
                     payload["hostname"] = hostname
-                    logger.info("hostname: {0}".format(hostname))
+#                    logger.info("hostname: {0}".format(hostname))
                     if (public_ip != None):
                         payload["public-ip"] = public_ip                      
                     else:
@@ -320,18 +315,9 @@ class LoadInfo(object):
         
 
 class ExtProcess():  # external process
-    @staticmethod
-    # def is_running(pid):
-    #     pid = int(pid)
-    #     try:
-    #         os.kill(pid, 0)
-    #     except OSError, e:
-    #         return False
-    #     else:
-    #         return True
         
     @staticmethod        
-    def watch():
+    def watch(cluster, service, role):
         while True:
             # try:
             #     config_mutex.acquire()       
@@ -343,30 +329,20 @@ class ExtProcess():  # external process
             # finally:                    
             #     config_mutex.release()
 
-            for s in services.sections():
-                cluster = Config().get(s, "cluster")
-                service = Config().get(s, "service")
-                if services.has_option(s, "role"):
-                    try:
-                        role = Config().get(s, "role")
 #                        logger.info("Checking {0}/{1}/{2}".format(cluster, service, role))
-                        section = Config().section_name(cluster, service, role)
-#                        pid_file = Config().get(section, "pid-file")
-#                        pid = Util().read_pid(pid_file)
-#                        if ExtProcess.is_running(pid) == True:
-                        if Service().alive(cluster,service,role) == True:
-                            if not Config().get(section, 'status') == 'Started':
-                                logger.info("Process started: {0}/{1}/{2}".format(cluster, service, role))
-                                Service().started(cluster, service, role)
-#                            if not Config().get(section, 'pid') == pid:
-#                               Config().edit(section, {'pid': pid}, {})
-                        else:
-                            raise Exception("Process is not running for {0}/{1}/{2}".format(cluster, service, role))
-                    except:  # raised if cannot read pid file (IOError), or manually, if pid is not running
-                        logger.warn("Proccess.watch: Process is not running: {0}/{1}/{2}".format(cluster, service, role))
-                        if Config().get(section, 'status') == 'Started':
-                            logger.info("Process failed: {0}/{1}/{2}".format(cluster, service, role))
-                            Service().failed(cluster, service, role)
+            try:
+                section = Config().section_name(cluster, service, role)
+                if Service().alive(cluster,service,role) == True:
+                    if not Config().get(section, 'status') == 'Started':
+                       logger.info("Process started: {0}/{1}/{2}".format(cluster, service, role))
+                       Service().started(cluster, service, role)
+                else:
+                    raise Exception("Process is not running for {0}/{1}/{2}".format(cluster, service, role))
+            except:  
+                logger.warn("Proccess.watch: Process is not running: {0}/{1}/{2}".format(cluster, service, role))
+                if Config().get(section, 'status') == 'Started':
+                    logger.info("Process failed: {0}/{1}/{2}".format(cluster, service, role))
+                    Service().failed(cluster, service, role)
                 else:
                     logger.info("Not watching {0}/{1}".format(cluster, service))
             sleep(watch_interval)
@@ -381,20 +357,20 @@ class Config():
         
     # select items so that the key does not contain 'file' or 'script'
     def read_all_for_heartbeat(self):
-#        config_mutex.acquire()       
+        config_mutex.acquire()       
 #        services = ConfigParser.ConfigParser()
 #        services.read(SERVICES_FILE)
         services_list = []     
-#       try:
-        for s in services.sections():
-            if services.has_option(s, "role") :
-                item = {}
-                for key, val in services.items(s):
-                    if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
-                        item[key] = val
-                    services_list.append(item)                
-#        finally:
- #           config_mutex.release()
+        try:
+            for s in services.sections():
+                if services.has_option(s, "role") :
+                   item = {}
+                   for key, val in services.items(s):
+                       if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
+                           item[key] = val
+                       services_list.append(item)                
+        finally:
+            config_mutex.release()
         return services_list
         
     def get_section(self, section):
@@ -486,14 +462,10 @@ class Service:
             logger.info("{0}".format(output))
             if not returncode == 0:
                 raise Exception("Start script returned a none-zero value")
-            # try:
-            #     pid = Util().read_pid(Config().get(section, "pid-file"))
-            # except:
-            #     pid = None
             Service().started(cluster, service, role)
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
             sleep(heartbeat_interval)
-            return pid
+            return True
         except Exception as err:
             logger.error(err)
             return False
@@ -505,7 +477,6 @@ class Service:
             subprocess.check_call(['sudo', script, role], close_fds=True)  # raises exception if not returncode == 0
             now = long(time.mktime(datetime.now().timetuple()))
             options_to_set = {'status':'Stopped', 'stop-time':now}
-#            options_to_remove = ['pid']
             options_to_remove = []
             Config().edit(section, options_to_set, options_to_remove)
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
@@ -524,10 +495,6 @@ class Service:
             returncode = p.returncode
             if not returncode == 0:
                 raise Exception("Restart script returned a none-zero value")
-            # try:
-            #     pid = Util().read_pid(Config().get(section, "pid-file"))
-            # except:
-            #     pid = None
             Service().started(cluster, service, role)
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
             sleep(heartbeat_interval)
@@ -557,7 +524,6 @@ class Service:
         section = Config().section_name(cluster, service, role)
         now = long(time.mktime(datetime.now().timetuple()))
         options_to_set = {'status':'Stopped', 'stop-time':now}
-#        options_to_remove = ['pid']
         options_to_remove = []
         Config().edit(section, options_to_set, options_to_remove)
         Alert.send(cluster, service, role, now, False)
@@ -566,8 +532,6 @@ class Service:
         section = Config().section_name(cluster, service, role)
         now = long(time.mktime(datetime.now().timetuple()))
         options_to_add = {'status':'Started', 'start-time':now}
-#        if not pid == None:
-#            options_to_add['pid'] = pid
         options_to_remove = ['stop-time']
         Config().edit(section, options_to_add, options_to_remove)
         Alert.send(cluster, service, role, now, True)
@@ -763,20 +727,27 @@ if __name__ == '__main__':
     
     agent_pid = str(os.getpid())
     file(agent_pidfile, 'w').write(agent_pid)
-    logger.info("HOPS-Agent PID: {0}".format(agent_pid))
+    logger.info("Hops Kagent PID: {0}".format(agent_pid))
     logger.setLevel(Util().logging_level(logging_level))
-    thread.start_new_thread(ExtProcess.watch,())
 
     # Heartbeat, process watch (alerts) and REST API are available after the agent registers successfully 
     thread.start_new_thread(Heartbeat, ()) 
-        
+
+    for s in services.sections():
+        cluster = Config().get(s, "cluster")
+        service = Config().get(s, "service")       
+        if services.has_option(s, "role"):
+            role = Config().get(s, "role")             
+            thread.start_new_thread(ExtProcess.watch, (cluster, service, role))
+        else:
+            logger.info("Not watching {0}/{1}".format(cluster, service))        
                             
     server_names['sslcherrypy'] = SSLCherryPy  
     app = Bottle()
     @get('/ping')
     def ping():
         logger.info('Incoming REST Request:  GET /ping')       
-        return "HOPS-Agent: Pong"
+        return "Hops-Agent: Pong"
         
     @get('/do/<cluster>/<service>/<role>/<command>')
     def do(cluster, service, role, command):
