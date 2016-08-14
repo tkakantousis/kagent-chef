@@ -149,10 +149,10 @@ loggedIn = False
  
 class Util():
     
-    def read_pid(self, pid_file):
-        with open(pid_file, 'r') as f:
-            pid = str(f.readline()).strip()
-            return pid
+    # def read_pid(self, pid_file):
+    #     with open(pid_file, 'r') as f:
+    #         pid = str(f.readline()).strip()
+    #         return pid
 
     def logging_level(self, level):
         return {
@@ -321,14 +321,14 @@ class LoadInfo(object):
 
 class ExtProcess():  # external process
     @staticmethod
-    def is_running(pid):
-        pid = int(pid)
-        try:
-            os.kill(pid, 0)
-        except OSError, e:
-            return False
-        else:
-            return True
+    # def is_running(pid):
+    #     pid = int(pid)
+    #     try:
+    #         os.kill(pid, 0)
+    #     except OSError, e:
+    #         return False
+    #     else:
+    #         return True
         
     @staticmethod        
     def watch():
@@ -351,17 +351,17 @@ class ExtProcess():  # external process
                         role = Config().get(s, "role")
 #                        logger.info("Checking {0}/{1}/{2}".format(cluster, service, role))
                         section = Config().section_name(cluster, service, role)
-                        pid_file = Config().get(section, "pid-file")
-                        pid = Util().read_pid(pid_file)
+#                        pid_file = Config().get(section, "pid-file")
+#                        pid = Util().read_pid(pid_file)
 #                        if ExtProcess.is_running(pid) == True:
                         if Service().alive(cluster,service,role) == True:
                             if not Config().get(section, 'status') == 'Started':
-                                logger.info("Process started: {0}/{1}/{2} pid={3}".format(cluster, service, role, pid))
-                                Service().started(cluster, service, role, pid)
-                            if not Config().get(section, 'pid') == pid:
-                               Config().edit(section, {'pid': pid}, {})
+                                logger.info("Process started: {0}/{1}/{2}".format(cluster, service, role))
+                                Service().started(cluster, service, role)
+#                            if not Config().get(section, 'pid') == pid:
+#                               Config().edit(section, {'pid': pid}, {})
                         else:
-                            raise Exception("Process {0} is not running for {1}/{2}/{3}".format(pid, cluster, service, role))
+                            raise Exception("Process is not running for {0}/{1}/{2}".format(cluster, service, role))
                     except:  # raised if cannot read pid file (IOError), or manually, if pid is not running
                         logger.warn("Proccess.watch: Process is not running: {0}/{1}/{2}".format(cluster, service, role))
                         if Config().get(section, 'status') == 'Started':
@@ -486,11 +486,11 @@ class Service:
             logger.info("{0}".format(output))
             if not returncode == 0:
                 raise Exception("Start script returned a none-zero value")
-            try:
-                pid = Util().read_pid(Config().get(section, "pid-file"))
-            except:
-                pid = None
-            Service().started(cluster, service, role, pid)
+            # try:
+            #     pid = Util().read_pid(Config().get(section, "pid-file"))
+            # except:
+            #     pid = None
+            Service().started(cluster, service, role)
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
             sleep(heartbeat_interval)
             return pid
@@ -505,7 +505,8 @@ class Service:
             subprocess.check_call(['sudo', script, role], close_fds=True)  # raises exception if not returncode == 0
             now = long(time.mktime(datetime.now().timetuple()))
             options_to_set = {'status':'Stopped', 'stop-time':now}
-            options_to_remove = ['pid']
+#            options_to_remove = ['pid']
+            options_to_remove = []
             Config().edit(section, options_to_set, options_to_remove)
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
             Service().failed(cluster, service, role)
@@ -523,14 +524,14 @@ class Service:
             returncode = p.returncode
             if not returncode == 0:
                 raise Exception("Restart script returned a none-zero value")
-            try:
-                pid = Util().read_pid(Config().get(section, "pid-file"))
-            except:
-                pid = None
-            Service().started(cluster, service, role, pid)
+            # try:
+            #     pid = Util().read_pid(Config().get(section, "pid-file"))
+            # except:
+            #     pid = None
+            Service().started(cluster, service, role)
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
             sleep(heartbeat_interval)
-            return pid
+            return True
         except Exception as err:
             logger.error(err)
             return False
@@ -539,10 +540,12 @@ class Service:
         section = Config().section_name(cluster, service, role)
         script = BIN_DIR + "/status-service.sh"
         try:
-            p = Popen(['sudo',script,role], close_fds=True)
+            p = Popen(['sudo',script,role], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            with p.stdout:
+                for line in iter(p.stdout.readline, b''):
+                    logger.info("{0}".format(line))
             p.wait()
-            returncode = p.returncode
-            if not returncode == 0:
+            if not p.returncode == 0:
                 logger.error(err)
                 return False
         except Exception as err:
@@ -554,16 +557,17 @@ class Service:
         section = Config().section_name(cluster, service, role)
         now = long(time.mktime(datetime.now().timetuple()))
         options_to_set = {'status':'Stopped', 'stop-time':now}
-        options_to_remove = ['pid']
+#        options_to_remove = ['pid']
+        options_to_remove = []
         Config().edit(section, options_to_set, options_to_remove)
         Alert.send(cluster, service, role, now, False)
 
-    def started(self, cluster, service, role, pid):
+    def started(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
         now = long(time.mktime(datetime.now().timetuple()))
         options_to_add = {'status':'Started', 'start-time':now}
-        if not pid == None:
-            options_to_add['pid'] = pid
+#        if not pid == None:
+#            options_to_add['pid'] = pid
         options_to_remove = ['stop-time']
         Config().edit(section, options_to_add, options_to_remove)
         Alert.send(cluster, service, role, now, True)

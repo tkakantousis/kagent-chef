@@ -27,15 +27,15 @@ action :add do
     'service'  => "#{service}",
     'role'  => "#{role}",
     'web-port' => new_resource.web_port,
-    'start-script'  => "#{new_resource.start_script}",
-    'stop-script'  => "#{new_resource.stop_script}",
-    'init-script'  => "#{new_resource.init_script}",
-    'pid-file'  => "#{new_resource.pid_file}",
+#    'start-script'  => "#{new_resource.start_script}",
+#    'stop-script'  => "#{new_resource.stop_script}",
+#    'init-script'  => "#{new_resource.init_script}",
+#    'pid-file'  => "#{new_resource.pid_file}",
     'stdout-file'  => "#{new_resource.log_file}",
     'config-file'  => "#{new_resource.config_file}",
-    'command'  => "#{new_resource.command}",
-    'command-user'  => "#{new_resource.command_user}",
-    'command-script'  => "#{new_resource.command_script}",
+#    'command'  => "#{new_resource.command}",
+#    'command-user'  => "#{new_resource.command_user}",
+#    'command-script'  => "#{new_resource.command_script}",
     'status' => 'Stopped'
   } 
   ini_file.save
