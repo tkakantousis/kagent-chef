@@ -173,9 +173,7 @@ class Heartbeat():
     daemon_threads = True 
     def __init__(self):
         while True:    
-            config_mutex.acquire()       
             Heartbeat.send()
-            config_mutex.release()       
             time.sleep(heartbeat_interval) 
 
 
@@ -343,8 +341,6 @@ class ExtProcess():  # external process
                 if Config().get(section, 'status') == 'Started':
                     logger.info("Process failed: {0}/{1}/{2}".format(cluster, service, role))
                     Service().failed(cluster, service, role)
-                else:
-                    logger.info("Not watching {0}/{1}".format(cluster, service))
             sleep(watch_interval)
 
 class Config(): 
@@ -513,7 +509,6 @@ class Service:
                     logger.info("{0}".format(line))
             p.wait()
             if not p.returncode == 0:
-                logger.error(err)
                 return False
         except Exception as err:
             logger.error(err)
