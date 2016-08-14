@@ -141,7 +141,6 @@ logger.info("Private IP: {0}".format(private_ip))
 try:
     services = ConfigParser.ConfigParser()
     services.read(SERVICES_FILE)
-    logger.info("Services: {0}".format(services.sections()))
 except Exception, e:
     logger.error("Exception while reading {0} file: {1}".format(SERVICES_FILE, e))
     sys.exit(1)     
@@ -219,7 +218,6 @@ class Heartbeat():
                     memory_info = MemoryInfo()
                     load_info = LoadInfo()
                     services_list = Config().read_all_for_heartbeat()
-                    logger.info("services: {0}".format(services_list))
                     now = long(time.mktime(datetime.now().timetuple()))                
                     headers = {'content-type': 'application/json'}
                     payload = {}
