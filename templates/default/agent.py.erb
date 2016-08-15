@@ -62,8 +62,8 @@ SERVER_KEYSTORE = "<%= node.kagent.keystore_dir %>/node_server_keystore.jks"
 SERVER_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_server_truststore.jks"
 CLIENT_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_client_truststore.jks"
 
-global services_dict
-services_dict = {}
+global states
+states = {}
 
 cores = multiprocessing.cpu_count()
 
@@ -150,7 +150,7 @@ try:
 
     for s in services.sections():
         if services.has_option(s, "role") :        
-            services_dict[services.get(s, "role")] = {'status':'Stopped', 'start-time':''}
+            states[services.get(s, "role")] = {'status':'Stopped', 'start-time':''}
 
 except Exception, e:
     logger.error("Exception while reading {0} file: {1}".format(SERVICES_FILE, e))
@@ -211,7 +211,7 @@ class Heartbeat():
 
     @staticmethod
     def serviceKey(*keys):
-            ob = services_dict
+            ob = states
             for key in keys:
                 ob = ob[key]
             return ob
@@ -335,14 +335,14 @@ class ExtProcess():  # external process
             try:
                 section = Config().section_name(cluster, service, role)
                 if Service().alive(cluster,service,role) == True:
-                     if (services_dict[role]['status'] == 'Stopped'):
+                     if (states[role]['status'] == 'Stopped'):
                        logger.info("Process started: {0}/{1}/{2}".format(cluster, service, role))
                        Service().started(cluster, service, role)
                 else:
                     raise Exception("Process is not running for {0}/{1}/{2}".format(cluster, service, role))
             except:  
                 logger.warn("Proccess.watch: Process is not running: {0}/{1}/{2}".format(cluster, service, role))
-                if Config().get(section, 'status') == 'Started':
+                if (states[role]['status'] == 'Started'):
                     logger.info("Process failed: {0}/{1}/{2}".format(cluster, service, role))
                     Service().failed(cluster, service, role)
             sleep(watch_interval)
@@ -411,7 +411,6 @@ class Service:
 
             
     def start(self, cluster, service, role):
-        section = Config().section_name(cluster, service, role)
         script = BIN_DIR + "/start-service.sh"
         try:
             p = Popen(['sudo',script,role],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -429,12 +428,11 @@ class Service:
             return False
         
     def stop(self, cluster, service, role):
-        section = Config().section_name(cluster, service, role)
         script = BIN_DIR + "/stop-service.sh"
         try:
             subprocess.check_call(['sudo', script, role], close_fds=True)  # raises exception if not returncode == 0
             now = long(time.mktime(datetime.now().timetuple()))
-            services_dict[role] = {'status':'Stopped', 'stop-time':now}
+            states[role] = {'status':'Stopped', 'stop-time':now}
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
             Service().failed(cluster, service, role)
             sleep(heartbeat_interval+1)
@@ -460,7 +458,6 @@ class Service:
             return False
 
     def alive(self, cluster, service, role):
-        section = Config().section_name(cluster, service, role)
         script = BIN_DIR + "/status-service.sh"
         try:
             p = Popen(['sudo',script,role], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -478,12 +475,12 @@ class Service:
 
     def failed(self, cluster, service, role):
         now = long(time.mktime(datetime.now().timetuple()))
-        services_dict[role] = {'status':'Stopped', 'start-time':now}
+        states[role] = {'status':'Stopped', 'start-time':now}
         Alert.send(cluster, service, role, now, False)
 
     def started(self, cluster, service, role):
         now = long(time.mktime(datetime.now().timetuple()))
-        services_dict[role] = {'status':'Started', 'start-time':now}
+        states[role] = {'status':'Started', 'start-time':now}
         Alert.send(cluster, service, role, now, True)
 
 
@@ -526,7 +523,7 @@ class CommandHandler():
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
             return CommandHandler().response(400, 'Role not installed.')
-        elif services.get(section, 'status') == 'Started':
+        elif states[role]['status'] == 'Started':
             return CommandHandler().response(400, 'Role already started.')
         else:
             res = Service().start(cluster, service, role)
@@ -539,7 +536,7 @@ class CommandHandler():
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
             return CommandHandler().response(400, 'Role not installed.')
-        elif not services.get(section, 'status') == 'Started':
+        elif not states[role]['status'] == 'Started':
             return CommandHandler().response(400, 'Role is not running.')
         else:
             if Service().stop(cluster, service, role) == True:
