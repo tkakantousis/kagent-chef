@@ -137,6 +137,8 @@ logger.info("Hostname: {0}".format(hostname))
 logger.info("Public IP: {0}".format(public_ip))
 logger.info("Private IP: {0}".format(private_ip))
 
+verbose=False
+
 # reading services
 try:
     services = ConfigParser.ConfigParser()
@@ -317,15 +319,15 @@ class ExtProcess():  # external process
     @staticmethod        
     def watch(cluster, service, role):
         while True:
-            # try:
-            #     config_mutex.acquire()       
-            #     services = ConfigParser.ConfigParser()
-            #     services.read(SERVICES_FILE)
-            # except : 
-            #     logger.warn("Cannot read services file: {0}".format(SERVICES_FILE))
-            #     continue
-            # finally:                    
-            #     config_mutex.release()
+            try:
+                config_mutex.acquire()       
+                services = ConfigParser.ConfigParser()
+                services.read(SERVICES_FILE)
+            except : 
+                logger.warn("Cannot read services file: {0}".format(SERVICES_FILE))
+                continue
+            finally:                    
+                config_mutex.release()
 
 #                        logger.info("Checking {0}/{1}/{2}".format(cluster, service, role))
             try:
@@ -354,8 +356,8 @@ class Config():
     # select items so that the key does not contain 'file' or 'script'
     def read_all_for_heartbeat(self):
         config_mutex.acquire()       
-#        services = ConfigParser.ConfigParser()
-#        services.read(SERVICES_FILE)
+       services = ConfigParser.ConfigParser()
+       services.read(SERVICES_FILE)
         services_list = []     
         try:
             for s in services.sections():
@@ -504,9 +506,10 @@ class Service:
         script = BIN_DIR + "/status-service.sh"
         try:
             p = Popen(['sudo',script,role], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            with p.stdout:
-                for line in iter(p.stdout.readline, b''):
-                    logger.info("{0}".format(line))
+            if (verbose == True):
+                with p.stdout:
+                    for line in iter(p.stdout.readline, b''):
+                        logger.info("{0}".format(line))
             p.wait()
             if not p.returncode == 0:
                 return False
@@ -720,6 +723,13 @@ class SSLCherryPy(ServerAdapter):
 
 if __name__ == '__main__':
     
+    if len(sys.argv) > 1:
+        if (sys.argv[1] == "-v" || sys.argv[1] == "-verbose" || sys.argv[1] == "--verbose"):
+            verbose=True
+        else:
+            print "usage: <prog> [-v|-verbose]"
+            sys.exit()
+
     agent_pid = str(os.getpid())
     file(agent_pidfile, 'w').write(agent_pid)
     logger.info("Hops Kagent PID: {0}".format(agent_pid))
