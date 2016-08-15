@@ -23,6 +23,7 @@ from datetime import datetime
 import multiprocessing
 import thread
 from threading import Lock
+import threading
 import subprocess
 from subprocess import Popen
 import os
@@ -736,14 +737,20 @@ if __name__ == '__main__':
     logger.setLevel(Util().logging_level(logging_level))
 
     # Heartbeat, process watch (alerts) and REST API are available after the agent registers successfully 
-    thread.start_new_thread(Heartbeat, ()) 
+#    thread.start_new_thread(Heartbeat, ()) 
+     hb_thread = threading.Thread(Heartbeat, ())
+     hb_thread.setDaemon(True)
+     hb_thread.start()
 
     for s in services.sections():
         cluster = Config().get(s, "cluster")
         service = Config().get(s, "service")       
         if services.has_option(s, "role"):
             role = Config().get(s, "role")             
-            thread.start_new_thread(ExtProcess.watch, (cluster, service, role))
+#            thread.start_new_thread(ExtProcess.watch, (cluster, service, role))
+            my_thread = threading.Thread(ExtProcess.watch, (cluster, service, role))
+            my_thread.setDaemon(True)
+            my_thread.start()
         else:
             logger.info("Not watching {0}/{1}".format(cluster, service))        
                             
