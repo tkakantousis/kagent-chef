@@ -4,7 +4,7 @@
 Created on 6 October 2013
 
 @author: Hamidreza Afzali <afzali@kth.se>
-@author: Jim Dowlin <jdowling@kth.se>
+@author: Jim Dowling <jdowling@kth.se>
 
 Install:
  requests:    easy_install requests
@@ -61,6 +61,9 @@ KEY_FILE = "<%= node[:kagent][:certs_dir] %>/priv.key"
 SERVER_KEYSTORE = "<%= node.kagent.keystore_dir %>/node_server_keystore.jks"
 SERVER_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_server_truststore.jks"
 CLIENT_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_client_truststore.jks"
+
+global services_dict
+services_dict = {}
 
 cores = multiprocessing.cpu_count()
 
@@ -144,6 +147,11 @@ verbose=False
 try:
     services = ConfigParser.ConfigParser()
     services.read(SERVICES_FILE)
+
+    for s in services.sections():
+        if services.has_option(s, "role") :        
+            services_dict[services.get(s, "role")] = {'status':'Stopped', 'start-time':''}
+
 except Exception, e:
     logger.error("Exception while reading {0} file: {1}".format(SERVICES_FILE, e))
     sys.exit(1)     
@@ -321,20 +329,9 @@ class ExtProcess():  # external process
     def watch(cluster, service, role):
         while True:
             try:
-                config_mutex.acquire()       
-                services = ConfigParser.ConfigParser()
-                services.read(SERVICES_FILE)
-            except : 
-                logger.warn("Cannot read services file: {0}".format(SERVICES_FILE))
-                continue
-            finally:                    
-                config_mutex.release()
-
-#                        logger.info("Checking {0}/{1}/{2}".format(cluster, service, role))
-            try:
                 section = Config().section_name(cluster, service, role)
                 if Service().alive(cluster,service,role) == True:
-                    if not Config().get(section, 'status') == 'Started':
+                     if (services_dict[role]['status'] == 'Stopped'):
                        logger.info("Process started: {0}/{1}/{2}".format(cluster, service, role))
                        Service().started(cluster, service, role)
                 else:
@@ -357,13 +354,11 @@ class Config():
     # select items so that the key does not contain 'file' or 'script'
     def read_all_for_heartbeat(self):
         config_mutex.acquire()       
-        services = ConfigParser.ConfigParser()
-        services.read(SERVICES_FILE)
         services_list = []     
         try:
             for s in services.sections():
-                if services.has_option(s, "role") :
                    item = {}
+                   item['status'] = services_dict[services.get(s, "role")]['status']
                    for key, val in services.items(s):
                        if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
                            item[key] = val
@@ -382,38 +377,6 @@ class Config():
             config_mutex.release()
         return items
     
-    def add(self, section, options):
-        config_mutex.acquire()
-        try:
-            services.add_section(section)
-            for k, v in options.iteritems():
-                services.set(section, k, v)
-            with open(SERVICES_FILE, 'wb') as configfile:
-                services.write(configfile)
-        finally:
-            config_mutex.release()  
- 
-    def remove(self, section):
-        config_mutex.acquire()
-        try:
-            services.remove_section(section)
-            with open(SERVICES_FILE, 'wb') as configfile:
-                services.write(configfile)
-        finally:
-            config_mutex.release()   
-               
-    def edit(self, section, options_to_set, options_to_remove):
-        config_mutex.acquire()
-        try:
-            for k, v in options_to_set.iteritems():
-                services.set(section, k, v)
-            for k in options_to_remove:
-                services.remove_option(section, k)               
-            with open(SERVICES_FILE, 'wb') as configfile:
-                services.write(configfile)
-        finally:
-            config_mutex.release()
-
     def get(self, section, option):
         config_mutex.acquire()
         val = ""
@@ -426,15 +389,6 @@ class Config():
      
 class Service:
     
-    def add(self, cluster, service, role):
-        options = Config().makeConfigOptions(cluster, service, role)
-        section = Config().section_name(cluster, service, role)
-        Config().add(section, options)    
-
-    def remove(self, cluster, service, role):
-        section = Config().section_name(cluster, service, role)
-        Config().remove(section)
-
     # need to be completed. Set the status to Initialize?
     def init(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
@@ -475,9 +429,7 @@ class Service:
         try:
             subprocess.check_call(['sudo', script, role], close_fds=True)  # raises exception if not returncode == 0
             now = long(time.mktime(datetime.now().timetuple()))
-            options_to_set = {'status':'Stopped', 'stop-time':now}
-            options_to_remove = []
-            Config().edit(section, options_to_set, options_to_remove)
+            services_dict[role] = {'status':'Stopped', 'stop-time':now}
             # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
             Service().failed(cluster, service, role)
             sleep(heartbeat_interval+1)
@@ -520,19 +472,13 @@ class Service:
         return True
 
     def failed(self, cluster, service, role):
-        section = Config().section_name(cluster, service, role)
         now = long(time.mktime(datetime.now().timetuple()))
-        options_to_set = {'status':'Stopped', 'stop-time':now}
-        options_to_remove = []
-        Config().edit(section, options_to_set, options_to_remove)
+        services_dict[role] = {'status':'Stopped', 'start-time':now}
         Alert.send(cluster, service, role, now, False)
 
     def started(self, cluster, service, role):
-        section = Config().section_name(cluster, service, role)
         now = long(time.mktime(datetime.now().timetuple()))
-        options_to_add = {'status':'Started', 'start-time':now}
-        options_to_remove = ['stop-time']
-        Config().edit(section, options_to_add, options_to_remove)
+        services_dict[role] = {'status':'Started', 'start-time':now}
         Alert.send(cluster, service, role, now, True)
 
 
