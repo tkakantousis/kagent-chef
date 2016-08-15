@@ -210,6 +210,13 @@ class Heartbeat():
             loggedIn = False
 
     @staticmethod
+    def serviceKey(*keys):
+            ob = services_dict
+            for key in keys:
+                ob = ob[key]
+            return ob
+
+    @staticmethod
     def send():
             global loggedIn
             global session
@@ -226,9 +233,7 @@ class Heartbeat():
                     headers = {'content-type': 'application/json'}
                     payload = {}
                     payload["host-id"] = host_id            
-#                    logger.info("host-id: {0}".format(host_id))
                     payload["agent-time"] = now
-#                    logger.info("time: {0}".format(now))
                     payload["load1"] = load_info.load1
                     payload["load5"] = load_info.load5
                     payload["load15"] = load_info.load15
@@ -237,7 +242,6 @@ class Heartbeat():
                     payload["services"] = services_list            
                     payload["group-name"] = group_name
                     payload["hostname"] = hostname
-#                    logger.info("hostname: {0}".format(hostname))
                     if (public_ip != None):
                         payload["public-ip"] = public_ip                      
                     else:
@@ -358,7 +362,8 @@ class Config():
         try:
             for s in services.sections():
                    item = {}
-                   item['status'] = services_dict[services.get(s, "role")]['status']
+                   item['status'] = Heartbeat.serviceKey(services.get(s, "role"), 'status')
+                   services_list.append(item)   
                    for key, val in services.items(s):
                        if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
                            item[key] = val

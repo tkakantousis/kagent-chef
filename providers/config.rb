@@ -32,11 +32,11 @@ action :add do
 #    'init-script'  => "#{new_resource.init_script}",
 #    'pid-file'  => "#{new_resource.pid_file}",
     'stdout-file'  => "#{new_resource.log_file}",
-    'config-file'  => "#{new_resource.config_file}",
+    'config-file'  => "#{new_resource.config_file}"
 #    'command'  => "#{new_resource.command}",
 #    'command-user'  => "#{new_resource.command_user}",
 #    'command-script'  => "#{new_resource.command_script}",
-    'status' => 'Stopped'
+#    'status' => 'Stopped'
   } 
   ini_file.save
   Chef::Log.info "Saved an updated copy of services file at the kagent after updating #{cluster}-#{service}-#{role}"
