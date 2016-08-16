@@ -84,6 +84,20 @@ if network_if == ""
 end
 
 
+template "#{node.kagent.base_dir}/start-all-local-services.sh" do
+  source "start-all-local-services.sh.erb"
+  owner node.kagent.user
+  group node.kagent.group
+  mode 0740
+end
+
+template "#{node.kagent.base_dir}/shutdown-all-local-services.sh" do
+  source "shutdown-all-local-services.sh.erb"
+  owner node.kagent.user
+  group node.kagent.group
+  mode 0740
+end
+
 
 #
 # Certificate Signing code - Needs Hopsworks dashboard
