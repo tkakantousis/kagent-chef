@@ -10,7 +10,10 @@ if [[ $services == *"$active"* ]] ; then
  sudo /var/lib/kagent/bin/status-service.sh $active > /dev/null
  if [ $? -ne 0 ] ; then
    echo -e "Starting \e[32m${active} \e[0m...."
-   sudo <%= node.kagent.base_dir %>/bin/start-service.sh $active
+   service $active start 2>&1 > /dev/null
+   if [ $? -ne 0 ] ; then 
+     echo -e "\e[31mProblem starting $active \e[0m"
+   fi
  else
    echo -e "$active was already \e[31mrunning \e[0m"
  fi

@@ -2,7 +2,7 @@
 
 really_stop() 
 {
-  echo -n "Do you really want to shutdown all the Hops services running on this server?"
+  echo -n "Do you really want to shutdown all the Hops services running on this server? (y/n) "
   read ACCEPT
   case $ACCEPT in
    y | Y)
@@ -29,7 +29,10 @@ if [[ $services == *"$active"* ]] ; then
  sudo /var/lib/kagent/bin/status-service.sh $active > /dev/null
  if [ $? -eq 0 ] ; then
    echo -e "Stopping \e[32m${active} \e[0m...."
-   <%= node.kagent.base_dir %>/bin/stop-service.sh $active
+   service $active stop
+   if [ $? -ne 0 ] ; then 
+     echo -e "\e[31mProblem stopping $active \e[0m"
+   fi
  else
    echo -e "$active was already \e[31mstopped \e[0m"
  fi
