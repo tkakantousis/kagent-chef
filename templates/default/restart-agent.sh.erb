@@ -1,6 +1,6 @@
 #!/bin/bash
 
-<%= node[:kagent][:base_dir] %>/stop-agent.sh
+<%= node[:kagent][:base_dir] %>/bin/stop-agent.sh
 sleep 3
-<%= node[:kagent][:base_dir] %>/start-agent.sh
+<%= node[:kagent][:base_dir] %>/bin/start-agent.sh
 exit $?
