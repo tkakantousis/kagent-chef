@@ -19,8 +19,6 @@ STOP_PROG=<%= "#{node[:kagent][:base_dir]}/stop-agent.sh" %>
 RESTART_PROG=<%= "#{node[:kagent][:base_dir]}/restart-agent.sh" %>
 
 
-RETVAL=0
-
 EXEC_WITH_USER="su <%= node[:kagent][:user] %> -c"
 
 
@@ -42,6 +40,17 @@ restart() {
   return $?
 }
 
+status() {
+  echo "Executing as '<%= node[:kagent][:user] %>': $STOP_PROG"
+  PID_FILE=<%= node[:kagent][:pid_file] %>
+  if [ -e $PID_FILE ] ; then
+     PID=`cat $PID_FILE`
+     kill -0 $PID
+     return $?
+  fi
+  return 1
+}
+
 
 # user-supplied parameter to stop/start/restart process.
 case "$1" in
@@ -53,6 +62,9 @@ case "$1" in
     ;;
   stop)
     stop
+    ;;
+  status)
+    status
     ;;
   restart)
     restart
@@ -72,4 +84,4 @@ case "$1" in
   esac
 
 
-exit $RETVAL
+exit $?
