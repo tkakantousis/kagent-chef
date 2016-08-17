@@ -29,7 +29,7 @@ if [[ $services == *"$active"* ]] ; then
  sudo /var/lib/kagent/bin/status-service.sh $active > /dev/null
  if [ $? -eq 0 ] ; then
    echo -e "Stopping \e[32m${active} \e[0m...."
-   service $active stop
+   sudo service $active stop
    if [ $? -ne 0 ] ; then 
      echo -e "\e[31mProblem stopping $active \e[0m"
    fi
