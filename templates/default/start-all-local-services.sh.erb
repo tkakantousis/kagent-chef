@@ -9,8 +9,8 @@ start()
 if [[ $services == *"$active"* ]] ; then
  sudo /var/lib/kagent/bin/status-service.sh $active > /dev/null
  if [ $? -ne 0 ] ; then
-   echo -e "Starting \e[32mactive \e[0m...."
-   <%= node.kagent.base_dir %>/bin/start-service.sh $active
+   echo -e "Starting \e[32m${active} \e[0m...."
+   sudo <%= node.kagent.base_dir %>/bin/start-service.sh $active
  else
    echo -e "$active was already \e[31mrunning \e[0m"
  fi
@@ -20,7 +20,7 @@ fi
 
 # Check which services are installed on this server
 services=$(grep role <%= node.kagent.base_dir %>/services | perl -p -e "s/role = //g" | perl -p -e "s/\n/ /g") 2>&1 > /dev/null
-services="kagent $services"
+services="kagent $services glassfish-domain1"
 
 echo -e ""
 # Shut down the services in the correct order
