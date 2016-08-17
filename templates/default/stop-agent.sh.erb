@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source <%= node[:kagent][:base_dir] %>/get-pid.sh
+source <%= node[:kagent][:base_dir] %>/bin/get-pid.sh
 
 if [ $? -ne 0 ]; then
 	echo "Agent is not running."

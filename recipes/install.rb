@@ -311,7 +311,7 @@ end
 
 ['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'].each do |script|
   Chef::Log.info "Installing #{script}"
-  template "#{node.kagent.base_dir}/#{script}" do
+  template "#{node.kagent.base_dir}/bin/#{script}" do
     source "#{script}.erb"
     owner node.kagent.user
     group node.kagent.group

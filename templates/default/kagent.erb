@@ -14,9 +14,9 @@
 ### END INIT INFO
 
 # Variables
-START_PROG=<%= "#{node[:kagent][:base_dir]}/start-agent.sh" %>
-STOP_PROG=<%= "#{node[:kagent][:base_dir]}/stop-agent.sh" %>
-RESTART_PROG=<%= "#{node[:kagent][:base_dir]}/restart-agent.sh" %>
+START_PROG=<%= "#{node[:kagent][:base_dir]}/bin/start-agent.sh" %>
+STOP_PROG=<%= "#{node[:kagent][:base_dir]}/bin/stop-agent.sh" %>
+RESTART_PROG=<%= "#{node[:kagent][:base_dir]}/bin/restart-agent.sh" %>
 
 
 EXEC_WITH_USER="su <%= node[:kagent][:user] %> -c"
