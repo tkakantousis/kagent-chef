@@ -289,10 +289,10 @@ class Alert:
                 payload["Message"] = "Role is not running: {0}/{1}/{2}".format(cluster, service, role)
             
             logger.info("Sending Alert...")
-#            session = requests.Session()
             auth = (server_username, server_password)
-#           session.post(alert_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)        
-           requests.post(alert_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)        
+#            session = requests.Session()
+#            session.post(alert_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)        
+            requests.post(alert_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)        
         except:
             logger.error("Cannot access the REST service for alerts. Alert not sent.")
 
