@@ -80,7 +80,7 @@ class Register():
                 logger.info("Registering with HopsWorks...")
 		session = requests.Session()
 		session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
-		resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
+		resp = session.post(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
 		if not resp.status_code == HTTP_OK:
                		raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0}).'.format(resp.status_code))
                 

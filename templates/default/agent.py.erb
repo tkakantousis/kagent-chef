@@ -197,8 +197,8 @@ class Heartbeat():
         global session
         try:
             session = requests.Session()
-            session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
-            resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
+            resp = session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
+#            resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
             if not resp.status_code == HTTP_OK:
                 loggedIn = False
                 logger.warn('Could not login agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
@@ -258,7 +258,7 @@ class Heartbeat():
     
                     logger.info("Sending heartbeat...")
                     auth = (server_username, server_password)     
-                    resp = session.put(heartbeat_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)
+                    resp = session.post(heartbeat_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)
                     if not resp.status_code == HTTP_OK:
                         raise Exception('Heartbeat could not be sent (Status code: {0})'.format(resp.status_code))
                         loggedIn = False
