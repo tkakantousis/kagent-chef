@@ -156,7 +156,7 @@ except Exception, e:
     logger.error("Exception while reading {0} file: {1}".format(SERVICES_FILE, e))
     sys.exit(1)     
 
-loggedIn = False
+#loggedIn = False
  
 class Util():
     
@@ -189,25 +189,25 @@ class Heartbeat():
 
 
     @staticmethod
-    def login():
-        json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
-        form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
-        payload = {}
-        global loggedIn
-        global session
-        try:
-            session = requests.Session()
-            resp = session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
-#            resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
-            if not resp.status_code == HTTP_OK:
-                loggedIn = False
-                logger.warn('Could not login agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
-            else:
-                logger.info('Successful login of agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
-                loggedIn = True
-        except Exception as err:
-            logger.warn('Could not login agent to Hopsworks {0}'.format(err))
-            loggedIn = False
+#     def login():
+#         json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
+#         form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
+#         payload = {}
+#         global loggedIn
+#         global session
+#         try:
+#             session = requests.Session()
+#             resp = session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
+# #            resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
+#             if not resp.status_code == HTTP_OK:
+#                 loggedIn = False
+#                 logger.warn('Could not login agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
+#             else:
+#                 logger.info('Successful login of agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
+#                 loggedIn = True
+#         except Exception as err:
+#             logger.warn('Could not login agent to Hopsworks {0}'.format(err))
+#             loggedIn = False
 
     @staticmethod
     def serviceKey(*keys):
@@ -218,53 +218,51 @@ class Heartbeat():
 
     @staticmethod
     def send():
-            global loggedIn
-            global session
-            if not loggedIn:
-                logger.info('Logging in to Hopsworks....')
-                Heartbeat.login()
+#            global loggedIn
+#            global session
+            # if not loggedIn:
+            #     logger.info('Logging in to Hopsworks....')
+            #     Heartbeat.login()
+            # else:
+        try:
+            disk_info = DiskInfo() 
+            memory_info = MemoryInfo()
+            load_info = LoadInfo()
+            services_list = Config().read_all_for_heartbeat()
+            now = long(time.mktime(datetime.now().timetuple()))                
+            headers = {'content-type': 'application/json'}
+            payload = {}
+            payload["host-id"] = host_id            
+            payload["agent-time"] = now
+            payload["load1"] = load_info.load1
+            payload["load5"] = load_info.load5
+            payload["load15"] = load_info.load15
+            payload["disk-used"] = disk_info.used
+            payload['memory-used'] = memory_info.used - memory_info.cached - memory_info.buffers
+            payload["services"] = services_list            
+            payload["group-name"] = group_name
+            payload["hostname"] = hostname
+            if (public_ip != None):
+                payload["public-ip"] = public_ip                      
             else:
-                try:
-                    disk_info = DiskInfo() 
-                    memory_info = MemoryInfo()
-                    load_info = LoadInfo()
-                    services_list = Config().read_all_for_heartbeat()
-                    now = long(time.mktime(datetime.now().timetuple()))                
-                    headers = {'content-type': 'application/json'}
-                    payload = {}
-                    payload["host-id"] = host_id            
-                    payload["agent-time"] = now
-                    payload["load1"] = load_info.load1
-                    payload["load5"] = load_info.load5
-                    payload["load15"] = load_info.load15
-                    payload["disk-used"] = disk_info.used
-                    payload['memory-used'] = memory_info.used - memory_info.cached - memory_info.buffers
-                    payload["services"] = services_list            
-                    payload["group-name"] = group_name
-                    payload["hostname"] = hostname
-                    if (public_ip != None):
-                        payload["public-ip"] = public_ip                      
-                    else:
-                        payload["public-ip"] = ""
-    
+                payload["public-ip"] = ""
                     if (private_ip != None):
                         payload["private-ip"] = private_ip 
                     else:
                         payload["private-ip"] = ""
-    
                     payload["cores"] = cores
                     payload["disk-capacity"] = disk_info.capacity    
                     payload['memory-capacity'] = memory_info.total                            
-    
                     logger.info("Sending heartbeat...")
                     auth = (server_username, server_password)     
+                    session = requests.Session()
                     resp = session.post(heartbeat_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)
                     if not resp.status_code == HTTP_OK:
                         raise Exception('Heartbeat could not be sent (Status code: {0})'.format(resp.status_code))
-                        loggedIn = False
-                except Exception as err:
-                    logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
-                    loggedIn = False
+#                        loggedIn = False
+                    except Exception as err:
+                        logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
+#                        loggedIn = False
 
 
 class Alert:
@@ -289,6 +287,7 @@ class Alert:
                 payload["Message"] = "Role is not running: {0}/{1}/{2}".format(cluster, service, role)
             
             logger.info("Sending Alert...")
+            session = requests.Session()
             auth = (server_username, server_password)
             session.post(alert_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)        
         except:
