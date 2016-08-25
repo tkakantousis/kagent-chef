@@ -1,4 +1,4 @@
-node.default.hadoop.version                = "2.4.0"
+#node.default.hadoop.version                = "2.4.0"
 
 # Default values for configuration parameters
 default.kagent.version                = "0.1.0"
@@ -79,3 +79,9 @@ node.default.ntp.install                            = "false"
 node.normal.ntp.servers                             = ['0.europe.pool.ntp.org', '1.europe.pool.ntp.org', '2.europe.pool.ntp.org', '3.europe.pool.ntp.org']
 
 node.normal.ntp.peers                               = ['time0.int.example.org', 'time1.int.example.org']
+
+
+node.default.java.jdk_version                         = 8
+node.default.java.set_etc_environment                 = true
+node.default.java.install_flavor                      = "oracle"
+node.default.java.oracle.accept_oracle_download_terms = true
