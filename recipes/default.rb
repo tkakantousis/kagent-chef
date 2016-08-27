@@ -139,10 +139,11 @@ template "#{node.kagent.base_dir}/config.ini" do
   notifies :restart, "service[#{service_name}]", :delayed
 end
 
-kagent_keys "sign-certs" do
- action :csr
+if node.kagent.test == false 
+    kagent_keys "sign-certs" do
+       action :csr
+    end
 end
-
 execute "service kagent stop"
 execute "rm -f #{node.kagent.pid_file}"
 

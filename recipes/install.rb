@@ -246,6 +246,38 @@ directory "#{node.kagent.base_dir}/bin" do
   recursive true
 end
 
+directory "#{node.kagent.base_dir}/tf" do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+  recursive true
+end
+
+directory "#{node.kagent.base_dir}/tf/projects" do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+  recursive true
+end
+
+directory "#{node.kagent.base_dir}/tf/run" do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+  recursive true
+end
+
+directory "#{node.kagent.base_dir}/tf/log" do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+  recursive true
+end
+
 
 directory node.kagent.keystore_dir do
   owner node.kagent.user
@@ -261,6 +293,14 @@ file node.default.kagent.services do
   mode "755"
   action :create_if_missing
 end
+
+file node.default.tf.services do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create_if_missing
+end
+
 
 # set_my_hostname
 if node.vagrant === "true" || node.vagrant == true 
@@ -356,3 +396,20 @@ template "/etc/sudoers.d/kagent" do
               })
   action :create
 end  
+
+
+id=0
+node.tf.cpu_ids.each do |cpu|
+  kagent_tf id do
+    resource "cpu" 
+  end
+  id+=1
+end
+
+id=0
+node.tf.gpu_devices.each do |gpu|
+  kagent_tf id do
+    resource "gpu" 
+  end
+  id+=1
+end

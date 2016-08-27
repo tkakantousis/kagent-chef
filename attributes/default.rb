@@ -1,5 +1,6 @@
 #node.default.hadoop.version                = "2.4.0"
 
+default.kagent.test                   = false
 # Default values for configuration parameters
 default.kagent.version                = "0.1.0"
 default.kagent.user                   = "kagent"
@@ -53,6 +54,7 @@ default.kagent.network.interface      = ""
 
 # services file contains locally installed services
 default.kagent.services               = node.kagent.base_dir + "/services"
+default.tf.services                   = node.kagent.base_dir + "/tf_services"
 # name of cluster as shown in Dashboard
 default.kagent.cluster                = "Hops"
 
@@ -64,20 +66,22 @@ default.kagent.public_ips             = ['10.0.2.15']
 default.kagent.private_ips            = ['10.0.2.15']
 default.kagent.allow_ssh_access       = "false"
 
-node.default.download_url                  = "http://193.10.67.171/hops"
-node.default.systemd                       = "true"
-node.default.ndb.mysql_socket              = "/tmp/mysql.sock"
-node.default.ndb.mysql.jdbc_url            = ""
-node.default.ndb.mysql_port                = "3306"
+node.default.download_url             = "http://193.10.67.171/hops"
+node.default.systemd                  = "true"
+node.default.ndb.mysql_socket         = "/tmp/mysql.sock"
+node.default.ndb.mysql.jdbc_url       = ""
+node.default.ndb.mysql_port           = "3306"
 
-node.default.vagrant                       = "false"
+node.default.vagrant                  = "false"
 
 
-node.default.ntp.install                            = "false"
+node.default.ntp.install              = "false"
 # Servers to sync ntp time with
 # '0.pool.ntp.org', '1.pool.ntp.org'
-node.normal.ntp.servers                             = ['0.europe.pool.ntp.org', '1.europe.pool.ntp.org', '2.europe.pool.ntp.org', '3.europe.pool.ntp.org']
+node.normal.ntp.servers               = ['0.europe.pool.ntp.org', '1.europe.pool.ntp.org', '2.europe.pool.ntp.org', '3.europe.pool.ntp.org']
 
-node.normal.ntp.peers                               = ['time0.int.example.org', 'time1.int.example.org']
+node.normal.ntp.peers                 = ['time0.int.example.org', 'time1.int.example.org']
 
 
+node.default.tf.cpu_ids               = ['']
+node.default.tf.gpu_devices           = ['']

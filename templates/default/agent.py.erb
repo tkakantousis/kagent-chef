@@ -53,6 +53,7 @@ HTTP_OK = 200
 BIN_DIR = "<%= node[:kagent][:base_dir] %>/bin"
 CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config.ini"
 SERVICES_FILE = "<%= node[:kagent][:base_dir] %>/services"
+TF_SERVICES_FILE = "<%= node[:kagent][:base_dir] %>/tf_services"
 LOG_FILE = "<%= node[:kagent][:base_dir] %>/agent.log"
 
 CERT_FILE = "<%= node[:kagent][:certs_dir] %>/pub.pem"
@@ -91,6 +92,8 @@ try:
     mysql_socket = config.get('agent', 'mysql-socket')          
     network_interface = config.get('agent', 'network-interface')          
     group_name = config.get('agent', 'group-name')          
+
+    group_name = config.get('agent', 'group-name')
 
 # TODO find public/private IP addresses 
     public_ip = None
@@ -152,9 +155,21 @@ try:
         if services.has_option(s, "role") :        
             states[services.get(s, "role")] = {'status':'Stopped', 'start-time':''}
 
+# TODO - for loop to see if there are running tensorflow  programs. Updates states to reflect situation.
 except Exception, e:
     logger.error("Exception while reading {0} file: {1}".format(SERVICES_FILE, e))
     sys.exit(1)     
+
+try:
+    tf_services = ConfigParser.ConfigParser()
+    tf_services.read(TF_SERVICES_FILE)
+    for s in services.sections():
+        if services.has_option(s, "id") :        
+            states[services.get(s, "id")] = {'status':'Free', 'start-time':''}
+except Exception, e:
+    logger.error("Exception while reading {0} file: {1}".format(TF_SERVICES_FILE, e))
+    sys.exit(1)     
+
 
 loggedIn = False
  
@@ -663,10 +678,25 @@ class Authentication():
 class SSLCherryPy(ServerAdapter):  
     def run(self, handler):  
         from cherrypy import wsgiserver  
+
+        cherrypy.config.update({
+        'environment': 'production',
+        'log.screen': False,
+        'log.access_file': "<%= node.kagent.base_dir %>/access.log",
+        'log.error_file': "<%= node.kagent.base_dir %>/error.log",
+        'server.socket_host': '0.0.0.0',
+        'server.socket_port': agent_restport,
+        'tools.caching.on': False,
+        'tools.encode.encoding': "utf-8",
+        'tools.json_in.on': True,
+        'tools.json_in.force': False,
+        })
+
         server = wsgiserver.CherryPyWSGIServer((self.host, self.port), handler)  
         # Certificate file. If a valid path, SSL will be used. Set to None to disable SSL  
         server.ssl_certificate = CERT_FILE
         server.ssl_private_key = KEY_FILE
+        # server.ssl_certificate_chain = 'ssl/bundle.crt'
         try:  
             server.start()  
         finally:  
@@ -704,6 +734,7 @@ if __name__ == '__main__':
         else:
             logger.info("Not watching {0}/{1}".format(cluster, service))        
                             
+
     server_names['sslcherrypy'] = SSLCherryPy  
     app = Bottle()
     @get('/ping')
@@ -858,15 +889,20 @@ if __name__ == '__main__':
                 return CommandHandler().execute(cluster, service, role, command, params);
         return CommandHandler().response(404, "Error")  
                 
-'''
-Tensorflow REST API.
-   Operations to allocate/free resources for Tensorflow programs.
-   Start/stop Tensorflow programs.
-   Serve/stop-serving Tensorflow models.
-'''
+    '''
+    Tensorflow REST API.
+    Operations to allocate/free resources for Tensorflow programs.
+    Start/stop Tensorflow programs.
+    Serve/stop-serving Tensorflow models.
+    '''
 
-    @post('/tf/alloc/<projuser/<cpus>/<gpus>')
+    @post('/tf/alloc/<projuser>/<cpus>/<gpus>')
     def tf_alloc(projuser, cpus, gpus):
+     # Extract the projectname, username
+     # Check if the directory exists, if not create it
+     # Check in state if there is 
+
+
         return HTTPResponse(status=400, output='Invalid command.')        
 
     @post('/tf/free/<projuser>/<allocation>')
@@ -885,19 +921,51 @@ Tensorflow REST API.
     def tf_poll(projuser):
         return HTTPResponse(status=400, output='Invalid command.')        
 
-    @post('/tf/startserving/<projuser>/<model>')
+
+    @post('/tf/uploadserver/<projuser>/<model>')
     def tf_start_serving(projuser,model):
+        try:
+            model_filename = request.POST.get('model')
+            for i in request.files.getlist('file'):
+                filepath = os.path.join('./models/uploaded',thisuser.data.get('model'))
+                fileobj = i.file
+                with open(filepath,"wb") as target_file:
+                    while True:
+                        datachunk = fileobj.read(1024)
+                        if not datachunk:
+                            break
+                    target_file.write(datachunk)
+
+        except:
+            print("error: " + sys.exc_info())
+
         return HTTPResponse(status=400, output='Invalid command.')        
 
+    @cherrypy.tools.accept(media='application/json')
+    @post('/tf/startserving/<projuser>/<modelfilename>/<args>')
+    def tf_start_serving(projuser,modelfilename,args):
+        try:
+            rawData = cherrypy.request.body.read(int(cherrypy.request.headers['Content-Length']))
+            b = json.loads(rawData)
+#            return json.dumps({'x': 4, 'c': b})
+
+            model_filename = request.POST.get('model')
+            args = request.POST.get('args')
+#            response.content_type = 'application/json'
+            return json.dumps(tfcase.search(searchterm,images_only))
+        except:
+            print("error: " + sys.exc_info())
+#        return json.dumps(tfcase.search(searchterm,images_only))
+        return HTTPResponse(status=400, output='Invalid command.')        
+
+
+    @cherrypy.tools.accept(media='text/plain')
     @get('/tf/stopserving/<projuser>/<model>')
     def tf_stop_serving(projuser,model):
         return HTTPResponse(status=400, output='Invalid command.')        
 
 
 
-
-
     logger.info("RESTful service started.")
     run(host='0.0.0.0', port=agent_restport, server='sslcherrypy')
-
 
