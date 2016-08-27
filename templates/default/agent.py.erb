@@ -626,7 +626,7 @@ class CommandHandler():
                 raise Exception("Not allowed execute command as user: {0}".format(as_user))
             if as_user:
                 command = "su - " + as_user + " -c \"" + command + "\""
-# TODO: shell=True is insecure when using untrused input
+# TODO: shell=True is insecure when using untrusted input
 # as an attacker can input "hdfs dfs -ls / ; rm -rf /"
             p = Popen(command , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             out, err = p.communicate()        
@@ -858,6 +858,44 @@ if __name__ == '__main__':
                 return CommandHandler().execute(cluster, service, role, command, params);
         return CommandHandler().response(404, "Error")  
                 
+'''
+Tensorflow REST API.
+   Operations to allocate/free resources for Tensorflow programs.
+   Start/stop Tensorflow programs.
+   Serve/stop-serving Tensorflow models.
+'''
+
+    @post('/tf/alloc/<projuser/<cpus>/<gpus>')
+    def tf_alloc(projuser, cpus, gpus):
+        return HTTPResponse(status=400, output='Invalid command.')        
+
+    @post('/tf/free/<projuser>/<allocation>')
+    def tf_free(projuser, allocation):
+        return HTTPResponse(status=400, output='Invalid command.')        
+
+    @post('/tf/runcpu/<projuser>/<pythonprog>/<args>')
+    def tf_run_cpu(projuser, pythonprog, args):
+        return HTTPResponse(status=400, output='Invalid command.')        
+
+    @post('/tf/rungpu/<projuser>/<pythonprog>/<args>')
+    def tf_run_gpu(projuser, pythonprog, args):
+        return HTTPResponse(status=400, output='Invalid command.')        
+
+    @post('/tf/poll/<projuser>')
+    def tf_poll(projuser):
+        return HTTPResponse(status=400, output='Invalid command.')        
+
+    @post('/tf/startserving/<projuser>/<model>')
+    def tf_start_serving(projuser,model):
+        return HTTPResponse(status=400, output='Invalid command.')        
+
+    @get('/tf/stopserving/<projuser>/<model>')
+    def tf_stop_serving(projuser,model):
+        return HTTPResponse(status=400, output='Invalid command.')        
+
+
+
+
 
     logger.info("RESTful service started.")
     run(host='0.0.0.0', port=agent_restport, server='sslcherrypy')
