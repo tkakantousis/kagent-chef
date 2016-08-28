@@ -66,6 +66,11 @@ CLIENT_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_client_truststore.jks"
 global states
 states = {}
 
+# tensorflow resources: gpu, cpus
+global tfstates
+tfstates = {}
+
+
 cores = multiprocessing.cpu_count()
 
 # reading config
@@ -160,18 +165,19 @@ except Exception, e:
     logger.error("Exception while reading {0} file: {1}".format(SERVICES_FILE, e))
     sys.exit(1)     
 
+
 try:
     tf_services = ConfigParser.ConfigParser()
     tf_services.read(TF_SERVICES_FILE)
     for s in services.sections():
-        if services.has_option(s, "id") :        
-            states[services.get(s, "id")] = {'status':'Free', 'start-time':''}
+        if (services.has_option(s, "resource") and services.has_option(s, "id") :        
+            tfstates[services.get(s, "resource")][services.get(s, "id")] = {'status':'Free', 'start-time':'', 'proj-user':'','pid-file':'', 'program':'', 'args':''}
 except Exception, e:
     logger.error("Exception while reading {0} file: {1}".format(TF_SERVICES_FILE, e))
     sys.exit(1)     
 
 
-loggedIn = False
+logged_in = False
  
 class Util():
     
@@ -208,21 +214,21 @@ class Heartbeat():
         json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
         form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
         payload = {}
-        global loggedIn
+        global logged_in
         global session
         try:
             session = requests.Session()
             resp = session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
 #            resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
             if not resp.status_code == HTTP_OK:
-                loggedIn = False
+                logged_in = False
                 logger.warn('Could not login agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
             else:
                 logger.info('Successful login of agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
-                loggedIn = True
+                logged_in = True
         except Exception as err:
             logger.warn('Could not login agent to Hopsworks {0}'.format(err))
-            loggedIn = False
+            logged_in = False
 
     @staticmethod
     def serviceKey(*keys):
@@ -233,9 +239,9 @@ class Heartbeat():
 
     @staticmethod
     def send():
-        global loggedIn
+        global logged_in
         global session
-        if not loggedIn:
+        if not logged_in:
            logger.info('Logging in to Hopsworks....')
            Heartbeat.login()
         else:
@@ -275,10 +281,10 @@ class Heartbeat():
                 resp = session.post(heartbeat_url, data=json.dumps(payload), headers=headers, verify=False)
                 if not resp.status_code == HTTP_OK:
                     raise Exception('Heartbeat could not be sent (Status code: {0})'.format(resp.status_code))
-                    loggedIn = False
+                    logged_in = False
             except Exception as err:
                 logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
-                loggedIn = False
+                logged_in = False
 
 
 class Alert:
@@ -659,19 +665,21 @@ class Authentication():
     def check(self):
         result = False
         try:
-            username = request.params['username']  
+#            username = request.params['username']  
             inPassword = request.params['password']  
-            if (username, inPassword) == (user, password):
+ #           if (username, inPassword) == (user, password):
+           if (inPassword == password):
                 return True
         except Exception:
             result = False
 
         if result == False:
-            logger.info("Authentication failed: Invalid username/password: {0}/{1}".format(username, password))
+#            logger.info("Authentication failed: Invalid username/password: {0}/{1}".format(username, password))
+            logger.info("Authentication failed: Invalid password: {0}".format(password))
         return result
     
     def failed(self):
-        return HTTPResponse(status=400, output="Invalid username/password")
+        return HTTPResponse(status=400, output="Invalid password")
 
 
 class SSLCherryPy(ServerAdapter):  
@@ -898,33 +906,51 @@ if __name__ == '__main__':
     Serve/stop-serving Tensorflow models.
     '''
 
-    @post('/tf/alloc/<projuser>/<cpuid:int>/<gpuid:int>')
-    def tf_alloc(projuser, cpus, gpus):
+    @post('/tf/alloc')
+    def tf_alloc():
      # Extract the projectname, username
      # Check if the directory exists, if not create it
      # Check in state if there is 
+        proj_user = request.json['proj-user']
+        resource = request.json['resource']
+        if (resource != "cpu" or resource != "gpu"):
+            return HTTPResponse(status=400, output='Invalid resource type requested. Valid types: cpu, gpu.')
+        id = int(request.json['id'])
 
+        if (password != request.json['password']):
+            return Authentication().failed()
 
         return HTTPResponse(status=400, output='Invalid command.')        
 
-    @post('/tf/free/<projuser>/<allocation>')
-    def tf_free(projuser, allocation):
+    @post('/tf/free/<projuser>')
+    def tf_free(projuser):
+        if (password != request.json['password']):
+            return Authentication().failed()
+
         return HTTPResponse(status=400, output='Invalid command.')        
 
     @post('/tf/runcpu/<projuser>/<pythonprog>/<args>')
     def tf_run_cpu(projuser, pythonprog, args):
+        if (password != request.json['password']):
+            return Authentication().failed()
         return HTTPResponse(status=400, output='Invalid command.')        
 
     @post('/tf/rungpu/<projuser>/<pythonprog>/<args>')
     def tf_run_gpu(projuser, pythonprog, args):
+        if (password != request.json['password']):
+            return Authentication().failed()
         return HTTPResponse(status=400, output='Invalid command.')        
 
     @post('/tf/poll/<projuser>')
     def tf_poll(projuser):
+        if (password != request.json['password']):
+            return Authentication().failed()
         return HTTPResponse(status=400, output='Invalid command.')        
 
     @post('/tf/uploadserver/<projuser>')
     def tf_start_serving(projuser):
+        if (password != request.json['password']):
+            return Authentication().failed()
         model = request.json
         try:
 #            model_filename = request.POST.get('model')
@@ -945,6 +971,8 @@ if __name__ == '__main__':
 
     @post('/tf/startserving/<projuser>/<modelfilename>/<args>')
     def tf_start_serving(projuser,modelfilename,args):
+        if (password != request.json['password']):
+            return Authentication().failed()
         try:
             rawData = cherrypy.request.body.read(int(cherrypy.request.headers['Content-Length']))
             b = json.loads(rawData)
@@ -959,8 +987,13 @@ if __name__ == '__main__':
         return HTTPResponse(status=400, output='Invalid command.')        
 
 
-    @get('/tf/stopserving/<projuser>/<model>')
-    def tf_stop_serving(projuser,model):
+    @get('/tf/stopserving')
+    def tf_stop_serving():
+        if (password != request.json['password']):
+            return Authentication().failed()
+        proj_user = request.json['projuser'];
+        model_name = request.json['model-name'];
+
         return HTTPResponse(status=400, output='Invalid command.')        
 
 
