@@ -358,7 +358,7 @@ class ExtProcess():  # external process
                 else:
                     raise Exception("Process is not running for {0}/{1}/{2}".format(cluster, service, role))
             except:  
-                logger.warn("Proccess.watch: Process is not running: {0}/{1}/{2}".format(cluster, service, role))
+                logger.info("Proccess.watch: Process is not running: {0}/{1}/{2}".format(cluster, service, role))
                 if (states[role]['status'] == 'Started'):
                     logger.info("Process failed: {0}/{1}/{2}".format(cluster, service, role))
                     Service().failed(cluster, service, role)
@@ -589,7 +589,6 @@ class CommandHandler():
 
     def read_agent_log(self, lines):
         try:
-            lines = int(lines)
             log = Util().tail(LOG_FILE, lines)
             return CommandHandler().response(200, log)
         
@@ -679,18 +678,18 @@ class SSLCherryPy(ServerAdapter):
     def run(self, handler):  
         from cherrypy import wsgiserver  
 
-        cherrypy.config.update({
-        'environment': 'production',
-        'log.screen': False,
-        'log.access_file': "<%= node.kagent.base_dir %>/access.log",
-        'log.error_file': "<%= node.kagent.base_dir %>/error.log",
-        'server.socket_host': '0.0.0.0',
-        'server.socket_port': agent_restport,
-        'tools.caching.on': False,
-        'tools.encode.encoding': "utf-8",
-        'tools.json_in.on': True,
-        'tools.json_in.force': False,
-        })
+        # cherrypy.config.update({
+        # 'environment': 'production',
+        # 'log.screen': False,
+        # 'log.access_file': "<%= node.kagent.base_dir %>/access.log",
+        # 'log.error_file': "<%= node.kagent.base_dir %>/error.log",
+        # 'server.socket_host': '0.0.0.0',
+        # 'server.socket_port': agent_restport,
+        # 'tools.caching.on': False,
+        # 'tools.encode.encoding': "utf-8",
+        # 'tools.json_in.on': True,
+        # 'tools.json_in.force': False,
+        # })
 
         server = wsgiserver.CherryPyWSGIServer((self.host, self.port), handler)  
         # Certificate file. If a valid path, SSL will be used. Set to None to disable SSL  
@@ -733,7 +732,10 @@ if __name__ == '__main__':
             my_thread.start()
         else:
             logger.info("Not watching {0}/{1}".format(cluster, service))        
-                            
+#
+# The REST code uses a CherryPy webserver, but Bottle for the REST endpoints
+# WSGI server for SSL
+# For a a tutorial on the REST code below, see http://bottlepy.org/docs/dev/tutorial.html
 
     server_names['sslcherrypy'] = SSLCherryPy  
     app = Bottle()
@@ -827,7 +829,7 @@ if __name__ == '__main__':
         return CommandHandler().read_log(cluster, service, None, lines);
 
 
-    @get('/agentlog/<lines>')
+    @get('/agentlog/<lines:int>')
     def agentlog(lines):
         logger.info('Incoming REST Request:  GET /agentlog/{0}'.format(lines))
         if not Authentication().check():
@@ -896,7 +898,7 @@ if __name__ == '__main__':
     Serve/stop-serving Tensorflow models.
     '''
 
-    @post('/tf/alloc/<projuser>/<cpus>/<gpus>')
+    @post('/tf/alloc/<projuser>/<cpuid:int>/<gpuid:int>')
     def tf_alloc(projuser, cpus, gpus):
      # Extract the projectname, username
      # Check if the directory exists, if not create it
@@ -921,11 +923,11 @@ if __name__ == '__main__':
     def tf_poll(projuser):
         return HTTPResponse(status=400, output='Invalid command.')        
 
-
-    @post('/tf/uploadserver/<projuser>/<model>')
-    def tf_start_serving(projuser,model):
+    @post('/tf/uploadserver/<projuser>')
+    def tf_start_serving(projuser):
+        model = request.json
         try:
-            model_filename = request.POST.get('model')
+#            model_filename = request.POST.get('model')
             for i in request.files.getlist('file'):
                 filepath = os.path.join('./models/uploaded',thisuser.data.get('model'))
                 fileobj = i.file
@@ -941,25 +943,22 @@ if __name__ == '__main__':
 
         return HTTPResponse(status=400, output='Invalid command.')        
 
-    @cherrypy.tools.accept(media='application/json')
     @post('/tf/startserving/<projuser>/<modelfilename>/<args>')
     def tf_start_serving(projuser,modelfilename,args):
         try:
             rawData = cherrypy.request.body.read(int(cherrypy.request.headers['Content-Length']))
             b = json.loads(rawData)
 #            return json.dumps({'x': 4, 'c': b})
-
+#            return {'x': 4, 'c': b}
             model_filename = request.POST.get('model')
             args = request.POST.get('args')
 #            response.content_type = 'application/json'
             return json.dumps(tfcase.search(searchterm,images_only))
         except:
             print("error: " + sys.exc_info())
-#        return json.dumps(tfcase.search(searchterm,images_only))
         return HTTPResponse(status=400, output='Invalid command.')        
 
 
-    @cherrypy.tools.accept(media='text/plain')
     @get('/tf/stopserving/<projuser>/<model>')
     def tf_stop_serving(projuser,model):
         return HTTPResponse(status=400, output='Invalid command.')        
