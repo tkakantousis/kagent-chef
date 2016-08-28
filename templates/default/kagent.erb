@@ -41,13 +41,18 @@ restart() {
 }
 
 status() {
-  echo "Executing as '<%= node[:kagent][:user] %>': $STOP_PROG"
   PID_FILE=<%= node[:kagent][:pid_file] %>
   if [ -e $PID_FILE ] ; then
      PID=`cat $PID_FILE`
-     kill -0 $PID
-     return $?
+     res=`kill -0 $PID`
+     if [ $res -eq 0 ] ; then
+       echo "kagent is running"
+     else
+       echo "kagent is not running"
+     fi
+     return $res
   fi
+  echo "kagent is not running"
   return 1
 }
 
