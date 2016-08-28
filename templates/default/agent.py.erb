@@ -170,8 +170,8 @@ try:
     tf_services = ConfigParser.ConfigParser()
     tf_services.read(TF_SERVICES_FILE)
     for s in services.sections():
-        if (services.has_option(s, "resource") and services.has_option(s, "id") :        
-            tfstates[services.get(s, "resource")][services.get(s, "id")] = {'status':'Free', 'start-time':'', 'proj-user':'','pid-file':'', 'program':'', 'args':''}
+        if (services.has_option(s, "resource") and services.has_option(s, "id")):        
+            tfstates[services.get(s, "resource")][services.get(s, "id")] = {'status':'free', 'start-time':'', 'proj-user':'','pid-file':'', 'program':'', 'args':''}
 except Exception, e:
     logger.error("Exception while reading {0} file: {1}".format(TF_SERVICES_FILE, e))
     sys.exit(1)     
@@ -665,16 +665,13 @@ class Authentication():
     def check(self):
         result = False
         try:
-#            username = request.params['username']  
             inPassword = request.params['password']  
- #           if (username, inPassword) == (user, password):
-           if (inPassword == password):
+            if (inPassword == password):
                 return True
         except Exception:
             result = False
 
         if result == False:
-#            logger.info("Authentication failed: Invalid username/password: {0}/{1}".format(username, password))
             logger.info("Authentication failed: Invalid password: {0}".format(password))
         return result
     
@@ -911,22 +908,40 @@ if __name__ == '__main__':
      # Extract the projectname, username
      # Check if the directory exists, if not create it
      # Check in state if there is 
+        if (password != request.json['password']):
+            return Authentication().failed()
+
         proj_user = request.json['proj-user']
         resource = request.json['resource']
         if (resource != "cpu" or resource != "gpu"):
             return HTTPResponse(status=400, output='Invalid resource type requested. Valid types: cpu, gpu.')
-        id = int(request.json['id'])
-
-        if (password != request.json['password']):
-            return Authentication().failed()
-
+        resource_id = int(request.json['id'])
+        if (tfstates[resource][resource_id]['status'] != 'free'):
+            return HTTPResponse(status=400, output='Resource is busy.')
+        now = long(time.mktime(datetime.now().timetuple()))
+        tfstates[resource][resource_id]['status'] = 'busy'
+        tfstates[resource][resource_id]['start-time'] = now
+        tfstates[resource][resource_id]['proj-user'] = proj_user
+        # Write to the tf_services file that i have updated the resource
         return HTTPResponse(status=400, output='Invalid command.')        
 
-    @post('/tf/free/<projuser>')
-    def tf_free(projuser):
+    @post('/tf/free')
+    def tf_free():
         if (password != request.json['password']):
             return Authentication().failed()
+        proj_user = request.json['proj-user']
+        resource = request.json['resource']
+        if (resource != "cpu" or resource != "gpu"):
+            return HTTPResponse(status=400, output='Invalid resource type requested. Valid types: cpu, gpu.')
+        resource_id = int(request.json['id'])
+        if (tfstates[resource][resource_id]['status'] != 'free'):
+            return HTTPResponse(status=400, output='Resource is busy.')
+        now = long(time.mktime(datetime.now().timetuple()))
+        tfstates[resource][resource_id]['status'] = 'busy'
+        tfstates[resource][resource_id]['start-time'] = now
+        tfstates[resource][resource_id]['proj-user'] = proj_user
 
+        # Write to the tf_services file that i have updated the resource
         return HTTPResponse(status=400, output='Invalid command.')        
 
     @post('/tf/runcpu/<projuser>/<pythonprog>/<args>')

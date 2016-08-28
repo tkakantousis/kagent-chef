@@ -29,7 +29,7 @@ action :add do
     'program' => "",
     'args' => "",
     'log' => "",
-    'status' => 'Free'
+    'status' => 'free'
   } 
   ini_file.save
 
