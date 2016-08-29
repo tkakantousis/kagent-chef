@@ -47,6 +47,7 @@ mysql_process = None
 var="~#@#@!#@!#!@#@!#"
 
 config_mutex = Lock()
+tf_mutex = Lock()
 
 HTTP_OK = 200
 
@@ -167,8 +168,8 @@ except Exception, e:
 
 
 try:
-    tf_services = ConfigParser.ConfigParser()
-    tf_services.read(TF_SERVICES_FILE)
+    resources = ConfigParser.ConfigParser()
+    resources.read(TF_SERVICES_FILE)
     for s in services.sections():
         if (services.has_option(s, "resource") and services.has_option(s, "id")):        
             tfstates[services.get(s, "resource")][services.get(s, "id")] = {'status':'free', 'start-time':'', 'proj-user':'','pid-file':'', 'program':'', 'args':''}
@@ -412,6 +413,51 @@ class Config():
             val = services.get(section, option)
         finally:
             config_mutex.release()
+        return val                
+
+
+class TfConfig(): 
+
+    def section_name(self, cluster, resource, id=None):
+        if id == None:
+            return "{0}-{1}".format(cluster, resource)
+        else:
+            return "{0}-{1}-{2}".format(cluster, resource, id)   
+        
+    # select items so that the key does not contain 'file' or 'script'
+    def read_all_for_heartbeat(self):
+        tf_mutex.acquire()       
+        resources_list = []     
+        try:
+            for s in resources.sections():
+                   item = {}
+                   item['status'] = Heartbeat.resourceKey(resources.get(s, "id"), 'status')
+                   resources_list.append(item)   
+                   for key, val in resources.items(s):
+                       if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
+                           item[key] = val
+                       resources_list.append(item)                
+        finally:
+            tf_mutex.release()
+        return resources_list
+        
+    def get_section(self, section):
+        tf_mutex.acquire()
+        items = {}
+        try:
+            for key, val in resources.items(section):
+                items[key] = val
+        finally:
+            tf_mutex.release()
+        return items
+    
+    def get(self, section, option):
+        tf_mutex.acquire()
+        val = ""
+        try:         
+            val = resources.get(section, option)
+        finally:
+            tf_mutex.release()
         return val                
 
      
@@ -906,8 +952,9 @@ if __name__ == '__main__':
     @post('/tf/alloc')
     def tf_alloc():
      # Extract the projectname, username
-     # Check if the directory exists, if not create it
-     # Check in state if there is 
+     # Extract the resource request (cpu or gpu). How many?
+     # Check tfstate to see if there is a free cpu or gpu
+     # Update tfstate, then write it to the file. Then return allocated response
         if (password != request.json['password']):
             return Authentication().failed()
 
@@ -922,7 +969,7 @@ if __name__ == '__main__':
         tfstates[resource][resource_id]['status'] = 'busy'
         tfstates[resource][resource_id]['start-time'] = now
         tfstates[resource][resource_id]['proj-user'] = proj_user
-        # Write to the tf_services file that i have updated the resource
+        # Write to the resources file that i have updated the resource
         return HTTPResponse(status=400, output='Invalid command.')        
 
     @post('/tf/free')
@@ -941,7 +988,7 @@ if __name__ == '__main__':
         tfstates[resource][resource_id]['start-time'] = now
         tfstates[resource][resource_id]['proj-user'] = proj_user
 
-        # Write to the tf_services file that i have updated the resource
+        # Write to the resources file that i have updated the resource
         return HTTPResponse(status=400, output='Invalid command.')        
 
     @post('/tf/runcpu/<projuser>/<pythonprog>/<args>')
