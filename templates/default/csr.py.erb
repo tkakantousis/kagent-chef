@@ -131,9 +131,9 @@ class Cert():
         req.get_subject().L = "Stockholm"
         req.get_subject().O = "HopsWorks"
         req.get_subject().OU = "KTH"
-
-        <% if node['hostname'].length > 63
-             hshort = node['hostname'].slice(0,63)
+        hshort = hostname
+        if hostname.length > 63
+             hshort = hostname.slice(0,63)
              validEndChar = False
              offset = 63
              begin 
@@ -143,10 +143,8 @@ class Cert():
                  end
                  offset -= 1
              end while validEndChar == false
-           else
-             hshort = node['hostname']
-        end -%>
-        req.get_subject().CN = <%= hshort %>
+        end
+        req.get_subject().CN = hshort
         req.set_pubkey(pkey)
         req.sign(pkey, 'sha256')
         csr = crypto.dump_certificate_request(crypto.FILETYPE_PEM, req)
