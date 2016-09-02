@@ -76,14 +76,14 @@ class Register():
 		payload = {}
                 payload["csr"] = csr
                 payload["agent-password"] = agent_password
-                payload["host-id"] = host_id            
+                payload["host-id"] = host_id
                 logger.info("Registering with HopsWorks...")
 		session = requests.Session()
 		session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
 		resp = session.post(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
 		if not resp.status_code == HTTP_OK:
                		raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0}).'.format(resp.status_code))
-                
+
                 # Loads (Load String) takes a Json file and converts into python data structure (dict or list, depending on JSON)
                 # jData = json.loads(myResponse.content)
                 jData = json.loads(resp.content)
@@ -115,7 +115,7 @@ class Cert():
     @staticmethod
     def existsKeystore():
         return exists(SERVER_KEYSTORE) and exists(SERVER_TRUSTSTORE) and exists(CLIENT_TRUSTSTORE)
-    
+
     @staticmethod
     def create_key_and_csr():
         """
@@ -131,11 +131,11 @@ class Cert():
         req.get_subject().L = "Stockholm"
         req.get_subject().O = "HopsWorks"
         req.get_subject().OU = "KTH"
-<% if hostname.length > 63 
-        hshort = hostname.slice(0,63)
-   else
-        hshort = hostname
-   end %>
+        <% if hostname.length > 16
+             hshort = hostname.slice(0,63)
+           else
+             hshort = hostname
+        end -%>
         req.get_subject().CN = <%= hshort %>
         req.set_pubkey(pkey)
         req.sign(pkey, 'sha256')
@@ -190,16 +190,16 @@ try:
         hostname = config.get("agent", "hostname")
     else:
         hostname = socket.gethostbyaddr(eth0_ip)[0]
-        
+
     if (config.has_option("agent", "host-id")):
         host_id = config.get("agent", "host-id")
     else:
         host_id = hostname
 
 
-    agent_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8))    
+    agent_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8))
     config.set('agent', 'password', agent_password)
-    with open(CONFIG_FILE, 'wb') as configfile: 
+    with open(CONFIG_FILE, 'wb') as configfile:
         config.write(configfile)
 
 # TODO find public/private IP addresses
