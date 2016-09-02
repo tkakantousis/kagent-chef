@@ -132,18 +132,15 @@ class Cert():
         req.get_subject().O = "HopsWorks"
         req.get_subject().OU = "KTH"
         hshort = hostname
-        if hostname.length > 63
-             hshort = hostname.slice(0,63)
-             validEndChar = False
-             offset = 63
-             begin 
-                 if hshort[offset].match(/^[[:alpha:]]$/)
-                     hshort = node['hostname'].slice(0,offset)
-                     validEndChar = True 
-                 end
-                 offset -= 1
-             end while validEndChar == false
-        end
+        if (len(hostname) > 63):
+            hshort = hostname[0:63]
+            validEndChar = False
+            offset = 63
+            while (validEndChar == false):
+                if (hshort[offset].isalnum()):
+                    hshort = hostname[0:offset]
+                    validEndChar = True
+                offset -= 1
         req.get_subject().CN = hshort
         req.set_pubkey(pkey)
         req.sign(pkey, 'sha256')
