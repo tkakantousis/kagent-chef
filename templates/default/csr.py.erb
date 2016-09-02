@@ -132,8 +132,17 @@ class Cert():
         req.get_subject().O = "HopsWorks"
         req.get_subject().OU = "KTH"
 
-        <% if node['hostname'].length > 16
-             hshort = node['hostname'].slice(0,15)
+        <% if node['hostname'].length > 63
+             hshort = node['hostname'].slice(0,63)
+             validEndChar = False
+             offset = 63
+             begin 
+                 if hshort[offset].match(/^[[:alpha:]]$/)
+                     hshort = node['hostname'].slice(0,offset)
+                     validEndChar = True 
+                 end
+                 offset -= 1
+             end while validEndChar == false
            else
              hshort = node['hostname']
         end -%>
