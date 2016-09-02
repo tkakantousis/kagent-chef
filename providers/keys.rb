@@ -15,7 +15,7 @@ action :csr do
   end
 
 
-  bash "cleanup old certificates" do
+  bash "chown-certificates" do
     user "root"
     code <<-EOH
       cd #{node[:kagent][:certs_dir]}
