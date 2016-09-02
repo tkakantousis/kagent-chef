@@ -19,6 +19,7 @@ depends 'hostsfile'
 depends 'ntp'
 
 recipe "kagent::default", "Installs and configures the Karamel agent"
+recipe "kagent::hops", "Installs and configures the Karamel agent for hops"
 recipe "kagent::purge", "Deletes the Karamel agent files"
 
 attribute "kagent/user",
