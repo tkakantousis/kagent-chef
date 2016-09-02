@@ -131,10 +131,10 @@ class Cert():
         req.get_subject().L = "Stockholm"
         req.get_subject().O = "HopsWorks"
         req.get_subject().OU = "KTH"
-        <% if hostname.length > 16
-             hshort = hostname.slice(0,63)
+        <% if node['hostname'].length > 16
+             hshort = node['hostname'].slice(0,63)
            else
-             hshort = hostname
+             hshort = node['hostname']
         end -%>
         req.get_subject().CN = <%= hshort %>
         req.set_pubkey(pkey)
