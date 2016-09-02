@@ -18,9 +18,11 @@ action :csr do
   bash "chown-certificates" do
     user "root"
     code <<-EOH
-      cd #{node[:kagent][:certs_dir]}
+      set -eo pipefail 
+      cd #{node.kagent.certs_dir}
       chown "root:#{node.kagent.certs_group}" .
       chown -R "root:#{node.kagent.certs_group}" node.kagent.keystore_dir
+      chown -R "root:#{node.kagent.certs_group}" keystores
       chown "root:#{node.kagent.group}" pub.pem ca_pub.pem priv.key
     EOH
   end
