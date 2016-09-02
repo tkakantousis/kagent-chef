@@ -7,6 +7,7 @@ action :csr do
     group node.kagent.group 
     code <<-EOF
       set -eo pipefail 
+      export PYTHON_EGG_CACHE=/tmp
       #{node.kagent.certs_dir}/csr.py
       touch #{signed}
   EOF
