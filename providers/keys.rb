@@ -3,16 +3,28 @@ action :csr do
   signed = "#{node.kagent.certs_dir}/.keystore_signed"
 
   bash "sign-local-csr-key" do
-    user "root"
+    user node.kagent.user
+    group node.kagent.group 
     code <<-EOF
       set -eo pipefail 
+      export PYTHON_EGG_CACHE=/tmp
       #{node.kagent.certs_dir}/csr.py
-      chown #{node.kagent.user}:#{node.kagent.group} #{node.kagent.base_dir}/csr.log
       touch #{signed}
   EOF
     not_if { ::File.exists?( "#{signed}" ) }
   end
-  
+
+
+  bash "chown-certificates" do
+    user "root"
+    code <<-EOH
+      set -eo pipefail 
+      cd #{node.kagent.certs_dir}
+      chown root:#{node.kagent.certs_group} .
+      chown -R root:#{node.kagent.certs_group} #{node.kagent.keystore_dir}
+      chown root:#{node.kagent.group} pub.pem ca_pub.pem priv.key
+    EOH
+  end
 
 end
 

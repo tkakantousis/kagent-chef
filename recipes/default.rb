@@ -144,6 +144,8 @@ if node.kagent.test == false
        action :csr
     end
 end
+
+
 execute "service kagent stop"
 execute "rm -f #{node.kagent.pid_file}"
 
