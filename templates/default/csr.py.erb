@@ -149,19 +149,14 @@ class Cert():
         req.get_subject().CN = hshort
         req.set_pubkey(pkey)
 
-
 ### For kafka fix
 
-# Appends SAN to have 'DNS:'
-        ss = []
-        fqdn = <%= node['fqdn'] %>
-        ss.append("DNS: %s" % fqdn)
-        base_constraints = ([crypto.X509Extension("keyUsage", False, "Digital Signature, Non Repudiation, Key Encipherment") ])
+
+        base_constraints = ([crypto.X509Extension("keyUsage", False, "Digital Signature, Non Repudiation, Key Encipherment")])
         x509_extensions = base_constraints
 # If there are SAN entries, append the base_constraints to include them.
-        if ss:
-            san_constraint = crypto.X509Extension("subjectAltName", False, ss)
-            x509_extensions.append(san_constraint)
+        san_constraint = crypto.X509Extension("subjectAltName", False, "DNS: %s" % hostname)
+        x509_extensions.append(san_constraint)
         req.add_extensions(x509_extensions)
 ### End Kafka
 
