@@ -79,5 +79,3 @@ node.normal.ntp.servers                    = ['0.europe.pool.ntp.org', '1.europe
 
 node.normal.ntp.peers                      = ['time0.int.example.org', 'time1.int.example.org']
 
-node.private_ips                           = ['10.0.2.15']
-node.public_ips                            = ['10.0.2.15']
