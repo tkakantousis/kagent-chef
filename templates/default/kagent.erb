@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Startup script for hop-agent
+# Startup script for kagent
 #
 ### BEGIN INIT INFO
 # Provides:                     kagent
@@ -14,32 +14,41 @@
 ### END INIT INFO
 
 # Variables
-START_PROG=<%= "#{node[:kagent][:base_dir]}/start-agent.sh" %>
-STOP_PROG=<%= "#{node[:kagent][:base_dir]}/stop-agent.sh" %>
-RESTART_PROG=<%= "#{node[:kagent][:base_dir]}/restart-agent.sh" %>
+START_PROG=<%= "#{node[:kagent][:base_dir]}/bin/start-agent.sh" %>
+STOP_PROG=<%= "#{node[:kagent][:base_dir]}/bin/stop-agent.sh" %>
+RESTART_PROG=<%= "#{node[:kagent][:base_dir]}/bin/restart-agent.sh" %>
 
 
-RETVAL=0
-
-EXEC_WITH_USER="su <%= node[:kagent][:run_as_user] %> -c"
+EXEC_WITH_USER="su <%= node[:kagent][:user] %> -c"
 
 
 start() {
-  echo "Executing as '<%= node[:kagent][:run_as_user] %>': $START_PROG"
+  echo "Executing as '<%= node[:kagent][:user] %>': $START_PROG"
   $EXEC_WITH_USER "$START_PROG"
   return $?
 }
 
 stop() {
-  echo "Executing as '<%= node[:kagent][:run_as_user] %>': $STOP_PROG"
+  echo "Executing as '<%= node[:kagent][:user] %>': $STOP_PROG"
   $EXEC_WITH_USER "$STOP_PROG"
   return $?
 }
 
 restart() {
-  echo "Executing as '<%= node[:kagent][:run_as_user] %>': $RESTART_PROG"
+  echo "Executing as '<%= node[:kagent][:user] %>': $RESTART_PROG"
   $EXEC_WITH_USER "$RESTART_PROG"
   return $?
+}
+
+status() {
+  echo "Executing as '<%= node[:kagent][:user] %>': $STOP_PROG"
+  PID_FILE=<%= node[:kagent][:pid_file] %>
+  if [ -e $PID_FILE ] ; then
+     PID=`cat $PID_FILE`
+     kill -0 $PID
+     return $?
+  fi
+  return 1
 }
 
 
@@ -53,6 +62,9 @@ case "$1" in
     ;;
   stop)
     stop
+    ;;
+  status)
+    status
     ;;
   restart)
     restart
@@ -72,4 +84,4 @@ case "$1" in
   esac
 
 
-exit $RETVAL
+exit $?

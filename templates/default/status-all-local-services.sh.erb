@@ -1,0 +1,61 @@
+#!/bin/bash
+
+#supress perl warnings
+export LC_CTYPE=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+status()
+{
+if [[ $services == *"$active"* ]] ; then
+ sudo service $active status 2>&1 > /dev/null
+ if [ $? -eq 0 ] ; then
+   echo -e "$active \e[32mrunning \e[0m"
+ else
+   echo -e "$active  \e[31mstopped \e[0m"
+ fi
+fi
+
+}
+
+
+# Check which services are installed on this server
+services=$(grep role <%= node.kagent.base_dir %>/services | perl -p -e "s/role = //g" | perl -p -e "s/\n/ /g") 2>&1 > /dev/null
+services="kagent $services glassfish-domain1"
+
+echo -e ""
+# Shut down the services in the correct order
+
+active="kagent"
+status
+active="historyserver"
+status
+active="sparkhistoryserver"
+status
+active="elasticsearch-hopsworks"
+status
+active="livy"
+status
+active="epipe"
+status
+active="zookeeper"
+status
+active="kafka"
+status
+active="drelephant"
+status
+active="namenode"
+status
+active="datanode"
+status
+active="resourcemanager"
+status
+active="nodemanager"
+status
+active="ndb_mgmd"
+status
+active="ndbmtd"
+status
+active="mysqld"
+status
+active="glassfish-domain1"
+status

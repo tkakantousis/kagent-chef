@@ -1,0 +1,66 @@
+#!/bin/bash
+
+#supress perl warnings
+export LC_CTYPE=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+start()
+{
+if [[ $services == *"$active"* ]] ; then
+ sudo /var/lib/kagent/bin/status-service.sh $active > /dev/null
+ if [ $? -ne 0 ] ; then
+   echo -e "Starting ${active} ...."
+   sudo service $active start 2>&1 > /dev/null
+   if [ $? -ne 0 ] ; then 
+     echo -e "\e[31mProblem starting $active \e[0m"
+   else
+     echo -e "Started \e[32m${active} \e[0m...."
+   fi
+ else
+   echo -e "$active was already \e[31mrunning \e[0m"
+ fi
+fi
+
+}
+
+# Check which services are installed on this server
+services=$(grep role <%= node.kagent.base_dir %>/services | perl -p -e "s/role = //g" | perl -p -e "s/\n/ /g") 2>&1 > /dev/null
+services="kagent $services glassfish-domain1"
+
+echo -e ""
+# Shut down the services in the correct order
+
+active="ndb_mgmd"
+start
+active="ndbmtd"
+start
+active="mysqld"
+start
+active="zookeeper"
+start
+active="kafka"
+start
+active="namenode"
+start
+active="datanode"
+start
+active="resourcemanager"
+start
+active="nodemanager"
+start
+active="glassfish-domain1"
+start
+active="historyserver"
+start
+active="sparkhistoryserver"
+start
+active="elasticsearch-hopsworks"
+start
+active="livy"
+start
+active="epipe"
+start
+active="drelephant"
+start
+active="kagent"
+start

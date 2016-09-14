@@ -27,6 +27,9 @@ import netifaces
 from IPy import IP
 import logging
 import subprocess
+import string
+import random
+
 
 try:
     import http.client as http_client
@@ -40,7 +43,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 requests_log = logging.getLogger("requests.packages.urllib3")
 requests_log.setLevel(logging.DEBUG)
 requests_log.propagate = True
-
+retries = 20
 
 class Util():
 
@@ -53,6 +56,7 @@ class Util():
                 'DEBUG' : logging.DEBUG,
                 'CRITICAL': logging.CRITICAL,
                 }.get(level, logging.NOTSET)
+
 
 class Register():
 
@@ -71,13 +75,15 @@ class Register():
         	form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
 		payload = {}
                 payload["csr"] = csr
+                payload["agent-password"] = agent_password
+                payload["host-id"] = host_id
                 logger.info("Registering with HopsWorks...")
 		session = requests.Session()
 		session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
-		resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
+		resp = session.post(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
 		if not resp.status_code == HTTP_OK:
                		raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0}).'.format(resp.status_code))
-                
+
                 # Loads (Load String) takes a Json file and converts into python data structure (dict or list, depending on JSON)
                 # jData = json.loads(myResponse.content)
                 jData = json.loads(resp.content)
@@ -109,7 +115,7 @@ class Cert():
     @staticmethod
     def existsKeystore():
         return exists(SERVER_KEYSTORE) and exists(SERVER_TRUSTSTORE) and exists(CLIENT_TRUSTSTORE)
-    
+
     @staticmethod
     def create_key_and_csr():
         """
@@ -125,7 +131,17 @@ class Cert():
         req.get_subject().L = "Stockholm"
         req.get_subject().O = "HopsWorks"
         req.get_subject().OU = "KTH"
-        req.get_subject().CN = hostname
+        hshort = hostname
+        if (len(hostname) > 63):
+            hshort = hostname[0:63]
+            validEndChar = False
+            offset = 63
+            while (validEndChar == false):
+                if (hshort[offset].isalnum()):
+                    hshort = hostname[0:offset]
+                    validEndChar = True
+                offset -= 1
+        req.get_subject().CN = hshort
         req.set_pubkey(pkey)
         req.sign(pkey, 'sha256')
         csr = crypto.dump_certificate_request(crypto.FILETYPE_PEM, req)
@@ -150,11 +166,11 @@ config_mutex = Lock()
 
 HTTP_OK = 200
 
-CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config-csr.ini"
+CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config.ini"
 LOG_FILE = "<%= node[:kagent][:base_dir] %>/csr.log"
-CERT_FILE = "<%= node[:kagent][:base_dir] %>/pub.pem"
-CA_FILE = "<%= node[:kagent][:base_dir] %>/ca_pub.pem"
-KEY_FILE = "<%= node[:kagent][:base_dir] %>/priv.key"
+CERT_FILE = "<%= node[:kagent][:certs_dir] %>/pub.pem"
+CA_FILE = "<%= node[:kagent][:certs_dir] %>/ca_pub.pem"
+KEY_FILE = "<%= node[:kagent][:certs_dir] %>/priv.key"
 SERVER_KEYSTORE = "<%= node.kagent.keystore_dir %>/node_server_keystore.jks"
 SERVER_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_server_truststore.jks"
 CLIENT_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_client_truststore.jks"
@@ -175,6 +191,21 @@ try:
     agent_pidfile = config.get('agent', 'pid-file')
     network_interface = config.get('agent', 'network-interface')
 
+    if (config.has_option("agent", "hostname")):
+        hostname = config.get("agent", "hostname")
+    else:
+        hostname = socket.gethostbyaddr(eth0_ip)[0]
+
+    if (config.has_option("agent", "host-id")):
+        host_id = config.get("agent", "host-id")
+    else:
+        host_id = hostname
+
+
+    agent_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8))
+    config.set('agent', 'password', agent_password)
+    with open(CONFIG_FILE, 'wb') as configfile:
+        config.write(configfile)
 
 # TODO find public/private IP addresses
     public_ip = None

@@ -4,7 +4,7 @@
 Created on 6 October 2013
 
 @author: Hamidreza Afzali <afzali@kth.se>
-@author: Jim Dowlin <jdowling@kth.se>
+@author: Jim Dowling <jdowling@kth.se>
 
 Install:
  requests:    easy_install requests
@@ -23,6 +23,7 @@ from datetime import datetime
 import multiprocessing
 import thread
 from threading import Lock
+import threading
 import subprocess
 from subprocess import Popen
 import os
@@ -49,11 +50,21 @@ config_mutex = Lock()
 
 HTTP_OK = 200
 
+BIN_DIR = "<%= node[:kagent][:base_dir] %>/bin"
 CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config.ini"
 SERVICES_FILE = "<%= node[:kagent][:base_dir] %>/services"
 LOG_FILE = "<%= node[:kagent][:base_dir] %>/agent.log"
-CERT_FILE = "<%= node[:kagent][:base_dir] %>/hop.pem"
-KEY_FILE = "<%= node[:kagent][:base_dir] %>/hop.key"
+
+CERT_FILE = "<%= node[:kagent][:certs_dir] %>/pub.pem"
+CA_FILE = "<%= node[:kagent][:certs_dir] %>/ca_pub.pem"
+KEY_FILE = "<%= node[:kagent][:certs_dir] %>/priv.key"
+SERVER_KEYSTORE = "<%= node.kagent.keystore_dir %>/node_server_keystore.jks"
+SERVER_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_server_truststore.jks"
+CLIENT_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_client_truststore.jks"
+
+global states
+states = {}
+
 cores = multiprocessing.cpu_count()
 
 # reading config
@@ -61,6 +72,7 @@ try:
     config = ConfigParser.ConfigParser()
     config.read(CONFIG_FILE)
     server_url = config.get('server', 'url')
+    login_url = server_url + config.get('server', 'path-login')
     register_url = server_url + config.get('server', 'path-register')
     heartbeat_url = server_url + config.get('server', 'path-heartbeat')
     alert_url = server_url + config.get('server', 'path-alert')
@@ -121,8 +133,7 @@ logger.addHandler(logger_file_handler)
 logger.addHandler(logger_stream_handler)
 logger.setLevel(logging.INFO)
 
-logger.info("HOPS-Agent started.")
-logger.info("Register URL: {0}".format(register_url))
+logger.info("Hops-Kagent started.")
 logger.info("Heartbeat URL: {0}".format(heartbeat_url))
 logger.info("Alert URL: {0}".format(alert_url))
 logger.info("Host Id: {0}".format(host_id))
@@ -130,22 +141,25 @@ logger.info("Hostname: {0}".format(hostname))
 logger.info("Public IP: {0}".format(public_ip))
 logger.info("Private IP: {0}".format(private_ip))
 
+verbose=False
+
 # reading services
 try:
     services = ConfigParser.ConfigParser()
     services.read(SERVICES_FILE)
-    logger.info("Services: {0}".format(services.sections()))
+
+    for s in services.sections():
+        if services.has_option(s, "role") :        
+            states[services.get(s, "role")] = {'status':'Stopped', 'start-time':''}
+
 except Exception, e:
     logger.error("Exception while reading {0} file: {1}".format(SERVICES_FILE, e))
     sys.exit(1)     
+
+loggedIn = False
  
 class Util():
     
-    def read_pid(self, pid_file):
-        with open(pid_file, 'r') as f:
-            pid = str(f.readline()).strip()
-            return pid
-
     def logging_level(self, level):
         return {
                 'INFO': logging.INFO,
@@ -166,44 +180,6 @@ class Util():
         return log
 
 
-class Register():
-    def __init__(self, csr, key):
-        while True:
-            cert = Register.register(csr, key)
-            if cert != None:
-                Cert.store(cert, key) 
-                break
-            time.sleep(heartbeat_interval)
-        
-    @staticmethod
-    def register(csr, key):
-            try:     
-                disk_info = DiskInfo() 
-                memory_info = MemoryInfo()                
-                headers = {'content-type': 'application/json'}
-                payload = {}
-                payload["csr"] = csr
-                payload["hostname"] = hostname
-                payload["host-id"] = host_id
-                if (public_ip != None):
-                    payload["public-ip"] = public_ip                      
-                if (private_ip != None):
-                    payload["private-ip"] = private_ip 
-                payload["cores"] = cores
-                payload["disk-capacity"] = disk_info.capacity    
-                payload['memory-capacity'] = memory_info.total                            
-                logger.info("Registering with the dashboard...")
-                auth = (server_username, server_password)
-                resp = requests.put(register_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)
-                if not resp.status_code == HTTP_OK:
-                    raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0}).'.format(resp.status_code))
-                cert = resp.content               
-                logger.info("Registered successfully.")                
-                return cert
-            except Exception as err:
-                logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
-                return None 
-        
 class Heartbeat():
     daemon_threads = True 
     def __init__(self):
@@ -211,8 +187,43 @@ class Heartbeat():
             Heartbeat.send()
             time.sleep(heartbeat_interval) 
 
+
+    @staticmethod
+    def login():
+        json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
+        form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
+        payload = {}
+        global loggedIn
+        global session
+        try:
+            session = requests.Session()
+            resp = session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
+#            resp = session.put(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
+            if not resp.status_code == HTTP_OK:
+                loggedIn = False
+                logger.warn('Could not login agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
+            else:
+                logger.info('Successful login of agent to Hopsworks (Status code: {0}).'.format(resp.status_code))
+                loggedIn = True
+        except Exception as err:
+            logger.warn('Could not login agent to Hopsworks {0}'.format(err))
+            loggedIn = False
+
+    @staticmethod
+    def serviceKey(*keys):
+            ob = states
+            for key in keys:
+                ob = ob[key]
+            return ob
+
     @staticmethod
     def send():
+        global loggedIn
+        global session
+        if not loggedIn:
+           logger.info('Logging in to Hopsworks....')
+           Heartbeat.login()
+        else:
             try:
                 disk_info = DiskInfo() 
                 memory_info = MemoryInfo()
@@ -222,7 +233,7 @@ class Heartbeat():
                 headers = {'content-type': 'application/json'}
                 payload = {}
                 payload["host-id"] = host_id            
-                payload["agent-time"] = str(now)
+                payload["agent-time"] = now
                 payload["load1"] = load_info.load1
                 payload["load5"] = load_info.load5
                 payload["load15"] = load_info.load15
@@ -230,31 +241,48 @@ class Heartbeat():
                 payload['memory-used'] = memory_info.used - memory_info.cached - memory_info.buffers
                 payload["services"] = services_list            
                 payload["group-name"] = group_name
+                payload["hostname"] = hostname
+
+                if (public_ip != None):
+                    payload["public-ip"] = public_ip                      
+                else:
+                    payload["public-ip"] = ""
+
+                if (private_ip != None):
+                    payload["private-ip"] = private_ip 
+                else:
+                    payload["private-ip"] = ""
+
+                payload["cores"] = cores
+                payload["disk-capacity"] = disk_info.capacity    
+                payload['memory-capacity'] = memory_info.total                            
                 logger.info("Sending heartbeat...")
-                auth = (server_username, server_password)     
-                resp = requests.put(heartbeat_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)
+                resp = session.post(heartbeat_url, data=json.dumps(payload), headers=headers, verify=False)
                 if not resp.status_code == HTTP_OK:
                     raise Exception('Heartbeat could not be sent (Status code: {0})'.format(resp.status_code))
+                    loggedIn = False
             except Exception as err:
                 logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
+                loggedIn = False
 
 
 class Alert:
     @staticmethod    
     def send(cluster, service, role, time, status):
+        global session
         try:
             headers = {'content-type': 'application/json'}
             payload = {}
             payload["Provider"] = "Agent"            
-            payload["Host"] = hostname
-            payload["Time"] = str(time)
+            payload["host-id"] = host_id
+            payload["Time"] = time
             payload["Plugin"] = "Monitoring"
             payload["Type"] = "Role"
             payload["TypeInstance"] = "{0}/{1}/{2}".format(cluster, service, role)
             payload["DataSource"] = "Agent"
             payload["CurrentValue"] = status
             if status == True:
-                payload["Severity"] = "OKAY"
+                payload["Severity"] = "OK"
                 payload["Message"] = "Role is running: {0}/{1}/{2}".format(cluster, service, role)
             else:
                 payload["Severity"] = "FAILURE"
@@ -262,6 +290,8 @@ class Alert:
             
             logger.info("Sending Alert...")
             auth = (server_username, server_password)
+#            session = requests.Session()
+#            session.post(alert_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)        
             requests.post(alert_url, data=json.dumps(payload), headers=headers, auth=auth, verify=False)        
         except:
             logger.error("Cannot access the REST service for alerts. Alert not sent.")
@@ -300,40 +330,24 @@ class LoadInfo(object):
         
 
 class ExtProcess():  # external process
-    @staticmethod
-    def is_running(pid):
-        pid = int(pid)
-        try:
-            os.kill(pid, 0)
-        except OSError, e:
-            return False
-        else:
-            return True
         
     @staticmethod        
     def watch(cluster, service, role):
         while True:
             try:
                 section = Config().section_name(cluster, service, role)
-                pid_file = Config().get(section, "pid-file")
-                pid = Util().read_pid(pid_file)
-                
-                if ExtProcess.is_running(pid) == True:
-                    if not Config().get(section, 'status') == 'Started':
-                        logger.info("Process started: {0}/{1}/{2} pid={3}".format(cluster, service, role, pid))
-                        Service().started(cluster, service, role, pid)
-                    if not Config().get(section, 'pid') == pid:
-                        Config().edit(section, {'pid': pid}, {})
+                if Service().alive(cluster,service,role) == True:
+                     if (states[role]['status'] == 'Stopped'):
+                       logger.info("Process started: {0}/{1}/{2}".format(cluster, service, role))
+                       Service().started(cluster, service, role)
                 else:
-                    raise Exception("Process {0} is not running for {1}/{2}/{3}".format(pid, cluster, service, role))
-            except :  # raised if cannot read pid file (IOError), or manually, if pid is not running
+                    raise Exception("Process is not running for {0}/{1}/{2}".format(cluster, service, role))
+            except:  
                 logger.warn("Proccess.watch: Process is not running: {0}/{1}/{2}".format(cluster, service, role))
-                if Config().get(section, 'status') == 'Started':
+                if (states[role]['status'] == 'Started'):
                     logger.info("Process failed: {0}/{1}/{2}".format(cluster, service, role))
                     Service().failed(cluster, service, role)
-            finally:                    
-                sleep(watch_interval)
-                  
+            sleep(watch_interval)
 
 class Config(): 
 
@@ -345,80 +359,43 @@ class Config():
         
     # select items so that the key does not contain 'file' or 'script'
     def read_all_for_heartbeat(self):
-        services_list = []
-        config_mutex.acquire()            
+        config_mutex.acquire()       
+        services_list = []     
         try:
             for s in services.sections():
-                if services.has_option(s, "role") :
-                    item = {}
-                    for key, val in services.items(s):
-                        if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
-                            item[key] = val
-                    services_list.append(item)                
+                   item = {}
+                   item['status'] = Heartbeat.serviceKey(services.get(s, "role"), 'status')
+                   services_list.append(item)   
+                   for key, val in services.items(s):
+                       if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
+                           item[key] = val
+                       services_list.append(item)                
         finally:
             config_mutex.release()
-            return services_list
+        return services_list
         
     def get_section(self, section):
-        items = {}
         config_mutex.acquire()
+        items = {}
         try:
             for key, val in services.items(section):
                 items[key] = val
         finally:
             config_mutex.release()
-            return items
+        return items
     
-    def add(self, section, options):
-        config_mutex.acquire()
-        try:
-            services.add_section(section)
-            for k, v in options.iteritems():
-                services.set(section, k, v)
-            services.write(open(SERVICES_FILE, 'w'))      
-        finally:
-            config_mutex.release()  
- 
-    def remove(self, section):
-        config_mutex.acquire()
-        try:
-            services.remove_section(section)
-            services.write(open(SERVICES_FILE, 'w'))
-        finally:
-            config_mutex.release()   
-               
-    def edit(self, section, options_to_set, options_to_remove):
-        config_mutex.acquire()
-        try:
-            for k, v in options_to_set.iteritems():
-                services.set(section, k, v)
-            for k in options_to_remove:
-                services.remove_option(section, k)               
-            services.write(open(SERVICES_FILE, 'w'))      
-        finally:
-            config_mutex.release()
-
     def get(self, section, option):
-        val = ""
         config_mutex.acquire()
+        val = ""
         try:         
             val = services.get(section, option)
         finally:
             config_mutex.release()
-            return val                
+        return val                
 
      
 class Service:
     
-    def add(self, cluster, service, role):
-        options = Config().makeConfigOptions(cluster, service, role)
-        section = Config().section_name(cluster, service, role)
-        Config().add(section, options)    
-
-    def remove(self, cluster, service, role):
-        section = Config().section_name(cluster, service, role)
-        Config().remove(section)
-
     # need to be completed. Set the status to Initialize?
     def init(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
@@ -436,55 +413,76 @@ class Service:
 
             
     def start(self, cluster, service, role):
-        section = Config().section_name(cluster, service, role)
-        script = Config().get(section, "start-script")
+        script = BIN_DIR + "/start-service.sh"
         try:
-            p = Popen(script, shell=True, close_fds=True)
-            p.wait()
-            returncode = p.returncode
+            p = Popen(['sudo',script,role],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (output,err)=p.communicate()
+            returncode = p.wait()
+            logger.info("{0}".format(output))
             if not returncode == 0:
                 raise Exception("Start script returned a none-zero value")
-            try:
-                pid = Util().read_pid(Config().get(section, "pid-file"))
-            except:
-                pid = None
-            Service().started(cluster, service, role, pid)
-            return pid
+            Service().started(cluster, service, role)
+            # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
+            sleep(heartbeat_interval+1)
+            return True
         except Exception as err:
             logger.error(err)
             return False
         
     def stop(self, cluster, service, role):
-        section = Config().section_name(cluster, service, role)
-        script = Config().get(section, "stop-script")
+        script = BIN_DIR + "/stop-service.sh"
         try:
-            subprocess.check_call(script)  # raises exception if not returncode == 0
-            now = str(long(time.mktime(datetime.now().timetuple())))
-            options_to_set = {'status':'Stopped', 'stop-time':now}
-            options_to_remove = ['pid']
-            Config().edit(section, options_to_set, options_to_remove)
+            subprocess.check_call(['sudo', script, role], close_fds=True)  # raises exception if not returncode == 0
+            now = long(time.mktime(datetime.now().timetuple()))
+            states[role] = {'status':'Stopped', 'stop-time':now}
+            # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
+            Service().failed(cluster, service, role)
+            sleep(heartbeat_interval+1)
             return True
         except Exception as err:
             logger.error(err)
             return False
 
+    def restart(self, cluster, service, role):
+        script = BIN_DIR + "/restart-service.sh"
+        try:
+            p = Popen(['sudo',script,role], close_fds=True)
+            p.wait()
+            returncode = p.returncode
+            if not returncode == 0:
+                raise Exception("Restart script returned a none-zero value")
+            Service().started(cluster, service, role)
+            # wait for the alert to get returned to Hopsworks, before returning (as this will cause a correct refresh of the service's status)
+            sleep(heartbeat_interval)
+            return True
+        except Exception as err:
+            logger.error(err)
+            return False
+
+    def alive(self, cluster, service, role):
+        script = BIN_DIR + "/status-service.sh"
+        try:
+            p = Popen(['sudo',script,role], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            if (verbose == True):
+                with p.stdout:
+                    for line in iter(p.stdout.readline, b''):
+                        logger.info("{0}".format(line))
+            p.wait()
+            if not p.returncode == 0:
+                return False
+        except Exception as err:
+            logger.error(err)
+            return False
+        return True
+
     def failed(self, cluster, service, role):
-        section = Config().section_name(cluster, service, role)
-        now = str(long(time.mktime(datetime.now().timetuple())))
-        options_to_set = {'status':'Stopped', 'stop-time':now}
-        options_to_remove = ['pid']
-        Config().edit(section, options_to_set, options_to_remove)
+        now = long(time.mktime(datetime.now().timetuple()))
+        states[role] = {'status':'Stopped', 'start-time':now}
         Alert.send(cluster, service, role, now, False)
 
-    def started(self, cluster, service, role, pid):
-        section = Config().section_name(cluster, service, role)
-        now = str(long(time.mktime(datetime.now().timetuple())))
-        options_to_add = {'status':'Started', 'start-time':now}
-        if not pid == None:
-            options_to_add['pid'] = pid
-            
-        options_to_remove = ['stop-time']
-        Config().edit(section, options_to_add, options_to_remove)
+    def started(self, cluster, service, role):
+        now = long(time.mktime(datetime.now().timetuple()))
+        states[role] = {'status':'Started', 'start-time':now}
         Alert.send(cluster, service, role, now, True)
 
 
@@ -508,7 +506,7 @@ class MySQLConnector():
     
 class CommandHandler():
 
-    def respose(self, code, msg):
+    def response(self, code, msg):
         resp = HTTPResponse(status=code, output=msg)
         logger.info("{0}".format(resp))
         return resp
@@ -516,40 +514,48 @@ class CommandHandler():
     def init(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
-            return CommandHandler().respose(400, 'Role not installed.')
+            return CommandHandler().response(400, 'Role not installed.')
         else:
             if Service().init(cluster, service, role) == True:
-                return CommandHandler().respose(200, 'Role initialized.')
+                return CommandHandler().response(200, 'Role initialized.')
             else:
-                return CommandHandler().respose(400, 'Error: Cannot initialize the service.')
+                return CommandHandler().response(400, 'Error: Cannot initialize the service.')
     
     def start(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
-            return CommandHandler().respose(400, 'Role not installed.')
-        elif services.get(section, 'status') == 'Started':
-            return CommandHandler().respose(400, 'Role already started.')
+            return CommandHandler().response(400, 'Role not installed.')
+        elif states[role]['status'] == 'Started':
+            return CommandHandler().response(400, 'Role already started.')
         else:
             res = Service().start(cluster, service, role)
             if res == False:
-                return CommandHandler().respose(400, 'Error: Cannot start the service.')
+                return CommandHandler().response(400, 'Error: Cannot start the service.')
             else:
-                payload = {}
-                payload['pid'] = str(res)
-                payload['msg'] = 'Role started.'
-                return CommandHandler().respose(200, json.dumps(payload))
+                return CommandHandler().response(200, "Role started.")
 
     def stop(self, cluster, service, role):
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
-            return CommandHandler().respose(400, 'Role not installed.')
-        elif not services.get(section, 'status') == 'Started':
-            return CommandHandler().respose(400, 'Role is not running.')
+            return CommandHandler().response(400, 'Role not installed.')
+        elif not states[role]['status'] == 'Started':
+            return CommandHandler().response(400, 'Role is not running.')
         else:
             if Service().stop(cluster, service, role) == True:
-                return CommandHandler().respose(200, 'Role stopped.')
+                return CommandHandler().response(200, 'Role stopped.')
             else:
-                return CommandHandler().respose(400, 'Error: Cannot stop the service.')
+                return CommandHandler().response(400, 'Error: Cannot stop the service.')
+
+    def restart(self, cluster, service, role):
+        section = Config().section_name(cluster, service, role)
+        if not services.has_section(section):
+            return CommandHandler().response(400, 'Role not installed.')
+        else:
+            res = Service().restart(cluster, service, role)
+            if res == False:
+                return CommandHandler().response(400, 'Error: Cannot restart the service.')
+            else:
+                return CommandHandler().response(200, "Role started.")
 
     def read_log(self, cluster, service, role, lines):
         try:
@@ -560,21 +566,21 @@ class CommandHandler():
                 section = Config().section_name(cluster, service, role)                
             log_file_name = Config().get(section, "stdout-file")
             log = Util().tail(log_file_name, lines)
-            return CommandHandler().respose(200, log)
+            return CommandHandler().response(200, log)
         
         except Exception as err:
             logger.error(err)
-            return CommandHandler().respose(400, "Cannot read file.")
+            return CommandHandler().response(400, "Cannot read file.")
 
     def read_agent_log(self, lines):
         try:
             lines = int(lines)
             log = Util().tail(LOG_FILE, lines)
-            return CommandHandler().respose(200, log)
+            return CommandHandler().response(200, log)
         
         except Exception as err:
             logger.error(err)
-            return CommandHandler().respose(400, "Cannot read file.")
+            return CommandHandler().response(400, "Cannot read file.")
 
     def read_config(self, cluster, service, role):
         try:
@@ -582,26 +588,25 @@ class CommandHandler():
             config_file_name = Config().get(section, "config-file")
             with open(config_file_name) as config_file:
                 conf = "".join(str(x) for x in (list(config_file)))
-            
-            return CommandHandler().respose(200, conf)
+            return CommandHandler().response(200, conf)
         
         except Exception as err:
             logger.error(err)
-            return CommandHandler().respose(400, "Cannot read file.")
+            return CommandHandler().response(400, "Cannot read file.")
 
     def info(self, cluster, service, role):
         try:
             section = Config().section_name(cluster, service, role)
             resp = json.dumps(Config().get_section(section))
-            return CommandHandler().respose(200, resp)
+            return CommandHandler().response(200, resp)
         
         except Exception as err:
             logger.error(err)
-            return CommandHandler().respose(400, "Cannot read file.")
+            return CommandHandler().response(400, "Cannot read file.")
 
     def read_ndbinfo(self, table):
         res = MySQLConnector.read_ndbinfo(table)
-        return CommandHandler().respose(200, res)
+        return CommandHandler().response(200, res)
                 
     def execute(self, cluster, service, role, command, params):
         try:
@@ -625,15 +630,15 @@ class CommandHandler():
 # as an attacker can input "hdfs dfs -ls / ; rm -rf /"
             p = Popen(command , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             out, err = p.communicate()        
-            return CommandHandler().respose(200, out)
+            return CommandHandler().response(200, out)
         
         except Exception as err:
             logger.error(err)
-            return CommandHandler().respose(400, "Could not execute.")                
+            return CommandHandler().response(400, "Could not execute.")                
                 
     def refresh(self):
         Heartbeat.send(False);
-        return CommandHandler().respose(200, "OK")
+        return CommandHandler().response(200, "OK")
 
 
 class Authentication():
@@ -641,8 +646,8 @@ class Authentication():
         result = False
         try:
             username = request.params['username']  
-            password = request.params['password']  
-            if (username, password) == (user, password):
+            inPassword = request.params['password']  
+            if (username, inPassword) == (user, password):
                 return True
         except Exception:
             result = False
@@ -653,51 +658,6 @@ class Authentication():
     
     def failed(self):
         return HTTPResponse(status=400, output="Invalid username/password")
-
-
-class Cert():
-    @staticmethod
-    def get_dir():
-        return os.path.dirname(os.path.abspath(__file__)) 
-    
-    @staticmethod
-    def exist():
-        cert_dir = Cert.get_dir() 
-        return exists(join(cert_dir, CERT_FILE)) and exists(join(cert_dir, KEY_FILE)) 
-    
-    @staticmethod    
-    def create_key_and_csr():
-        """
-        Create key-pair and certificate sign request (CSR)
-        """    
-        # create a key pair
-        pkey = crypto.PKey()
-        pkey.generate_key(crypto.TYPE_RSA, 2048)
-        # create certificate sign request
-        req = crypto.X509Req()    
-        req.get_subject().C = "SE"
-        req.get_subject().ST = "Sweden"
-        req.get_subject().L = "Stockholm"
-        req.get_subject().O = "HopsWorks"
-        req.get_subject().OU = "KTH"
-        req.get_subject().CN = hostname
-        req.set_pubkey(pkey)
-        req.sign(pkey, 'sha256')
-        csr = crypto.dump_certificate_request(crypto.FILETYPE_PEM, req)
-        private_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey)
-        return csr, private_key  
-
-    @staticmethod
-    def store(cert, key):
-        """
-        Write certificate and private key in current directory
-        """           
-        cert_dir = Cert.get_dir() 
-        with open(join(cert_dir, CERT_FILE), "wt") as f:
-            f.write(cert)
-        with open(join(cert_dir, KEY_FILE), "wt") as f:
-            f.write(key)
-        logger.info("Writing Cert/Key pair to {0}/{1}.".format(CERT_FILE, KEY_FILE))
 
 
 class SSLCherryPy(ServerAdapter):  
@@ -714,35 +674,42 @@ class SSLCherryPy(ServerAdapter):
 
 if __name__ == '__main__':
     
+    if len(sys.argv) > 1:
+        if (sys.argv[1] == "-v" or sys.argv[1] == "-verbose" or sys.argv[1] == "--verbose"):
+            verbose=True
+        else:
+            print "usage: <prog> [-v|-verbose]"
+            sys.exit()
+
     agent_pid = str(os.getpid())
     file(agent_pidfile, 'w').write(agent_pid)
-    logger.info("HOPS-Agent PID: {0}".format(agent_pid))
+    logger.info("Hops Kagent PID: {0}".format(agent_pid))
     logger.setLevel(Util().logging_level(logging_level))
-        
-    if not Cert.exist():    
-        (csr, key) = Cert.create_key_and_csr()
-        Register(csr=csr, key=key) # Registering with the dashboard
-    else:
-        logger.info('Certificate files exist. Already registered. Skipping registration phase.')
-        
+
     # Heartbeat, process watch (alerts) and REST API are available after the agent registers successfully 
-    thread.start_new_thread(Heartbeat, ()) 
-        
+#    thread.start_new_thread(Heartbeat, ()) 
+    hb_thread = threading.Thread(target=Heartbeat, args=())
+    hb_thread.setDaemon(True)
+    hb_thread.start()
+
     for s in services.sections():
         cluster = Config().get(s, "cluster")
         service = Config().get(s, "service")       
         if services.has_option(s, "role"):
             role = Config().get(s, "role")             
-            thread.start_new_thread(ExtProcess.watch, (cluster, service, role,))
+#            thread.start_new_thread(ExtProcess.watch, (cluster, service, role))
+            my_thread = threading.Thread(target=ExtProcess.watch, args=(cluster, service, role))
+            my_thread.setDaemon(True)
+            my_thread.start()
         else:
-            logger.info("Not watching {0}/{1}".format(cluster, service))
+            logger.info("Not watching {0}/{1}".format(cluster, service))        
                             
     server_names['sslcherrypy'] = SSLCherryPy  
     app = Bottle()
     @get('/ping')
     def ping():
         logger.info('Incoming REST Request:  GET /ping')       
-        return "HOPS-Agent: Pong"
+        return "Hops-Agent: Pong"
         
     @get('/do/<cluster>/<service>/<role>/<command>')
     def do(cluster, service, role, command):
@@ -772,6 +739,38 @@ if __name__ == '__main__':
         else:
             return HTTPResponse(status=400, output='Invalid command.')        
 
+    @get('/restartRole/<cluster>/<service>/<role>')
+    def restartRole(cluster, service, role):
+        logger.info('Incoming REST Request:  GET /restartRole/{0}/{1}'.format(cluster, service, role))
+        if not Authentication().check():
+            return Authentication().failed()
+        
+        if not services.has_section(Config().section_name(cluster, service, role)):
+            return HTTPResponse(status=400, output='Cluster/Service/Role not available.')
+
+        return CommandHandler().restart(cluster, service, role);
+
+    @get('/startRole/<cluster>/<service>/<role>')
+    def startRole(cluster, service, role):
+        logger.info('Incoming REST Request:  GET /startRole/{0}/{1}'.format(cluster, service, role))
+        if not Authentication().check():
+            return Authentication().failed()
+        
+        if not services.has_section(Config().section_name(cluster, service, role)):
+            return HTTPResponse(status=400, output='Cluster/Service/Role not available.')
+
+        return CommandHandler().start(cluster, service, role);
+
+    @get('/stopRole/<cluster>/<service>/<role>')
+    def stopRole(cluster, service, role):
+        logger.info('Incoming REST Request:  GET /stopRole/{0}/{1}/{2}'.format(cluster, service, role))
+        if not Authentication().check():
+            return Authentication().failed()
+        
+        if not services.has_section(Config().section_name(cluster, service, role)):
+            return HTTPResponse(status=400, output='Cluster/Service/Role not available.')
+
+        return CommandHandler().stop(cluster, service, role);
 
     @get('/log/<cluster>/<service>/<role>/<lines>')
     def log(cluster, service, role, lines):
@@ -857,7 +856,7 @@ if __name__ == '__main__':
                 return CommandHandler().execute(cluster, service, None, command, params);
             else:       
                 return CommandHandler().execute(cluster, service, role, command, params);
-        return CommandHandler().respose(404, "Error")  
+        return CommandHandler().response(404, "Error")  
                 
 
     logger.info("RESTful service started.")

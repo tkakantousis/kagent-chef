@@ -23,9 +23,11 @@ if node.systemd == "true"
 
   template systemd_script do
     source "#{service_name}.service.erb"
-    owner node.kagent.run_as_user
-    group node.kagent.run_as_user
+    owner node.kagent.user
+    group node.kagent.group
     mode 0650
+    notifies :enable, "service[#{service_name}]"
+    notifies :restart, "service[#{service_name}]", :delayed
   end
 
   link "/etc/systemd/system/#{service_name}.service" do
@@ -44,49 +46,21 @@ else # sysv
 
   template "/etc/init.d/#{service_name}" do
     source "#{service_name}.erb"
-    owner node.kagent.run_as_user
-    group node.kagent.run_as_user
+    owner node.kagent.user
+    group node.kagent.group
     mode 0650
     notifies :enable, "service[#{service_name}]"
-    notifies :start, "service[#{service_name}]"
+    notifies :restart, "service[#{service_name}]", :delayed
   end
 
 end
 
 
-
-template "#{node.kagent.base_dir}/agent.py" do
-  source "agent.py.erb"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
-  mode 0655
-end
-
-
-['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'].each do |script|
-  Chef::Log.info "Installing #{script}"
-  template "#{node.kagent.base_dir}/#{script}" do
-    source "#{script}.erb"
-    owner node.kagent.run_as_user
-    group node.kagent.run_as_user
-    mode 0655
-  end
-end 
-
-['services'].each do |conf|
-  Chef::Log.info "Installing #{conf}"
-  template "#{node.kagent.base_dir}/#{conf}" do
-    source "#{conf}.erb"
-    owner node.kagent.run_as_user
-    group node.kagent.run_as_user
-    mode 0644
-  end
-end
 
 private_ip = my_private_ip()
 public_ip = my_public_ip()
 
-dashboard_endpoint = "10.0.2.15:8080"
+dashboard_endpoint = "10.0.2.15"  + ":" + node.kagent.dashboard.port 
 
 if node.attribute? "hopsworks"
   begin
@@ -109,10 +83,50 @@ if network_if == ""
   end
 end
 
+
+template "#{node.kagent.base_dir}/bin/start-all-local-services.sh" do
+  source "start-all-local-services.sh.erb"
+  owner node.kagent.user
+  group node.kagent.group
+  mode 0740
+end
+
+template "#{node.kagent.base_dir}/bin/shutdown-all-local-services.sh" do
+  source "shutdown-all-local-services.sh.erb"
+  owner node.kagent.user
+  group node.kagent.group
+  mode 0740
+end
+
+template "#{node.kagent.base_dir}/bin/status-all-local-services.sh" do
+  source "status-all-local-services.sh.erb"
+  owner node.kagent.user
+  group node.kagent.group
+  mode 0740
+end
+
+
+#
+# Certificate Signing code - Needs Hopsworks dashboard
+#
+
+
+template "#{node.kagent.base_dir}/keystore.sh" do
+  source "keystore.sh.erb"
+  owner node.kagent.user
+  group node.kagent.group
+  mode 0700
+   variables({
+              :directory => node.kagent.keystore_dir,
+              :keystorepass => node.hopsworks.master.password 
+            })
+end
+
+
 template "#{node.kagent.base_dir}/config.ini" do
   source "config.ini.erb"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
+  owner node.kagent.user
+  group node.kagent.group
   mode 0600
   variables({
               :rest_url => "http://#{dashboard_endpoint}/#{node.kagent.dashboard_app}",
@@ -122,12 +136,17 @@ template "#{node.kagent.base_dir}/config.ini" do
               :network_if => network_if
             })
   notifies :enable, "service[#{service_name}]"
-  notifies :start, "service[#{service_name}]"
+  notifies :restart, "service[#{service_name}]", :delayed
 end
 
-kagent_kagent "restart-kagent" do
-  action :restart
+kagent_keys "sign-certs" do
+ action :csr
 end
+
+
+
+execute "service kagent stop"
+execute "rm -f #{node.kagent.pid_file}"
 
 case node.platform_family
 when "rhel"
@@ -157,50 +176,3 @@ if node.kagent.allow_ssh_access == 'true'
     end
   end
 end
-
-
-
-#
-# Certificate Signing code - Needs Hopsworks dashboard
-#
-
-
-template"#{node.kagent.base_dir}/csr.py" do
-  source "csr.py.erb"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
-  mode 0655
-end
-
-template "#{node.kagent.base_dir}/config-csr.ini" do
-  source "config-csr.ini.erb"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
-  mode 0600
-  variables({
-              :rest_url => "http://#{dashboard_endpoint}/#{node.kagent.dashboard_app}",
-              :public_ip => public_ip,
-              :private_ip => private_ip,
-              :network_if => network_if,
-              :login => node.kagent.dashboard.api.login,
-              :register => node.kagent.dashboard.api.register,
-              :username => node.kagent.dashboard.user,
-              :password => node.kagent.dashboard.password 
-            })
-end
-
-template "#{node.kagent.base_dir}/keystore.sh" do
-  source "keystore.sh.erb"
-  owner node.kagent.run_as_user
-  group node.kagent.run_as_user
-  mode 0700
-   variables({
-              :directory => node.kagent.keystore_dir,
-              :keystorepass => node.hopsworks.master.password 
-            })
-end
-
-kagent_keys "sign-certs" do
- action :csr
-end
-

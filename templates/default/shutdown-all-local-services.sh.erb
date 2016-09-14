@@ -1,0 +1,87 @@
+#!/bin/bash
+
+really_stop() 
+{
+  echo -n "Do you really want to shutdown all the Hops services running on this server? (y/n) "
+  read ACCEPT
+  case $ACCEPT in
+   y | Y)
+      ;;
+   n | N)
+      exit 1
+      ;;
+    *)
+      echo ""
+      echo "Please enter 'y' or 'n'." 
+      really_stop
+      ;;
+   esac
+}
+really_stop
+
+#supress perl warnings
+export LC_CTYPE=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+stop()
+{
+if [[ $services == *"$active"* ]] ; then
+ sudo /var/lib/kagent/bin/status-service.sh $active > /dev/null
+ if [ $? -eq 0 ] ; then
+   echo -e "Stopping ${active} ...."
+   sudo service $active stop
+   if [ $? -ne 0 ] ; then 
+     echo -e "\e[31mProblem stopping $active \e[0m"
+   else 
+     echo -e "\e[32mStopped $active \e[0m"
+   fi
+ else
+   echo -e "$active was already \e[31mstopped \e[0m"
+ fi
+fi
+
+}
+
+
+# Check which services are installed on this server
+services=$(grep role <%= node.kagent.base_dir %>/services | perl -p -e "s/role = //g" | perl -p -e "s/\n/ /g") 2>&1 > /dev/null
+services="kagent $services glassfish-domain1"
+
+echo -e ""
+
+# Shut down the services in the correct order
+
+active="kagent"
+stop
+active="historyserver"
+stop
+active="sparkhistoryserver"
+stop
+active="elasticsearch-hopsworks"
+stop
+active="livy"
+stop
+active="epipe"
+stop
+active="zookeeper"
+stop
+active="kafka"
+stop
+active="drelephant"
+stop
+active="namenode"
+stop
+active="datanode"
+stop
+active="resourcemanager"
+stop
+active="nodemanager"
+stop
+active="ndb_mgmd"
+stop
+active="ndbmtd"
+stop
+active="mysqld"
+stop
+active="glassfish-domain1"
+stop
