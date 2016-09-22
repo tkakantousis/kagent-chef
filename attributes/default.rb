@@ -1,4 +1,3 @@
-
 # Default values for configuration parameters
 default.kagent.version                     = "0.1.0"
 default.kagent.user                        = "kagent"
@@ -33,7 +32,6 @@ default.hopsworks.master.password          = "adminpw"
 default.kagent.certificate_file            = "server.pem"
 
 # dashboard ip:port endpoint
-# default.kagent.dashboard.port         = ""
 default.kagent.dashboard.ip                = "10.0.2.15"
 default.kagent.dashboard.port              = "8080"  
 default.kagent.dashboard_app               = "hopsworks"
@@ -62,8 +60,12 @@ default.kagent.cluster                     = "Hops"
 
 default.kagent.hostid                      = 100
 
-default.kagent.keystore_dir                = node.kagent.certs_dir + "/keystores"
+default.kagent.hostname                    =
 
+default.kagent.keystore_dir 		   = node.kagent.base_dir + "/keystores"
+
+default.public_ips                         = ['10.0.2.15']
+default.private_ips                        = ['10.0.2.15']
 default.kagent.allow_ssh_access            = "false"
 
 node.default.download_url                  = "http://193.10.67.171/hops"

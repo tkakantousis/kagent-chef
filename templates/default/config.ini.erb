@@ -19,7 +19,7 @@ username = <%= node[:kagent][:rest_api][:user] %>
 public-ip = <%= @public_ip %>
 private-ip = <%= @private_ip %>
 mysql-socket = <%= node[:ndb][:mysql_socket] %>
-hostname = <%= node['hostname'] %>
+hostname = <%= @hostname %>
 network-interface = <%= @network_if %>
 group-name = <%= node[:kagent][:group_name] %>
 

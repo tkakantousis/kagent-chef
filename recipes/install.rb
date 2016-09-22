@@ -11,6 +11,11 @@ when "debian"
    apt-get install libssl-dev -y
  EOF
   end
+
+#  package "python-openssl" eo
+#  action :install
+#  end
+
 when "rhel"
 # gcc, gcc-c++, kernel-devel are the equivalent of "build-essential" from apt.
   package "gcc" do
@@ -35,7 +40,6 @@ include_recipe "poise-python"
 # The openssl::upgrade recipe doesn't install openssl-dev/libssl-dev, needed by python-ssl
 # Now using packages in ubuntu/centos.
 #include_recipe "openssl::upgrade"
-
 
 group node.kagent.group do
   action :create

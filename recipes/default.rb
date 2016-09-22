@@ -1,5 +1,14 @@
 service_name = "kagent"
 
+bash "install_python_openssl_module" do
+  user "root"
+  code <<-EOF
+     pip install pyopenssl
+   EOF
+end
+
+
+
 case node.platform
 when "ubuntu"
  if node.platform_version.to_f <= 14.04
@@ -122,6 +131,12 @@ template "#{node.kagent.base_dir}/keystore.sh" do
             })
 end
 
+# Default to hostname found in /etc/hosts, but allow user to override it.
+hostname = node['hostname']
+if node.kagent.attribute?("hostname") then
+ hostname = node.kagent.hostname
+end
+
 
 template "#{node.kagent.base_dir}/config.ini" do
   source "config.ini.erb"
@@ -133,6 +148,7 @@ template "#{node.kagent.base_dir}/config.ini" do
               :rack => '/default',
               :public_ip => public_ip,
               :private_ip => private_ip,
+              :hostname => hostname,
               :network_if => network_if
             })
   notifies :enable, "service[#{service_name}]"
