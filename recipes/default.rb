@@ -1,5 +1,14 @@
 service_name = "kagent"
 
+bash "install_python_openssl_module" do
+  user "root"
+  code <<-EOF
+     pip install pyopenssl
+   EOF
+end
+
+
+
 case node.platform
 when "ubuntu"
  if node.platform_version.to_f <= 14.04
