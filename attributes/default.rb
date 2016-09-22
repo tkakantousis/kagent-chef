@@ -57,6 +57,8 @@ default.kagent.cluster                     = "Hops"
 
 default.kagent.hostid                      = 100
 
+default.kagent.hostname                    =
+
 default.kagent.keystore_dir 		   = node.kagent.base_dir + "/keystores"
 
 default.public_ips                         = ['10.0.2.15']
