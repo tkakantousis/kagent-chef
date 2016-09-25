@@ -85,6 +85,6 @@ node.normal.ntp.peers                      = ['time0.int.example.org', 'time1.in
 
 
 node.default.tf.cpu_ids                    = ['']
-node.default.tf.gpu_devices                = ['']
+node.default.tf.gpu_ids                    = ['']
 
 default.kagent.test                        = false

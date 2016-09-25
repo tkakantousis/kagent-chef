@@ -17,8 +17,27 @@ really_stop()
       ;;
    esac
 }
-really_stop
 
+if [ $# -gt 1 ] ; then
+  echo "Invalid parameters $@."
+  echo "Usage: $0 [-f]"
+  exit 1
+fi
+
+if [ $# -eq 1 ] ; then
+    if [ "$1" != "-h" || "$1" == "-help" ] ; then
+	echo "Usage: $0 [-f]"
+	exit 1
+    fi
+    if [ "$1" != "-f" ] ; then
+	echo "Invalid parameter: $1."
+	echo "Usage: $0 [-f]"
+	exit 1
+    fi
+else 
+  really_stop
+fi
+    
 #supress perl warnings
 export LC_CTYPE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
