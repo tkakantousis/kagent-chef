@@ -386,10 +386,12 @@ node.tf.cpu_ids.each do |cpu|
 end
 
 id=0
-node.tf.gpu_devices.each do |gpu|
+
+node.tf.gpu_ids.each do |gpu|
   kagent_tf id do
     resource "gpu" 
   end
   id+=1
 end
+
 
