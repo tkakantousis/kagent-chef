@@ -17,6 +17,7 @@ depends 'openssl'
 depends 'sudo'
 depends 'hostsfile'
 depends 'ntp'
+depends 'poise-python'
 
 recipe "kagent::default", "Installs and configures the Karamel agent"
 recipe "kagent::hops", "Installs and configures the Karamel agent for hops"

@@ -62,7 +62,7 @@ default.kagent.hostid                      = 100
 
 default.kagent.hostname                    =
 
-default.kagent.keystore_dir 		   = node.kagent.base_dir + "/keystores"
+default.kagent.keystore_dir 		   = node.kagent.certs_dir + "/keystores"
 
 default.public_ips                         = ['10.0.2.15']
 default.private_ips                        = ['10.0.2.15']
