@@ -250,6 +250,38 @@ directory "#{node.kagent.base_dir}/bin" do
   recursive true
 end
 
+directory "#{node.kagent.base_dir}/tf" do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+  recursive true
+end
+
+directory "#{node.kagent.base_dir}/tf/projects" do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+  recursive true
+end
+
+directory "#{node.kagent.base_dir}/tf/run" do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+  recursive true
+end
+
+directory "#{node.kagent.base_dir}/tf/log" do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+  recursive true
+end
+
 
 directory node.kagent.keystore_dir do
   owner node.kagent.user
@@ -266,28 +298,11 @@ file node.default.kagent.services do
   action :create_if_missing
 end
 
-# set_my_hostname
-if node.vagrant === "true" || node.vagrant == true 
-    my_ip = my_private_ip()
-  case node.platform_family
-  when "debian"
-    hostsfile_entry "#{my_ip}" do
-      hostname  node.fqdn
-      action    :create
-      unique    true
-    end
-    hostsfile_entry "#{my_ip}" do
-      hostname  node.hostname
-      action    :create
-      unique    true
-    end
-  when "rhel"
-    hostsfile_entry "#{my_ip}" do
-      hostname  "default-centos-70.vagrantup.com"
-      unique    true
-    end
-  end
-
+file node.default.tf.services do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create_if_missing
 end
 
 
@@ -360,3 +375,23 @@ template "/etc/sudoers.d/kagent" do
               })
   action :create
 end  
+
+
+id=0
+node.tf.cpu_ids.each do |cpu|
+  kagent_tf id do
+    resource "cpu" 
+  end
+  id+=1
+end
+
+id=0
+
+node.tf.gpu_ids.each do |gpu|
+  kagent_tf id do
+    resource "gpu" 
+  end
+  id+=1
+end
+
+

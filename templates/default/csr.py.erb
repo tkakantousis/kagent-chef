@@ -131,6 +131,11 @@ class Cert():
         req.get_subject().L = "Stockholm"
         req.get_subject().O = "HopsWorks"
         req.get_subject().OU = "KTH"
+
+#
+# The CN should be the FQDN of the server
+#
+#        hshort = <%= node['fqdn'] %>
         hshort = hostname
         if (len(hostname) > 63):
             hshort = hostname[0:63]
@@ -143,6 +148,18 @@ class Cert():
                 offset -= 1
         req.get_subject().CN = hshort
         req.set_pubkey(pkey)
+
+### For kafka fix
+
+
+        base_constraints = ([crypto.X509Extension("keyUsage", False, "Digital Signature, Non Repudiation, Key Encipherment")])
+        x509_extensions = base_constraints
+# If there are SAN entries, append the base_constraints to include them.
+        san_constraint = crypto.X509Extension("subjectAltName", False, "DNS: %s" % hostname)
+        x509_extensions.append(san_constraint)
+        req.add_extensions(x509_extensions)
+### End Kafka
+
         req.sign(pkey, 'sha256')
         csr = crypto.dump_certificate_request(crypto.FILETYPE_PEM, req)
         private_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey)

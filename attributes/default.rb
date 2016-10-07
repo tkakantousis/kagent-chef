@@ -51,7 +51,10 @@ default.kagent[:default][:public_ips]      = ['10.0.2.15']
 default.kagent[:default][:private_ips]     = ['10.0.2.15']
 
 # services file contains locally installed services
+
 default.kagent.services                    = node.kagent.base_dir + "/services"
+default.tf.services                        = node.kagent.base_dir + "/tf_services"
+
 # name of cluster as shown in Dashboard
 default.kagent.cluster                     = "Hops"
 
@@ -59,7 +62,7 @@ default.kagent.hostid                      = 100
 
 default.kagent.hostname                    =
 
-default.kagent.keystore_dir 		   = node.kagent.base_dir + "/keystores"
+default.kagent.keystore_dir 		   = node.kagent.certs_dir + "/keystores"
 
 default.public_ips                         = ['10.0.2.15']
 default.private_ips                        = ['10.0.2.15']
@@ -73,7 +76,6 @@ node.default.ndb.mysql_port                = "3306"
 
 node.default.vagrant                       = "false"
 
-
 node.default.ntp.install                   = "false"
 # Servers to sync ntp time with
 # '0.pool.ntp.org', '1.pool.ntp.org'
@@ -81,3 +83,8 @@ node.normal.ntp.servers                    = ['0.europe.pool.ntp.org', '1.europe
 
 node.normal.ntp.peers                      = ['time0.int.example.org', 'time1.int.example.org']
 
+
+node.default.tf.cpu_ids                    = ['']
+node.default.tf.gpu_ids                    = ['']
+
+default.kagent.test                        = false
