@@ -194,26 +194,3 @@ if node.kagent.allow_ssh_access == 'true'
   end
 end
 
-# set_my_hostname
-if node.vagrant === "true" || node.vagrant == true 
-    my_ip = my_private_ip()
-  case node.platform_family
-  when "debian"
-    hostsfile_entry "#{my_ip}" do
-      hostname  node.fqdn
-      action    :create
-      unique    true
-    end
-    hostsfile_entry "#{my_ip}" do
-      hostname  node.hostname
-      action    :create
-      unique    true
-    end
-  when "rhel"
-    hostsfile_entry "#{my_ip}" do
-      hostname  "default-centos-70.vagrantup.com"
-      unique    true
-    end
-  end
-
-end
