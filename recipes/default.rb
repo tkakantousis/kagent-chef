@@ -1,12 +1,19 @@
 service_name = "kagent"
 
-bash "install_python_openssl_module" do
-  user "root"
-  code <<-EOF
-     pip install pyopenssl
-   EOF
-end
+case node.platform_family
+when "rhel"
+     package "pyOpenSSL" do
+      action :install
+     end
+     package "python-netifaces" do
+      action :install
+     end
 
+when "debian"
+     package "python-openssl" do
+      action :install
+     end
+end
 
 
 case node.platform
