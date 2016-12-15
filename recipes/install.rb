@@ -5,10 +5,10 @@ when "debian"
   bash "apt_update_install_build_tools" do
     user "root"
     code <<-EOF
-   apt-get update -y
-#   DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
-   apt-get install build-essential -y
-   apt-get install libssl-dev -y
+   apt-get update -y 
+   apt-get -f upgrade -y 
+   apt-get install build-essential -y 
+   apt-get install libssl-dev -y 
  EOF
   end
 
