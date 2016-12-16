@@ -31,9 +31,9 @@ if node.systemd == "true"
   end
 
 
-  kagent_config  do
-    action :systemd_reload
-  end
+  # kagent_config  do
+  #   action :systemd_reload
+  # end
 
   case node.platform_family
   when "rhel"
@@ -65,9 +65,9 @@ else # sysv
     action :nothing
   end
 
-  kagent_config  do
-    action :systemd_reload
-  end
+  # kagent_config  do
+  #   action :systemd_reload
+  # end
 
   template "/etc/init.d/#{service_name}" do
     source "#{service_name}.erb"
