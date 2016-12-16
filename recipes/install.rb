@@ -6,7 +6,7 @@ when "debian"
     user "root"
     code <<-EOF
    apt-get update -y 
-   apt-get -f upgrade -y 
+#   apt-get -f upgrade -y 
    apt-get install build-essential -y 
    apt-get install libssl-dev -y 
  EOF
