@@ -30,6 +30,11 @@ if node.systemd == "true"
     action :nothing
   end
 
+
+  kagent_config  do
+    action :systemd_reload
+  end
+
   case node.platform_family
   when "rhel"
     systemd_script = "/usr/lib/systemd/system/#{service_name}.service" 
@@ -58,6 +63,10 @@ else # sysv
     provider Chef::Provider::Service::Init::Debian
     supports :restart => true, :start => true, :stop => true, :enable => true
     action :nothing
+  end
+
+  kagent_config  do
+    action :systemd_reload
   end
 
   template "/etc/init.d/#{service_name}" do
