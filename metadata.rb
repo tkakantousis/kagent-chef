@@ -35,6 +35,10 @@ attribute "kagent/dashboard/port",
           :description => " Port for Dashboard REST API",
           :type => 'string'
 
+attribute "kagent/enabled",
+          :description => "Kagent enabled: default 'true'. Set to 'false' to disable it.",
+          :type => 'string'
+
 attribute "hop/hostid",
           :description => " One-time password used when registering the host",
           :type => 'string'
