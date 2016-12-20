@@ -420,7 +420,7 @@ if node.vagrant === "true" || node.vagrant == true
 #  case node.platform_family
 #  when "debian"
 
-    kagent[:default][:private_ips].each_with_index do |ip, index| 
+    node[:kagent][:default][:private_ips].each_with_index do |ip, index| 
       hostsfile_entry "#{ip}" do
         hostname  "dn#{index}"
         action    :create
