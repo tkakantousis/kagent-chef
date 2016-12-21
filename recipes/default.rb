@@ -47,7 +47,9 @@ if node.systemd == "true"
     owner node.kagent.user
     group node.kagent.group
     mode 0650
-    notifies :enable, "service[#{service_name}]"
+if node.services.enabled == "true"
+    notifies :enable, resources(:service => service_name)
+end
     notifies :restart, "service[#{service_name}]", :delayed
   end
 
@@ -74,7 +76,9 @@ else # sysv
     owner node.kagent.user
     group node.kagent.group
     mode 0650
-    notifies :enable, "service[#{service_name}]"
+if node.services.enabled == "true"
+    notifies :enable, resources(:service => service_name)
+end
     notifies :restart, "service[#{service_name}]", :delayed
   end
 
