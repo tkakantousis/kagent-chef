@@ -87,3 +87,7 @@ attribute "ntp/install",
           :description => "Install Network Time Protocol (default: false)",
           :type => "string"
 
+attribute "services/enabled",
+          :description => "Default 'false'. Set to 'true' to enable daemon services, so that they are started on a host restart.",
+          :type => "string"
+
