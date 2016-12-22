@@ -230,6 +230,15 @@ gem_package "inifile" do
   action :install
 end
 
+directory node.kagent.dir  do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+  recursive true
+  not_if { File.directory?("#{node.kagent.dir}") }
+end
+
 directory node.kagent.home do
   owner node.kagent.user
   group node.kagent.group
