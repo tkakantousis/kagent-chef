@@ -752,6 +752,23 @@ class SSLCherryPy(ServerAdapter):
         finally:  
             server.stop()
 
+class PythonDependency:
+
+    @staticmethod    
+    def exec(self, project, package, op):
+        script = BIN_DIR + "/pythondependency.sh"
+        try:
+            p = Popen(['sudo', script, project, op, package],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (output,err)=p.communicate()
+            returncode = p.wait()
+            logger.info("{0}".format(output))
+            if not returncode == 0:
+                raise Exception("Add/remove python dependency returned a none-zero value")
+            return True
+        except Exception as err:
+            logger.error(err)
+            return False
+
 if __name__ == '__main__':
     
     if len(sys.argv) > 1:
@@ -1058,6 +1075,20 @@ if __name__ == '__main__':
 
         return HTTPResponse(status=400, output='Invalid command.')        
 
+
+    @get('/python/virtualenv/<proj>/<package>/<op>')
+    def python_dependency():
+        if (password != request.json['password']):
+            return Authentication().failed()
+        project = request.json['project'];
+        package = request.json['package'];
+        # 'add' or 'rm'
+        op = request.json['op'];
+        if (PythonDependency.exec(project, package, op)):
+            resp = HTTPResponse(status=HTTP_OK, output="Python dependency updated successfully.")
+            logger.info("{0}".format(resp))
+            return resp
+        return CommandHandler().response(404, "Error")  
 
 
     logger.info("RESTful service started.")

@@ -437,3 +437,25 @@ if node.vagrant === "true" || node.vagrant == true
   end
 
 end
+
+
+template "#{node.kagent.home}/bin/pythondependency.sh"
+  source "pythondependency.sh.erb"
+  owner node.kagent.user
+  group node.kagent.group
+  mode "510"
+  action :create
+end
+
+
+template "/etc/sudoers.d/kagent" do
+  source "ksudoers.erb"
+  owner "root"
+  group "root"
+  mode "0440"
+  variables({
+                :user => node.kagent.user,
+                :pythondependency =>  "#{node.kagent.home}/bin/pythondependency.sh"
+              })
+  action :create
+end  
