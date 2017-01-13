@@ -36,7 +36,7 @@ from OpenSSL import crypto
 import socket
 from os.path import exists, join
 import MySQLdb
-from bottle import Bottle, run, get, post, request, HTTPResponse, server_names, ServerAdapter
+from bottle import Bottle, run, get, post, request, HTTPResponse, server_names, ServerAdapter, response
 import netifaces 
 from IPy import IP
 import pexpect
@@ -752,11 +752,12 @@ class SSLCherryPy(ServerAdapter):
         finally:  
             server.stop()
 
-class PythonDependency:
+class Conda:
 
     @staticmethod    
     def exec(self, project, package, op):
-        script = BIN_DIR + "/pythondependency.sh"
+#        script = BIN_DIR + "/pythondependency.sh"
+        script = BIN_DIR + "/anaconda.sh"        
         try:
             p = Popen(['sudo', script, project, op, package],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (output,err)=p.communicate()
@@ -1076,18 +1077,25 @@ if __name__ == '__main__':
         return HTTPResponse(status=400, output='Invalid command.')        
 
 
-    @get('/python/virtualenv/<proj>/<package>/<op>')
-    def python_dependency():
+    @get('/conda/<proj>/<package>/<op>')
+    def conda():
         if (password != request.json['password']):
             return Authentication().failed()
         project = request.json['project'];
         package = request.json['package'];
-        # 'add' or 'rm'
+        # 'install' or 'remove' or 'list'
         op = request.json['op'];
-        if (PythonDependency.exec(project, package, op)):
-            resp = HTTPResponse(status=HTTP_OK, output="Python dependency updated successfully.")
-            logger.info("{0}".format(resp))
-            return resp
+        if (Conda.exec(project, package, op)):
+            if (op == "list"):
+                with open('/tmp/' + project + "__conda_list.json") as json_data:
+                    data = json.loads(json_data)
+                    json_data.close()
+                response.content_type = 'application/json'                    
+                return dumps(data)
+            else
+                resp = HTTPResponse(status=HTTP_OK, output="Python dependency updated successfully.")
+                logger.info("{0}".format(resp))
+                return resp
         return CommandHandler().response(404, "Error")  
 
 

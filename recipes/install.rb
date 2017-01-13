@@ -437,8 +437,16 @@ if node.vagrant === "true" || node.vagrant == true
 end
 
 
-template "#{node.kagent.home}/bin/pythondependency.sh"
-  source "pythondependency.sh.erb"
+template "#{node.kagent.home}/bin/conda.sh"
+  source "conda.sh.erb"
+  owner node.kagent.user
+  group node.kagent.group
+  mode "510"
+  action :create
+end
+
+template "#{node.kagent.home}/bin/anaconda_env.sh"
+  source "anaconda_env.sh.erb"
   owner node.kagent.user
   group node.kagent.group
   mode "510"
@@ -453,7 +461,8 @@ template "/etc/sudoers.d/kagent" do
   mode "0440"
   variables({
                 :user => node.kagent.user,
-                :pythondependency =>  "#{node.kagent.home}/bin/pythondependency.sh"
+                :conda =>  "#{node.kagent.home}/bin/conda.sh",
+                :anaconda =>  "#{node.kagent.home}/bin/anaconda_env.sh",                
               })
   action :create
 end  

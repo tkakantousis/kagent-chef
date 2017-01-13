@@ -1,0 +1,34 @@
+#!/bin/bash
+
+if [ $# -lt 2  ]; then
+ echo "incorrect usage"
+ exit 1
+fi
+
+set -e
+
+# Name of hopsworks project
+PROJECT="$1"
+shift
+# {'install', 'remove', 'list'}
+OP="$1"
+shift
+# Name of virtualenv python dependency
+PACKAGES="$@"
+
+# Load environment $PROJECT first
+
+source activate $PROJECT
+
+#Execute the 'op'
+
+if [ $OP == "install" ] ; then
+  conda install -q -y -n $PROJECT $PACKAGES
+elif [ $OP == "remove" ] ; then
+  conda remove $PACKAGES
+elif [ $OP == "remove" ] ; then
+  conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json
+else
+    exit -1
+fi
+
