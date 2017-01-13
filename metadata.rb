@@ -35,6 +35,10 @@ attribute "kagent/dashboard/port",
           :description => " Port for Dashboard REST API",
           :type => 'string'
 
+attribute "kagent/enabled",
+          :description => "Kagent enabled: default 'true'. Set to 'false' to disable it.",
+          :type => 'string'
+
 attribute "hop/hostid",
           :description => " One-time password used when registering the host",
           :type => 'string'
@@ -81,5 +85,9 @@ attribute "kagent/network/interface",
 
 attribute "ntp/install",
           :description => "Install Network Time Protocol (default: false)",
+          :type => "string"
+
+attribute "services/enabled",
+          :description => "Default 'false'. Set to 'true' to enable daemon services, so that they are started on a host restart.",
           :type => "string"
 

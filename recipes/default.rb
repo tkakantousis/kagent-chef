@@ -30,6 +30,11 @@ if node.systemd == "true"
     action :nothing
   end
 
+
+  # kagent_config  do
+  #   action :systemd_reload
+  # end
+
   case node.platform_family
   when "rhel"
     systemd_script = "/usr/lib/systemd/system/#{service_name}.service" 
@@ -42,7 +47,9 @@ if node.systemd == "true"
     owner node.kagent.user
     group node.kagent.group
     mode 0650
-    notifies :enable, "service[#{service_name}]"
+if node.services.enabled == "true"
+    notifies :enable, resources(:service => service_name)
+end
     notifies :restart, "service[#{service_name}]", :delayed
   end
 
@@ -60,12 +67,18 @@ else # sysv
     action :nothing
   end
 
+  # kagent_config  do
+  #   action :systemd_reload
+  # end
+
   template "/etc/init.d/#{service_name}" do
     source "#{service_name}.erb"
     owner node.kagent.user
     group node.kagent.group
     mode 0650
-    notifies :enable, "service[#{service_name}]"
+if node.services.enabled == "true"
+    notifies :enable, resources(:service => service_name)
+end
     notifies :restart, "service[#{service_name}]", :delayed
   end
 

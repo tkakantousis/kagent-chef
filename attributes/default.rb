@@ -88,3 +88,5 @@ node.default.tf.cpu_ids                    = ['']
 node.default.tf.gpu_ids                    = ['']
 
 default.kagent.test                        = false
+
+default.services.enabled                   = "false"
