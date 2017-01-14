@@ -39,5 +39,6 @@ bash "update_conda" do
   user node.kagent.user
   code <<-EOF
    #{node.anaconda.base_dir}/bin/conda update conda -y -q
+   #{node.anaconda.base_dir}/bin/conda update anaconda -y -q
  EOF
 end

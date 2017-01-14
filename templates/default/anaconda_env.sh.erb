@@ -14,9 +14,11 @@ OP="$2"
 
 #conda $@
 
-if [ $OP == "install" ] ; then
+if [ "$OP" == "install" ] ; then
     <%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT python=2.5 -y -q
-elif [ $OP == "remove" ] ; then
+elif [ "$OP" == "list" ] ; then
+    <%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json
+elif [ "$OP" == "remove" ] ; then
     <%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT --all -y -q
     # Verify the environment has been deleted
     # Need to first make sure that projectnames are not partial names of other projectnames, else this might return a false positive (error)

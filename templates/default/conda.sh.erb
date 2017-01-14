@@ -26,8 +26,6 @@ if [ $OP == "install" ] ; then
   <%= node.anaconda.base_dir %>/bin/conda install -q -y -n $PROJECT $PACKAGES
 elif [ $OP == "remove" ] ; then
   <%= node.anaconda.base_dir %>/bin/conda remove $PACKAGES
-elif [ $OP == "remove" ] ; then
-  <%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json
 else
     source <%= node.anaconda.base_dir %>/bin/deactivate $PROJECT
     exit -1
