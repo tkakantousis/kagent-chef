@@ -24,6 +24,7 @@ recipe "kagent::default", "Installs and configures the Karamel agent"
 recipe "kagent::hops", "Installs and configures the Karamel agent for hops"
 recipe "kagent::purge", "Deletes the Karamel agent files"
 recipe "kagent::anaconda", "Installs and configures anaconda"
+recipe "kagent::all", "Installs default, anaconda recipes"
 
 attribute "kagent/user",
           :description => "Username to run kagent as",

@@ -1,3 +1,5 @@
+include_attribute "anaconda"
+
 # Default values for configuration parameters
 default.kagent.version                     = "0.1.0"
 default.kagent.user                        = "kagent"
@@ -7,7 +9,11 @@ default.kagent.dir                         = "/var/lib"
 default.kagent.base_dir                    = "#{node.kagent.dir}/kagent"
 default.kagent.home                        = "#{node.kagent.dir}/kagent-#{node.kagent.version}"
 
+default.anaconda.user                      = node.kagent.user
+default.anaconda.group                     = node.kagent.group
 default.anaconda.dir                       = node.kagent.dir + "/anaconda"
+default.anaconda.home                      = node.anaconda.install_root + "/" + node.anaconda.version
+default.anaconda.base_dir                  = node.anaconda.install_root + "/anaconda"
 
 default.kagent.enabled                     = "true"
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $# -me 2  ]; then
+if [ $# -ne 2  ]; then
  echo "incorrect usage"
  exit 1
 fi
@@ -15,9 +15,9 @@ OP="$2"
 #conda $@
 
 if [ $OP == "install" ] ; then
- conda create -n $PROJECT python=2.5 -y -q
+    <%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT python=2.5 -y -q
 elif [ $OP == "remove" ] ; then
-    conda remove -n $PROJECT --all -y -q
+    <%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT --all -y -q
     # Verify the environment has been deleted
     # Need to first make sure that projectnames are not partial names of other projectnames, else this might return a false positive (error)
     # One way would be to have environment names as follows: "projectname__" - '__' is not allowed as a sequence of chars in a projectname.
