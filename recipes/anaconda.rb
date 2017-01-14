@@ -15,7 +15,7 @@ node.override.anaconda.python = "python2"
 
 include_recipe "anaconda::default"
 
-include_recipe "anaconda::shell_conveniences"
+#include_recipe "anaconda::shell_conveniences"
 
 
 link node.anaconda.base_dir do
@@ -29,3 +29,15 @@ link node.anaconda.base_dir do
   to node.anaconda.home
 end
 
+magic_shell_environment 'PATH' do
+  value "$PATH:#{node.anaconda.base_dir}/bin"
+end
+
+
+
+bash "update_conda" do
+  user node.kagent.user
+  code <<-EOF
+   #{node.anaconda.base_dir}/bin/conda update conda -y -q
+ EOF
+end

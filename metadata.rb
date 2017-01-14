@@ -19,6 +19,8 @@ depends 'hostsfile'
 depends 'ntp'
 depends 'poise-python'
 depends 'anaconda'
+depends 'magic_shell'
+
 
 recipe "kagent::default", "Installs and configures the Karamel agent"
 recipe "kagent::hops", "Installs and configures the Karamel agent for hops"

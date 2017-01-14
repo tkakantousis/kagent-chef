@@ -7,3 +7,5 @@ cookbook 'hostsfile', '~> 2.4.5'
 cookbook 'ntp', '~> 2.0.0'
 cookbook 'poise-python', '~> 1.4.0'
 cookbook 'anaconda', '~> 0.6.2'
+
+cookbook 'magic_shell'

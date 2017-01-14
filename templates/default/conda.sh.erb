@@ -18,7 +18,7 @@ PACKAGES="$@"
 
 # Load environment $PROJECT first
 
-source activate $PROJECT
+source <%= node.anaconda.base_dir %>/bin/activate $PROJECT
 
 #Execute the 'op'
 
@@ -29,6 +29,9 @@ elif [ $OP == "remove" ] ; then
 elif [ $OP == "remove" ] ; then
   <%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json
 else
+    source <%= node.anaconda.base_dir %>/bin/deactivate $PROJECT
     exit -1
 fi
 
+# Deactivate environment
+source <%= node.anaconda.base_dir %>/bin/deactivate $PROJECT
