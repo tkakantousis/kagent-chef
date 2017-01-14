@@ -459,8 +459,8 @@ template "/etc/sudoers.d/kagent" do
   mode "0440"
   variables({
                 :user => node.kagent.user,
-                :conda =>  "#{node.kagent.home}/bin/conda.sh",
-                :anaconda =>  "#{node.kagent.home}/bin/anaconda_env.sh",                
+                :conda =>  "#{node.kagent.base_dir}/bin/conda.sh",
+                :anaconda =>  "#{node.kagent.base_dir}/bin/anaconda_env.sh",                
               })
   action :create
 end  
