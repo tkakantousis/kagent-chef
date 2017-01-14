@@ -7,6 +7,8 @@ default.kagent.dir                         = "/var/lib"
 default.kagent.base_dir                    = "#{node.kagent.dir}/kagent"
 default.kagent.home                        = "#{node.kagent.dir}/kagent-#{node.kagent.version}"
 
+default.anaconda.dir                       = node.kagent.dir + "/anaconda"
+
 default.kagent.enabled                     = "true"
 
 default.kagent.certs_dir                   = "#{node.kagent.dir}/kagent-certs"
