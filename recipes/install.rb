@@ -453,7 +453,7 @@ end
 
 
 template "/etc/sudoers.d/kagent" do
-  source "ksudoers.erb"
+  source "sudoers.erb"
   owner "root"
   group "root"
   mode "0440"
