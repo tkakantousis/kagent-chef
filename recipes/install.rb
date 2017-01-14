@@ -425,7 +425,6 @@ end
 
 # set_my_hostname
 if node.vagrant === "true" || node.vagrant == true 
-
     node[:kagent][:default][:private_ips].each_with_index do |ip, index| 
       hostsfile_entry "#{ip}" do
         hostname  "dn#{index}"
@@ -433,11 +432,10 @@ if node.vagrant === "true" || node.vagrant == true
         unique    true
       end
     end
-
 end
 
 
-template "#{node.kagent.home}/bin/conda.sh"
+template "#{node.kagent.home}/bin/conda.sh" do
   source "conda.sh.erb"
   owner node.kagent.user
   group node.kagent.group
@@ -445,7 +443,7 @@ template "#{node.kagent.home}/bin/conda.sh"
   action :create
 end
 
-template "#{node.kagent.home}/bin/anaconda_env.sh"
+template "#{node.kagent.home}/bin/anaconda_env.sh" do
   source "anaconda_env.sh.erb"
   owner node.kagent.user
   group node.kagent.group
