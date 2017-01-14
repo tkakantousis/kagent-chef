@@ -770,10 +770,10 @@ class Conda:
             return False
 
     @staticmethod    
-    def proj(self, project, op):
+    def project(self, project, op, arg):
         script = BIN_DIR + "/anaconda.sh"        
         try:
-            p = Popen(['sudo', script, project, op],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p = Popen(['sudo', script, project, op, arg],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (output,err)=p.communicate()
             returncode = p.wait()
             logger.info("{0}".format(output))
@@ -1106,14 +1106,16 @@ if __name__ == '__main__':
                 return resp
         return CommandHandler().response(404, "Error")  
 
-    @get('/anaconda/<proj>/<op>')
+    # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
+    @get('/anaconda/<proj>/<op>/<arg>')
     def anaconda():
         if (password != request.json['password']):
             return Authentication().failed()
         project = request.json['project'];
-        # 'create' or 'remove' or 'list'
+        arg = request.json['arg'];
+        # 'create' or 'remove' or 'list' or 'clone'
         op = request.json['op'];
-        if (Conda.proj(project, op)):
+        if (Conda.project(project, op, arg)):
             if (op == "list"):
                 with open('/tmp/' + project + "__conda_list.json") as json_data:
                     data = json.loads(json_data)

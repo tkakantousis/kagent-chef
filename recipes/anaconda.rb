@@ -9,13 +9,12 @@ node.override.anaconda.owner = node.kagent.user
 node.override.anaconda.group = node.kagent.group
 node.override.anaconda.flavor = "x86_64"
 node.override.anaconda.python = "python2"
+
+# Changing the install path led to problems.
 #node.override.anaconda.install_root = node.anaconda.dir
 
-#include_recipe "anaconda::python_workaround"
 
 include_recipe "anaconda::default"
-
-#include_recipe "anaconda::shell_conveniences"
 
 
 link node.anaconda.base_dir do

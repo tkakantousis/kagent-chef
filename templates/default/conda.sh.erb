@@ -1,11 +1,9 @@
 #!/bin/bash
 
-if [ $# -lt 2  ]; then
+if [ $# -lt 3  ]; then
  echo "incorrect usage"
  exit 1
 fi
-
-set -e
 
 # Name of hopsworks project
 PROJECT="$1"
@@ -13,17 +11,24 @@ shift
 # {'install', 'remove', 'list'}
 OP="$1"
 shift
+# default channel_alias  is http://conda.anaconda.org/.
+CHANNEL="$1"
+shift
 # Name of virtualenv python dependency
 PACKAGES="$@"
+
+
 
 # Load environment $PROJECT first
 
 source <%= node.anaconda.base_dir %>/bin/activate $PROJECT
+if [ $? -ne 0 ] ; then
+ exit 2
+fi
 
 #Execute the 'op'
-
 if [ $OP == "install" ] ; then
-  <%= node.anaconda.base_dir %>/bin/conda install -q -y -n $PROJECT $PACKAGES
+  <%= node.anaconda.base_dir %>/bin/conda install -q -y -c $CHANNEL $PACKAGES
 elif [ $OP == "remove" ] ; then
   <%= node.anaconda.base_dir %>/bin/conda remove $PACKAGES
 else
@@ -31,5 +36,12 @@ else
     exit -1
 fi
 
+res = 0
+if [ $? -ne 0 ] ; then
+  res = 1
+fi
+
 # Deactivate environment
 source <%= node.anaconda.base_dir %>/bin/deactivate $PROJECT
+
+exit $res
