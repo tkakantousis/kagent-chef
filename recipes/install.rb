@@ -309,6 +309,14 @@ directory "#{node.kagent.base_dir}/tf/log" do
   recursive true
 end
 
+directory "#{node.kagent.base_dir}/anaconda" do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+end
+
+
 
 directory node.kagent.keystore_dir do
   owner node.kagent.user
@@ -451,6 +459,15 @@ template "#{node.kagent.home}/bin/anaconda_env.sh" do
   action :create
 end
 
+template "#{node.kagent.home}/bin/anaconda_env.sh" do
+  source "anaconda_env.sh.erb"
+  owner node.kagent.user
+  group node.kagent.group
+  mode "510"
+  action :create
+end
+
+
 
 template "/etc/sudoers.d/kagent" do
   source "sudoers.erb"
@@ -464,3 +481,4 @@ template "/etc/sudoers.d/kagent" do
               })
   action :create
 end  
+
