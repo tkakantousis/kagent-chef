@@ -13,7 +13,7 @@ OP="$2"
 CLONE="$3"
 
 if [ "$OP" == "install" ] ; then
-    <%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT --clone hopsworksconda -y -q
+    <%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q
 #    <%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q
 elif [ "$OP" == "list" ] ; then
     <%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json

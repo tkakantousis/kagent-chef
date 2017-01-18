@@ -447,7 +447,7 @@ template "#{node.kagent.home}/bin/conda.sh" do
   source "conda.sh.erb"
   owner node.kagent.user
   group node.kagent.group
-  mode "510"
+  mode "755"
   action :create
 end
 
@@ -455,18 +455,9 @@ template "#{node.kagent.home}/bin/anaconda_env.sh" do
   source "anaconda_env.sh.erb"
   owner node.kagent.user
   group node.kagent.group
-  mode "510"
+  mode "755"
   action :create
 end
-
-template "#{node.kagent.home}/bin/anaconda_env.sh" do
-  source "anaconda_env.sh.erb"
-  owner node.kagent.user
-  group node.kagent.group
-  mode "510"
-  action :create
-end
-
 
 
 template "/etc/sudoers.d/kagent" do

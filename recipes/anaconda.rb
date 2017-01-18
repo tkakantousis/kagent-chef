@@ -38,6 +38,7 @@ end
 
 bash "update_conda" do
   user node.kagent.user
+  user node.kagent.group
   code <<-EOF
 #   #{node.anaconda.base_dir}/bin/conda update conda -y -q
 #   #{node.anaconda.base_dir}/bin/conda update anaconda -y -q
@@ -47,8 +48,7 @@ bash "update_conda" do
    #{node.anaconda.base_dir}/bin/conda config --add create_default_packages scikit-learn 
    #{node.anaconda.base_dir}/bin/conda config --add create_default_packages matplotlib 
    #{node.anaconda.base_dir}/bin/conda config --add create_default_packages pandas 
-   #{node.anaconda.base_dir}/bin/conda create -n hopsworksconda -y -q 
-
+#   #{node.anaconda.base_dir}/bin/conda create -n hopsworksconda -y -q 
 # --file #{node.kagent.base_dir}/anaconda/spec-file.txt
  EOF
 end
