@@ -482,3 +482,22 @@ template "/etc/sudoers.d/kagent" do
   action :create
 end  
 
+
+template "#{node.kagent.base_dir}/anaconda/spec-file.txt" do
+  source "spec-file.txt.erb"
+  owner node.anaconda.user
+  group node.anaconda.group
+  mode "0440"
+  action :create
+end  
+
+link node.anaconda.base_dir do
+  action :delete
+  only_if "test -L #{node.anaconda.base_dir}"
+end
+
+link node.anaconda.base_dir do
+  owner node.anaconda.user
+  group node.anaconda.group
+  to node.anaconda.home
+end
