@@ -17,6 +17,19 @@ node.override.anaconda.python = "python2"
 include_recipe "anaconda::default"
 
 
+link node.anaconda.base_dir do
+  action :delete
+  only_if "test -L #{node.anaconda.base_dir}"
+end
+
+link node.anaconda.base_dir do
+  owner node.anaconda.user
+  group node.anaconda.group
+  to node.anaconda.home
+end
+
+
+
 magic_shell_environment 'PATH' do
   value "$PATH:#{node.anaconda.base_dir}/bin"
 end
