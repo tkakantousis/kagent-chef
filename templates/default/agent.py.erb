@@ -753,9 +753,8 @@ class SSLCherryPy(ServerAdapter):
             server.stop()
 
 class Conda:
-
     @staticmethod    
-    def exec(self, project, op, package):
+    def doit(self, project, op, package):
         script = BIN_DIR + "/conda.sh"        
         try:
             p = Popen(['sudo', script, project, package, op],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -1100,7 +1099,7 @@ if __name__ == '__main__':
         package = request.json['package'];
         # 'install' or 'remove'
         op = request.json['op'];
-        if (Conda.exec(project, op, package)):
+        if (Conda.doit(project, op, package)):
                 resp = HTTPResponse(status=HTTP_OK, output="Conda python dependency updated successfully.")
                 logger.info("{0}".format(resp))
                 return resp
@@ -1122,7 +1121,7 @@ if __name__ == '__main__':
                     json_data.close()
                 response.content_type = 'application/json'                    
                 return dumps(data)
-            else
+            else:
                 resp = HTTPResponse(status=HTTP_OK, output="Project operation updated successfully.")
                 logger.info("{0}".format(resp))
                 return resp
