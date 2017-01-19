@@ -3,8 +3,8 @@ action :config do
 
 
 bash "update_conda" do
-  user node.anaconda.owner
-  group node.ananconda.group
+  user node.kagent.user
+  group node.kagent.group
   code <<-EOF
 #   #{node.anaconda.base_dir}/bin/conda update conda -y -q
 #   #{node.anaconda.base_dir}/bin/conda update anaconda -y -q

@@ -5,7 +5,7 @@
 #
 
 node.override.anaconda.accept_license = "yes"
-node.override.anaconda.owner = node.kagent.user
+node.override.anaconda.user = node.kagent.user
 node.override.anaconda.group = node.kagent.group
 node.override.anaconda.home = node.kagent.base_dir
 node.override.anaconda.flavor = "x86_64"
