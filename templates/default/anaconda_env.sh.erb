@@ -13,6 +13,13 @@ OP="$2"
 CLONE="$3"
 
 if [ "$OP" == "install" ] ; then
+
+   <%= node.anaconda.base_dir %>/bin/conda config --add create_default_packages numpy 
+   <%= node.anaconda.base_dir %>/bin/conda config --add create_default_packages hdfs3
+   <%= node.anaconda.base_dir %>/bin/conda config --add create_default_packages scikit-learn 
+   <%= node.anaconda.base_dir %>/bin/conda config --add create_default_packages matplotlib 
+   <%= node.anaconda.base_dir %>/bin/conda config --add create_default_packages pandas 
+
     <%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q
 #    <%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q
 elif [ "$OP" == "list" ] ; then
