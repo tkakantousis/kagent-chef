@@ -393,25 +393,6 @@ end
 end
 
 
-template "/etc/sudoers.d/kagent" do
-  source "kagent_sudoers.erb"
-  owner "root"
-  group "root"
-  mode "0440"
-  variables({
-                :user => node.kagent.user,
-                :start => "#{node.kagent.base_dir}/bin/start-service.sh",
-                :stop => "#{node.kagent.base_dir}/bin/stop-service.sh",
-                :restart => "#{node.kagent.base_dir}/bin/restart-service.sh",
-                :status => "#{node.kagent.base_dir}/bin/status-service.sh",
-                :startall => "#{node.kagent.base_dir}/bin/start-all-local-services.sh",
-                :stopall => "#{node.kagent.base_dir}/bin/shutdown-all-local-services.sh",
-                :statusall => "#{node.kagent.base_dir}/bin/status-all-local-services.sh"
-              })
-  action :create
-end  
-
-
 id=0
 node.tf.cpu_ids.each do |cpu|
   kagent_tf id do
