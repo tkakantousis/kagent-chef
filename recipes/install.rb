@@ -468,7 +468,15 @@ template "/etc/sudoers.d/kagent" do
   variables({
                 :user => node.kagent.user,
                 :conda =>  "#{node.kagent.base_dir}/bin/conda.sh",
-                :anaconda =>  "#{node.kagent.base_dir}/bin/anaconda_env.sh",                
+                :anaconda =>  "#{node.kagent.base_dir}/bin/anaconda_env.sh",
+                :user => node.kagent.user,
+                :start => "#{node.kagent.base_dir}/bin/start-service.sh",
+                :stop => "#{node.kagent.base_dir}/bin/stop-service.sh",
+                :restart => "#{node.kagent.base_dir}/bin/restart-service.sh",
+                :status => "#{node.kagent.base_dir}/bin/status-service.sh",
+                :startall => "#{node.kagent.base_dir}/bin/start-all-local-services.sh",
+                :stopall => "#{node.kagent.base_dir}/bin/shutdown-all-local-services.sh",
+                :statusall => "#{node.kagent.base_dir}/bin/status-all-local-services.sh"                
               })
   action :create
 end  
