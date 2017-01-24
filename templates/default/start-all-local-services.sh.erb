@@ -7,7 +7,7 @@ export LC_ALL=en_US.UTF-8
 start()
 {
 if [[ $services == *"$active"* ]] ; then
- sudo /var/lib/kagent/bin/status-service.sh $active > /dev/null
+ sudo <%= node.kagent.base_dir %>/bin/status-service.sh $active > /dev/null
  if [ $? -ne 0 ] ; then
    echo -e "Starting ${active} ...."
    sudo service $active start 2>&1 > /dev/null

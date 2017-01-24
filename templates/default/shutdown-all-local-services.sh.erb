@@ -45,7 +45,7 @@ export LC_ALL=en_US.UTF-8
 stop()
 {
 if [[ $services == *"$active"* ]] ; then
- sudo /var/lib/kagent/bin/status-service.sh $active > /dev/null
+ sudo <%= node.kagent.base_dir %>/bin/status-service.sh $active > /dev/null
  if [ $? -eq 0 ] ; then
    echo -e "Stopping ${active} ...."
    sudo service $active stop
