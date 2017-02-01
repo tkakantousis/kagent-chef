@@ -44,7 +44,8 @@ status() {
   PID_FILE=<%= node[:kagent][:pid_file] %>
   if [ -e $PID_FILE ] ; then
      PID=`cat $PID_FILE`
-     res=`kill -0 $PID`
+     kill -0 $PID
+     res=$?
      if [ $res -eq 0 ] ; then
        echo "kagent is running"
      else
