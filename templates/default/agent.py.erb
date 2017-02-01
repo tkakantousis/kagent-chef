@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 '''
-Created on 6 October 2013
-
 @author: Hamidreza Afzali <afzali@kth.se>
 @author: Jim Dowling <jdowling@kth.se>
 
@@ -48,6 +46,7 @@ var="~#@#@!#@!#!@#@!#"
 
 config_mutex = Lock()
 tf_mutex = Lock()
+conda_mutex = Lock()
 
 HTTP_OK = 200
 
@@ -70,6 +69,12 @@ states = {}
 # tensorflow resources: gpu, cpus
 global tfstates
 tfstates = {}
+
+# Conda install/remove/update/clone events
+global conda_list
+conda_list = []
+# conda_list['project'] = {'op':'install', 'url':'', 'dep': '', 'version':'', 'status':'success'}
+
 
 
 cores = multiprocessing.cpu_count()
@@ -265,6 +270,11 @@ class Heartbeat():
                 payload["group-name"] = group_name
                 payload["hostname"] = hostname
 
+                conda_mutex.acquire()
+                if bool(conda_list):
+                    payload["conda-ops"] = conda_list
+                conda_mutex.release()                
+                
                 if (public_ip != None):
                     payload["public-ip"] = public_ip                      
                 else:
@@ -283,6 +293,11 @@ class Heartbeat():
                 if not resp.status_code == HTTP_OK:
                     raise Exception('Heartbeat could not be sent (Status code: {0})'.format(resp.status_code))
                     logged_in = False
+                else:
+                    # Clear the list of conda ops to upload if the rest call is successful
+                    conda_mutex.acquire()
+                    conda_list = []
+                    conda_mutex.release()                                    
             except Exception as err:
                 logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
                 logged_in = False
@@ -752,24 +767,47 @@ class SSLCherryPy(ServerAdapter):
         finally:  
             server.stop()
 
-class Conda:
-    @staticmethod    
-    def doit(self, project, op, package):
-        script = BIN_DIR + "/conda.sh"        
-        try:
-            p = Popen(['sudo', script, project, package, op],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            (output,err)=p.communicate()
-            returncode = p.wait()
-            logger.info("{0}".format(output))
-            if not returncode == 0:
-                raise Exception("Add/remove python dependency returned a none-zero value")
-            return True
-        except Exception as err:
-            logger.error(err)
-            return False
 
+class Conda:
+    @staticmethod
+    def conda(self, op, proj, channelurl, lib, version):
+        def target(op, proj, channelurl, lib, version):
+            if (version is None):
+                version=""
+            logger.info("Conda operation:  {0} - {1}/{2}/{3}/{4}".format(op, proj, channelurl, lib, version))                            
+            script = BIN_DIR + "/conda.sh"
+#            conda_op = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'INSTALLING'}
+            conda_op = {}
+            try:
+                p = Popen(['sudo', script, op, proj, channelurl, lib, version],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                (output,err)=p.communicate()
+#                conda_mutex.acquire()
+#                conda_list.append(conda_op)
+#                conda_mutex.release()
+                returncode = p.wait()
+                logger.info("{0}".format(output))
+                logger.error("{0}".format(err))                                        
+                conda_mutex.acquire()       
+                try:
+                    if returncode == 0:
+                        conda_op = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'INSTALLED'}                        
+                    else:
+                        conda_op = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'FAILED'}
+                finally:
+                    conda_list.append(conda_op)
+                    conda_mutex.release()
+            except Exception as err:
+                conda_mutex.acquire()                
+                conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'FAILED'}
+                conda_list.append(conda_op)                   
+                conda_mutex.release()
+                logger.error(err)
+
+        thread = threading.Thread(target=target, args=(op, proj, channelurl, lib, version,))
+        thread.start()
+            
     @staticmethod    
-    def project(self, project, op, arg):
+    def anaconda(self, project, op, arg):
         script = BIN_DIR + "/anaconda.sh"        
         try:
             p = Popen(['sudo', script, project, op, arg],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -1091,32 +1129,42 @@ if __name__ == '__main__':
         return HTTPResponse(status=400, output='Invalid command.')        
 
 
-    @get('/conda/<proj>/<package>/<op>')
+    @get('/conda/<op>/<proj>/<channelurl>/<lib>/<version>')
     def conda():
         if (password != request.json['password']):
             return Authentication().failed()
-        project = request.json['project'];
-        package = request.json['package'];
-        # 'install' or 'remove'
+        proj = request.json['proj'];
+        # 'install' or 'remove' or 'update'
         op = request.json['op'];
-        if (Conda.doit(project, op, package)):
-                resp = HTTPResponse(status=HTTP_OK, output="Conda python dependency updated successfully.")
+        channelurl = request.json['channelurl'];
+        lib = request.json['lib'];
+        version = request.json['version'];
+
+        # conda_mutex.acquire()
+        # if (conda_list[proj] != None):
+        #     conda_mutex.release()
+        #     return CommandHandler().response(404, "Error. Busy installing a library for this project. Retry in a few seconds.")              
+        # conda_mutex.release()        
+        if (Conda.run(op, proj, channelurl, lib, version)):
+                resp = HTTPResponse(status=HTTP_OK, output="Conda operation started.")
                 logger.info("{0}".format(resp))
                 return resp
         return CommandHandler().response(404, "Error")  
 
     # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
-    @get('/anaconda/<proj>/<op>/<arg>')
+    @get('/anaconda/<op>/<proj>/<arg>')
     def anaconda():
         if (password != request.json['password']):
             return Authentication().failed()
-        project = request.json['project'];
+        proj = request.json['proj'];
         arg = request.json['arg'];
         # 'create' or 'remove' or 'list' or 'clone'
         op = request.json['op'];
-        if (Conda.project(project, op, arg)):
+        op = op.lower();
+        # Blocking REST call here
+        if (Conda.anaconda(proj, op, arg)):
             if (op == "list"):
-                with open('/tmp/' + project + "__conda_list.json") as json_data:
+                with open('/tmp/' + proj + "__conda_list.json") as json_data:
                     data = json.loads(json_data)
                     json_data.close()
                 response.content_type = 'application/json'                    
