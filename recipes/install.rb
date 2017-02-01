@@ -418,7 +418,6 @@ if node.vagrant === "true" || node.vagrant == true
       hostsfile_entry "#{ip}" do
         hostname  "dn#{index}"
         action    :append
-        unique    true
       end
     end
 end
