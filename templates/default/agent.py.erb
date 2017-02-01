@@ -238,6 +238,7 @@ class Heartbeat():
 
     @staticmethod
     def serviceKey(*keys):
+            global states
             ob = states
             for key in keys:
                 ob = ob[key]
@@ -247,6 +248,7 @@ class Heartbeat():
     def send():
         global logged_in
         global session
+        global conda_list        
         if not logged_in:
            logger.info('Logging in to Hopsworks....')
            Heartbeat.login()
@@ -370,6 +372,7 @@ class ExtProcess():  # external process
         
     @staticmethod        
     def watch(cluster, service, role):
+        global states        
         while True:
             try:
                 section = Config().section_name(cluster, service, role)
@@ -513,6 +516,7 @@ class Service:
         
     def stop(self, cluster, service, role):
         script = BIN_DIR + "/stop-service.sh"
+        global states        
         try:
             subprocess.check_call(['sudo', script, role], close_fds=True)  # raises exception if not returncode == 0
             now = long(time.mktime(datetime.now().timetuple()))
@@ -558,11 +562,13 @@ class Service:
         return True
 
     def failed(self, cluster, service, role):
+        global states        
         now = long(time.mktime(datetime.now().timetuple()))
         states[role] = {'status':'Stopped', 'start-time':now}
         Alert.send(cluster, service, role, now, False)
 
     def started(self, cluster, service, role):
+        global states        
         now = long(time.mktime(datetime.now().timetuple()))
         states[role] = {'status':'Started', 'start-time':now}
         Alert.send(cluster, service, role, now, True)
@@ -604,6 +610,7 @@ class CommandHandler():
                 return CommandHandler().response(400, 'Error: Cannot initialize the service.')
     
     def start(self, cluster, service, role):
+        global states
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
             return CommandHandler().response(400, 'Role not installed.')
@@ -617,6 +624,7 @@ class CommandHandler():
                 return CommandHandler().response(200, "Role started.")
 
     def stop(self, cluster, service, role):
+        global states
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
             return CommandHandler().response(400, 'Role not installed.')
@@ -772,6 +780,7 @@ class Conda:
     @staticmethod
     def conda(self, op, proj, channelurl, lib, version):
         def target(op, proj, channelurl, lib, version):
+            global conda_list                    
             if (version is None):
                 version=""
             logger.info("Conda operation:  {0} - {1}/{2}/{3}/{4}".format(op, proj, channelurl, lib, version))                            
@@ -1021,6 +1030,7 @@ if __name__ == '__main__':
 
     @post('/tf/alloc')
     def tf_alloc():
+        global tfstates
      # Extract the projectname, username
      # Extract the resource request (cpu or gpu). How many?
      # Check tfstate to see if there is a free cpu or gpu
@@ -1044,6 +1054,7 @@ if __name__ == '__main__':
 
     @post('/tf/free')
     def tf_free():
+        global tfstates        
         if (password != request.json['password']):
             return Authentication().failed()
         proj_user = request.json['proj-user']
