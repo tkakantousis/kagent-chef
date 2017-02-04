@@ -1142,15 +1142,9 @@ if __name__ == '__main__':
 
     @get('/conda/<op>/<proj>/<channelurl>/<lib>/<version>')
     def conda(op,proj,channelurl,lib,version):
-        if (password != request.json['password']):
+        logger.info('Incoming REST Request:  GET /conda/{0}/{1}/{2}/{3}/{4}'.format(op, proj, channelurl, lib, version))
+        if not Authentication().check():
             return Authentication().failed()
-        proj = request.json['proj'];
-        # 'install' or 'remove' or 'update'
-        op = request.json['op'];
-        channelurl = request.json['channelurl'];
-        lib = request.json['lib'];
-        version = request.json['version'];
-
         # conda_mutex.acquire()
         # if (conda_list[proj] != None):
         #     conda_mutex.release()
@@ -1165,13 +1159,9 @@ if __name__ == '__main__':
     # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
     @get('/anaconda/<op>/<proj>/<arg>')
     def anaconda(op,proj,arg):
-        if (password != request.json['password']):
+        logger.info('Incoming REST Request:  GET /anaconda/{0}/{1}/{2}/{3}'.format(cluster, service, role, command))
+        if not Authentication().check():
             return Authentication().failed()
-        proj = request.json['proj'];
-        arg = request.json['arg'];
-        # 'create' or 'remove' or 'list' or 'clone'
-        op = request.json['op'];
-        op = op.lower();
         # Blocking REST call here
         if (Conda.anaconda(proj, op, arg)):
             if (op == "list"):
