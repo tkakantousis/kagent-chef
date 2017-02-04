@@ -10,9 +10,17 @@ node.override.anaconda.group = node.kagent.group
 node.override.anaconda.flavor = "x86_64"
 node.override.anaconda.python = "python2"
 
-# Changing the install path led to problems.
-#node.override.anaconda.install_root = node.anaconda.dir
+template "#{node.kagent.base_dir}/anaconda/spec-file.txt" do
+  source "spec-file.txt.erb"
+  owner node.anaconda.user
+  group node.anaconda.group
+  mode "0444"
+  action :create
+end  
 
+# Bugs: Changing the install path led to problems.
+#node.override.anaconda.install_root = node.anaconda.dir
+# Bug 2: it still installs as user 'anaconda'. Need to change ownership afterwards.
 
 include_recipe "anaconda::default"
 

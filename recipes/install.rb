@@ -461,12 +461,3 @@ template "/etc/sudoers.d/kagent" do
   action :create
 end  
 
-
-template "#{node.kagent.base_dir}/anaconda/spec-file.txt" do
-  source "spec-file.txt.erb"
-  owner node.anaconda.user
-  group node.anaconda.group
-  mode "0444"
-  action :create
-end  
-
