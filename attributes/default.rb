@@ -9,7 +9,7 @@ default.kagent.dir                         = "/var/lib"
 default.kagent.base_dir                    = "#{node.kagent.dir}/kagent"
 default.kagent.home                        = "#{node.kagent.dir}/kagent-#{node.kagent.version}"
 
-node.override.anaconda.user                = node.kagent.user
+node.override.anaconda.user                = "anaconda"
 node.override.anaconda.group               = node.kagent.group
 default.anaconda.dir                       = node.kagent.dir + "/anaconda"
 default.anaconda.home                      = node.anaconda.install_root + "/" + node.anaconda.version
