@@ -777,7 +777,6 @@ class SSLCherryPy(ServerAdapter):
 
 
 class Conda:
-    @staticmethod
     def conda(op, proj, channelurl, lib, version):
         def target(op, proj, channelurl, lib, version):
             global conda_list                    
@@ -815,9 +814,9 @@ class Conda:
         thread = threading.Thread(target=target, args=(op, proj, channelurl, lib, version,))
         thread.start()
             
-    @staticmethod    
-    def anaconda(project, op, arg):
-        script = BIN_DIR + "/anaconda.sh"        
+    def anaconda(project, op):
+        script = BIN_DIR + "/anaconda.sh"
+        logger.info("Go for it: {0} {1} {2}".format(script, project, op))
         try:
             logger.info("Anaconda operation {0} on {1}".format(op).format(project))
             p = Popen(['sudo', script, project, op, arg],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -1151,20 +1150,20 @@ if __name__ == '__main__':
         #     conda_mutex.release()
         #     return CommandHandler().response(404, "Error. Busy installing a library for this project. Retry in a few seconds.")              
         # conda_mutex.release()        
-        if (Conda.run(op, proj, channelurl, lib, version)):
+        if (Conda().conda(op, proj, channelurl, lib, version)):
                 resp = HTTPResponse(status=HTTP_OK, output="Conda operation started.")
                 logger.info("{0}".format(resp))
                 return resp
         return CommandHandler().response(404, "Error")  
 
     # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
-    @get('/anaconda/<op>/<proj>/<arg>')
-    def anaconda(op,proj,arg):
-        logger.info('Incoming REST Request:  GET /anaconda/{0}/{1}/{2}/{3}'.format(cluster, service, role, command))
+    @get('/anaconda/<op>/<proj>')
+    def anaconda(op,proj):
+        logger.info('Incoming REST Request:  GET /anaconda/{0}/{1}'.format(op, proj))
         if not Authentication().check():
             return Authentication().failed()
         # Blocking REST call here
-        if (Conda.anaconda(proj, op, arg)):
+        if (Conda().anaconda(proj, op)):
             if (op == "list"):
                 with open('/tmp/' + proj + "__conda_list.json") as json_data:
                     data = json.loads(json_data)
