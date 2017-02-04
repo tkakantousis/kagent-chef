@@ -778,7 +778,7 @@ class SSLCherryPy(ServerAdapter):
 
 class Conda:
     @staticmethod
-    def conda(self, op, proj, channelurl, lib, version):
+    def conda(op, proj, channelurl, lib, version):
         def target(op, proj, channelurl, lib, version):
             global conda_list                    
             if (version is None):
@@ -816,9 +816,10 @@ class Conda:
         thread.start()
             
     @staticmethod    
-    def anaconda(self, project, op, arg):
+    def anaconda(project, op, arg):
         script = BIN_DIR + "/anaconda.sh"        
         try:
+            logger.info("Anaconda operation {0} on {1}".format(op).format(project))
             p = Popen(['sudo', script, project, op, arg],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (output,err)=p.communicate()
             returncode = p.wait()
