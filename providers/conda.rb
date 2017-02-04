@@ -4,27 +4,28 @@ action :config do
 #   #{node.anaconda.base_dir}/bin/conda create -n hopsworksconda -y -q 
 # --file #{node.kagent.base_dir}/anaconda/spec-file.txt
 
-execute "create_base" do
-  user node.kagent.user
-  command "#{node.anaconda.base_dir}/bin/conda create -n #{node.kagent.user} --clone=root"
-  not_if "source <%= node.anaconda.base_dir %>/bin/activate #{node.kagent.user}"
-end
 
 execute "update_conda" do
-  user node.kagent.user
-  command "#{node.anaconda.base_dir}/bin/conda update conda -y -q"
+  user "root"
+  command "su #{node.anaconda.user} -c \"#{node.anaconda.base_dir}/bin/conda update conda -y -q\""
 end
 
 execute "update_anconda" do
-  user node.kagent.user
-  command "#{node.anaconda.base_dir}/bin/conda update anaconda -y -q"
+  user "root"
+  command "su #{node.anaconda.user} -c \"#{node.anaconda.base_dir}/bin/conda update anaconda -y -q\""
 end
 
 for lib in node.anaconda.default_libs do
   execute "install_anconda_default_libs" do
-    user node.kagent.user
-    command "#{node.anaconda.base_dir}/bin/conda install -q -y #{lib}"
+  user "root"
+    command "su #{node.anaconda.user} -c \"#{node.anaconda.base_dir}/bin/conda install -q -y #{lib}\""
   end
+end
+
+execute "create_base" do
+  user "root"
+  command "su #{node.kagent.user} -c \"#{node.anaconda.base_dir}/bin/conda create -n #{node.kagent.user} --clone=root\""
+  not_if "test -d /home/#{node.kagent.user}/.conda/envs/#{node.kagent.user}"
 end
 
 end
