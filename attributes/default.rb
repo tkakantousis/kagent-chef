@@ -15,7 +15,7 @@ default.anaconda.dir                       = node.kagent.dir + "/anaconda"
 default.anaconda.home                      = node.anaconda.install_root + "/" + node.anaconda.version
 default.anaconda.base_dir                  = node.anaconda.install_root + "/anaconda"
 
-default.anaconda.default_libs              = %w{ numpy hdfs3 scikit-learn matplotlib pandas }
+default.anaconda.default_libs              = %w{ numpy hdfs3 scikit-learn matplotlib pandas tensorflow }
 
 default.kagent.enabled                     = "true"
 
