@@ -42,7 +42,7 @@ bash 'create_default_anaconda_env' do
   code <<-EOF
      #{node.kagent.base_dir}/bin/anaconda_env.sh #{node.kagent.user} install
     EOF
-  not_if {source <%= node.anaconda.base_dir %>/bin/activate #{node.kagent.user}}
+  not_if "source <%= node.anaconda.base_dir %>/bin/activate #{node.kagent.user}"
 end
 
 
