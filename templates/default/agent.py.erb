@@ -1141,7 +1141,7 @@ if __name__ == '__main__':
 
 
     @get('/conda/<op>/<proj>/<channelurl>/<lib>/<version>')
-    def conda():
+    def conda(op,proj,channelurl,lib,version):
         if (password != request.json['password']):
             return Authentication().failed()
         proj = request.json['proj'];
@@ -1164,7 +1164,7 @@ if __name__ == '__main__':
 
     # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
     @get('/anaconda/<op>/<proj>/<arg>')
-    def anaconda():
+    def anaconda(op,proj,arg):
         if (password != request.json['password']):
             return Authentication().failed()
         proj = request.json['proj'];
@@ -1185,8 +1185,6 @@ if __name__ == '__main__':
                 logger.info("{0}".format(resp))
                 return resp
         return CommandHandler().response(404, "Error")  
-
-
 
     logger.info("RESTful service started.")
     run(host='0.0.0.0', port=agent_restport, server='sslcherrypy')
