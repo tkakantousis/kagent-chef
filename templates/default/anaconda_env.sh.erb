@@ -10,18 +10,14 @@ set -e
 PROJECT="$1"
 OP="$2"
 
-CLONE="$3"
+CLONE=
 
-if [ "$OP" == "install" ] ; then
+if [ $# -gt 2  ]; then
+   CLONE="$3"
+fi
 
-   <%= node.anaconda.base_dir %>/bin/conda config --add create_default_packages numpy 
-   <%= node.anaconda.base_dir %>/bin/conda config --add create_default_packages hdfs3
-   <%= node.anaconda.base_dir %>/bin/conda config --add create_default_packages scikit-learn 
-   <%= node.anaconda.base_dir %>/bin/conda config --add create_default_packages matplotlib 
-   <%= node.anaconda.base_dir %>/bin/conda config --add create_default_packages pandas 
-
+if [ "$OP" == "create" ] ; then
     <%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q
-#    <%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q
 elif [ "$OP" == "list" ] ; then
     <%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json
 elif [ "$OP" == "clone" ] ; then
