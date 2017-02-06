@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# conda <op> -n <proj> -c <channel> lib[=version]
-# conda $1 -n $2 -c $3 $4[$5]
+# conda <op> -n <proj> [-c <channel> --override-channels] lib[=version]
+# conda $1 -n $2 -c [$3] $4[$5]
 
-if [ $# -lt 4  ]; then
+if [[ $# -lt 4 || $# -gt 5 ]]; then
  echo "incorrect usage"
  exit 1
 fi
@@ -12,14 +12,18 @@ if [ $# -eq 5  ]; then
   VERSION="=${5}"
 fi
 
+
 # Name of hopsworks project
 PROJECT="$1"
 shift
 # {'install', 'remove', 'update', 'list'}
 OP="$1"
 shift
+CHANNEL=
 # default channel_alias  is http://conda.anaconda.org/.
-CHANNEL="$1"
+if [ "$1" != "default" ] ; then
+  CHANNEL="-c $1 --override-channels"
+fi
 shift
 # Name of virtualenv python dependency
 #PACKAGES="$@"
@@ -29,7 +33,7 @@ LIB="${1}${VERSION}"
 
 # Activate the conda environment for $PROJECT before installing/removing/updating
 
-source <%= node.anaconda.base_dir %>/bin/activate $PROJECT
+#source <%= node.anaconda.base_dir %>/bin/activate $PROJECT
 if [ $? -ne 0 ] ; then
  exit 2
 fi
@@ -37,13 +41,13 @@ fi
 res = 0
 #Execute the 'op'
 if [ $OP == "install" ] ; then
-  <%= node.anaconda.base_dir %>/bin/conda install -q -y -c $CHANNEL $LIB
+  <%= node.anaconda.base_dir %>/bin/conda install -n $PROJECT -q -y $CHANNEL $LIB
 elif [ $OP == "upgrade" ] ; then
-  <%= node.anaconda.base_dir %>/bin/conda upgrade $LIB
+  <%= node.anaconda.base_dir %>/bin/conda upgrade -n $PROJECT $CHANNEL $LIB
 elif [ $OP == "remove" ] ; then
-    <%= node.anaconda.base_dir %>/bin/conda remove $LIB
+  <%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT $CHANNEL $LIB
 else
-  res = -1
+  res = -5
 fi
 
 if [ $? -ne 0 ] ; then
@@ -51,6 +55,6 @@ if [ $? -ne 0 ] ; then
 fi
 
 # Deactivate environment
-source <%= node.anaconda.base_dir %>/bin/deactivate $PROJECT
+#source <%= node.anaconda.base_dir %>/bin/deactivate $PROJECT
 
 exit $res

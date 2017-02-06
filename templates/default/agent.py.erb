@@ -782,6 +782,8 @@ class Conda:
             global conda_list                    
             if (version is None):
                 version=""
+            if (channelurl is None || not channelurl):
+                channelurl="default"
             logger.info("Conda operation:  {0} - {1}/{2}/{3}/{4}".format(op, proj, channelurl, lib, version))                            
             script = BIN_DIR + "/conda.sh"
 #            conda_op = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'INSTALLING'}
@@ -846,7 +848,6 @@ if __name__ == '__main__':
     logger.setLevel(Util().logging_level(logging_level))
 
     # Heartbeat, process watch (alerts) and REST API are available after the agent registers successfully 
-#    thread.start_new_thread(Heartbeat, ()) 
     hb_thread = threading.Thread(target=Heartbeat, args=())
     hb_thread.setDaemon(True)
     hb_thread.start()
@@ -856,7 +857,6 @@ if __name__ == '__main__':
         service = Config().get(s, "service")       
         if services.has_option(s, "role"):
             role = Config().get(s, "role")             
-#            thread.start_new_thread(ExtProcess.watch, (cluster, service, role))
             my_thread = threading.Thread(target=ExtProcess.watch, args=(cluster, service, role))
             my_thread.setDaemon(True)
             my_thread.start()
