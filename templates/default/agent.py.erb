@@ -782,7 +782,7 @@ class Conda:
             global conda_list                    
             if (version is None):
                 version=""
-            if (channelurl is None || not channelurl):
+            if (channelurl is None or not channelurl):
                 channelurl="default"
             logger.info("Conda operation:  {0} - {1}/{2}/{3}/{4}".format(op, proj, channelurl, lib, version))                            
             script = BIN_DIR + "/conda.sh"
