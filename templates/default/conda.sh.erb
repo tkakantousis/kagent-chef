@@ -13,7 +13,6 @@ if [ $# -eq 5  ]; then
 fi
 
 
-# Name of hopsworks project
 PROJECT="$1"
 shift
 # {'install', 'remove', 'update', 'list'}
@@ -31,30 +30,24 @@ LIB="${1}${VERSION}"
 
 
 
-# Activate the conda environment for $PROJECT before installing/removing/updating
-
-#source <%= node.anaconda.base_dir %>/bin/activate $PROJECT
 if [ $? -ne 0 ] ; then
  exit 2
 fi
 
-res = 0
-#Execute the 'op'
-if [ $OP == "install" ] ; then
+res=0
+if [ "$OP" == "install" ] ; then
   <%= node.anaconda.base_dir %>/bin/conda install -n $PROJECT -q -y $CHANNEL $LIB
-elif [ $OP == "upgrade" ] ; then
+elif [ "$OP" == "upgrade" ] ; then
   <%= node.anaconda.base_dir %>/bin/conda upgrade -n $PROJECT $CHANNEL $LIB
-elif [ $OP == "remove" ] ; then
+elif [ "$OP" == "remove" ] ; then
   <%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT $CHANNEL $LIB
 else
-  res = -5
+  res=-5
 fi
 
 if [ $? -ne 0 ] ; then
-  res = 1
+  res=1
 fi
 
-# Deactivate environment
-#source <%= node.anaconda.base_dir %>/bin/deactivate $PROJECT
 
 exit $res
