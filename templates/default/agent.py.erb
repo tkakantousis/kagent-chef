@@ -1126,14 +1126,17 @@ if __name__ == '__main__':
         return HTTPResponse(status=400, output='Invalid command.')        
 
 
-    @get('/conda/<user>/<op>/<proj>/<lib>/<version>')
+    @get('/conda/<user>/<op>/<proj>/<lib>')
     def conda(op,proj,channelurl,lib,version):
         logger.info('Incoming REST Request:  GET /conda/{0}/{1}/{2}/{3}'.format(op, proj, lib, version))
         if not Authentication().check():
             return Authentication().failed()
-        arg = request.params['channelurl']
+        channelurl = request.params['channelurl']
         if not channelurl:
             channelurl="default"
+        version = request.params['version']
+        if not version:
+            version=None
         try:
             msg = Conda().conda(op, proj, channelurl, lib, version)
             resp = HTTPResponse(status=HTTP_OK, output=msg)
@@ -1144,7 +1147,7 @@ if __name__ == '__main__':
             return CommandHandler().response(400, "Error")  
 
     # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
-    # curl -k -X GET https://10.0.2.15:8090/create/project/?password=blah
+    # curl -k -X GET https://10.0.2.15:8090/create/project?password=blah
     # curl -k -X GET https://10.0.2.15:8090/clone/projectSrc/projectDest?password=blah    
     @get('/anaconda/<user>/<op>/<proj>')
     def anaconda(user,op,proj):
@@ -1154,7 +1157,7 @@ if __name__ == '__main__':
         # Blocking REST call here
         arg = "default"
         if (op == "clone"):
-            arg = request.params['src']
+            arg = request.params['srcproj']
         try:
             msg = Conda().anaconda(user, op, proj, arg)
             resp = HTTPResponse(status=HTTP_OK, output=msg)

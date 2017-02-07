@@ -29,7 +29,6 @@ shift
 LIB="${1}${VERSION}"
 
 
-
 if [ $? -ne 0 ] ; then
  exit 2
 fi
@@ -38,9 +37,9 @@ res=0
 if [ "$OP" == "install" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda install -n $PROJECT -q -y $CHANNEL $LIB"
 elif [ "$OP" == "upgrade" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda upgrade -n $PROJECT $CHANNEL $LIB"
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda upgrade -n $PROJECT -q -y $CHANNEL $LIB"
 elif [ "$OP" == "remove" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT $CHANNEL $LIB"
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT -q -y $CHANNEL $LIB"
 else
   res=-5
 fi
