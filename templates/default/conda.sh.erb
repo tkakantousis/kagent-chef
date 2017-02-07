@@ -1,17 +1,18 @@
 #!/bin/bash
 
-# conda <op> -n <proj> [-c <channel> --override-channels] lib[=version]
+# conda <user> <op> -n <proj> [-c <channel> --override-channels] lib[=version]
 # conda $1 -n $2 -c [$3] $4[$5]
 
-if [[ $# -lt 4 || $# -gt 5 ]]; then
+if [[ $# -lt 5 || $# -gt 6 ]]; then
  echo "incorrect usage"
  exit 1
 fi
 VERSION=""
-if [ $# -eq 5  ]; then
-  VERSION="=${5}"
+if [ $# -eq 6  ]; then
+  VERSION="=${6}"
 fi
 
+EXEC_AS_USER=$1
 # {'install', 'remove', 'update', 'list'}
 OP="$1"
 shift
@@ -35,11 +36,11 @@ fi
 
 res=0
 if [ "$OP" == "install" ] ; then
-  <%= node.anaconda.base_dir %>/bin/conda install -n $PROJECT -q -y $CHANNEL $LIB
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda install -n $PROJECT -q -y $CHANNEL $LIB"
 elif [ "$OP" == "upgrade" ] ; then
-  <%= node.anaconda.base_dir %>/bin/conda upgrade -n $PROJECT $CHANNEL $LIB
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda upgrade -n $PROJECT $CHANNEL $LIB"
 elif [ "$OP" == "remove" ] ; then
-  <%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT $CHANNEL $LIB
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT $CHANNEL $LIB"
 else
   res=-5
 fi

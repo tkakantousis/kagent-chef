@@ -777,26 +777,21 @@ class SSLCherryPy(ServerAdapter):
 
 
 class Conda():
-    def conda(self, op, proj, channelurl, lib, version):
-        def target(op, proj, channelurl, lib, version):
+    def conda(self, user, op, proj, channelurl, lib, version):
+        def target(user, op, proj, channelurl, lib, version):
             global conda_list                    
             if (version is None):
                 version=""
             if (channelurl is None or not channelurl):
                 channelurl="default"
-            logger.info("Conda operation:  {0} - {1}/{2}/{3}/{4}".format(op, proj, channelurl, lib, version))                            
             script = BIN_DIR + "/conda.sh"
-#            conda_op = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'INSTALLING'}
             conda_op = {}
             try:
-                p = Popen([script, op, proj, channelurl, lib, version],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                (output,err)=p.communicate()
-#                conda_mutex.acquire()
-#                conda_list.append(conda_op)
-#                conda_mutex.release()
+                command = "{0} {1} {2} {3} {4} {5} {6}".format(script, user, op, proj, channelurl, lib, version)
+                logger.info("{0}".format(command))                                            
                 returncode = p.wait()
-                logger.info("{0}".format(output))
-                logger.error("{0}".format(err))                                        
+                msg = subprocess.check_output([script, user, op, proj, channelurl, lib, version])                
+                logger.info("{0}".format(msg))
                 conda_mutex.acquire()       
                 try:
                     if returncode == 0:
@@ -804,33 +799,24 @@ class Conda():
                     else:
                         conda_op = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'FAILED'}
                 finally:
+                    # TODO - write the 'conda_op' to disk, and then read from disk to enable failure-recovery
                     conda_list.append(conda_op)
                     conda_mutex.release()
             except Exception as err:
                 conda_mutex.acquire()                
                 conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'FAILED'}
+                # TODO - write the 'conda_op' to disk, and then read from disk to enable failure-recovery
                 conda_list.append(conda_op)                   
                 conda_mutex.release()
                 logger.error(err)
 
-        thread = threading.Thread(target=target, args=(op, proj, channelurl, lib, version,))
+        thread = threading.Thread(target=target, args=(user, op, proj, channelurl, lib, version,))
         thread.start()
             
-    def anaconda(self, op, proj, arg):
+    def anaconda(self, user, op, proj, arg):
         script = BIN_DIR + "/anaconda_env.sh"
-        logger.info("Go for it: {0} {1} {2}".format(script, proj, op))
-        try:
-            logger.info("Anaconda operation {0} on {1}".format(op).format(proj))
-            p = Popen([script, proj, op, arg],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            (output,err)=p.communicate()
-            returncode = p.wait()
-            logger.info("{0}".format(output))
-            if not returncode == 0:
-                raise Exception("Add/remove python dependency returned a none-zero value")
-            return True
-        except Exception as err:
-            logger.error(err)
-            return False
+        logger.info("{0} {1} {2} {3} {4}".format(script, user, op, proj, arg))
+        return subprocess.check_output([script, user, op, proj, arg])
 
 
 if __name__ == '__main__':
@@ -1140,7 +1126,7 @@ if __name__ == '__main__':
         return HTTPResponse(status=400, output='Invalid command.')        
 
 
-    @get('/conda/<op>/<proj>/<channelurl>/<lib>/<version>')
+    @get('/conda/<user>/<op>/<proj>/<channelurl>/<lib>/<version>')
     def conda(op,proj,channelurl,lib,version):
         logger.info('Incoming REST Request:  GET /conda/{0}/{1}/{2}/{3}/{4}'.format(op, proj, channelurl, lib, version))
         if not Authentication().check():
@@ -1149,37 +1135,38 @@ if __name__ == '__main__':
         # if (conda_list[proj] != None):
         #     conda_mutex.release()
         #     return CommandHandler().response(404, "Error. Busy installing a library for this project. Retry in a few seconds.")              
-        # conda_mutex.release()        
-        if (Conda().conda(op, proj, channelurl, lib, version)):
-                resp = HTTPResponse(status=HTTP_OK, output="Conda operation started.")
-                logger.info("{0}".format(resp))
-                return resp
-        return CommandHandler().response(404, "Error")  
+        # conda_mutex.release()
+        try:        
+            msg = Conda().conda(op, proj, channelurl, lib, version)
+            resp = HTTPResponse(status=HTTP_OK, output=msg)
+            logger.info("{0}".format(resp))
+            return resp            
+            
+        except Exception as err:
+            logger.error("{0}".format(err))            
+            return CommandHandler().response(400, "Error")  
+
 
     # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
     # curl -k -X GET https://10.0.2.15:8090/create/project/?password=blah
     # curl -k -X GET https://10.0.2.15:8090/clone/projectSrc/projectDest?password=blah    
-    @get('/anaconda/<op>/<proj>')
-    def anaconda(op,proj):
-        logger.info('Incoming REST Request:  GET /anaconda/{0}/{1}'.format(op, proj))
+    @get('/anaconda/<user>/<op>/<proj>')
+    def anaconda(user,op,proj):
+        logger.info('Incoming REST Request:  GET /anaconda/{0}/{1}/{2}'.format(user, op, proj))
         if not Authentication().check():
             return Authentication().failed()
         # Blocking REST call here
         arg = "default"
         if (op == "clone"):
             arg = request.params['src']
-        if (Conda().anaconda(op, proj, arg)):
-            if (op == "list"):
-                with open('/tmp/' + proj + "__conda_list.json") as json_data:
-                    data = json.loads(json_data)
-                    json_data.close()
-                response.content_type = 'application/json'                    
-                return dumps(data)
-            else:
-                resp = HTTPResponse(status=HTTP_OK, output="Project operation updated successfully.")
-                logger.info("{0}".format(resp))
-                return resp
-        return CommandHandler().response(404, "Error")  
+        try:
+            msg = Conda().anaconda(user, op, proj, arg)
+            resp = HTTPResponse(status=HTTP_OK, output=msg)
+            logger.info("{0}".format(resp))
+            return resp            
+        except Exception as err:
+            logger.error("{0}".format(err))            
+            return CommandHandler().response(400, "Error")  
 
     logger.info("RESTful service started.")
     run(host='0.0.0.0', port=agent_restport, server='sslcherrypy')

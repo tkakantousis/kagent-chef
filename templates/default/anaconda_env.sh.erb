@@ -1,30 +1,31 @@
 #!/bin/bash
 
-if [ $# -lt 2  ]; then
-    echo "<op> <proj> <arg>"
+if [ $# -lt 3  ]; then
+    echo "<user> <op> <proj> <arg>"
     echo "incorrect usage"
  exit 1
 fi
 
 set -e
 
-OP="$1"
-PROJECT="$2"
+EXEC_AS_USER=$1
+OP=$2
+PROJECT=$3
 
 CLONE=
 
-if [ $# -eq 3  ]; then
-   CLONE="--clone $3"
+if [ "$OP" == "clone" ] ; then
+   CLONE="--clone $4"
 fi
 
 if [ "$OP" == "create" ] ; then
-    <%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q"
 elif [ "$OP" == "list" ] ; then
-    <%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json"
 elif [ "$OP" == "clone" ] ; then
-    <%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT --clone $CLONE -y -q
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT --clone $CLONE -y -q"
 elif [ "$OP" == "remove" ] ; then
-    <%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT --all -y -q
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT --all -y -q"
     # Verify the environment has been deleted
     # Need to first make sure that projectnames are not partial names of other projectnames, else this might return a false positive (error)
     # One way would be to have environment names as follows: "projectname__" - '__' is not allowed as a sequence of chars in a projectname.
