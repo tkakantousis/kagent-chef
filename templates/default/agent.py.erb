@@ -776,8 +776,8 @@ class SSLCherryPy(ServerAdapter):
             server.stop()
 
 
-class Conda:
-    def conda(op, proj, channelurl, lib, version):
+class Conda():
+    def conda(self, op, proj, channelurl, lib, version):
         def target(op, proj, channelurl, lib, version):
             global conda_list                    
             if (version is None):
@@ -789,7 +789,7 @@ class Conda:
 #            conda_op = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'INSTALLING'}
             conda_op = {}
             try:
-                p = Popen(['sudo', script, op, proj, channelurl, lib, version],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                p = Popen([script, op, proj, channelurl, lib, version],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 (output,err)=p.communicate()
 #                conda_mutex.acquire()
 #                conda_list.append(conda_op)
@@ -816,12 +816,12 @@ class Conda:
         thread = threading.Thread(target=target, args=(op, proj, channelurl, lib, version,))
         thread.start()
             
-    def anaconda(project, op):
-        script = BIN_DIR + "/anaconda.sh"
-        logger.info("Go for it: {0} {1} {2}".format(script, project, op))
+    def anaconda(self, op, proj, arg):
+        script = BIN_DIR + "/anaconda_env.sh"
+        logger.info("Go for it: {0} {1} {2}".format(script, proj, op))
         try:
-            logger.info("Anaconda operation {0} on {1}".format(op).format(project))
-            p = Popen(['sudo', script, project, op, arg],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            logger.info("Anaconda operation {0} on {1}".format(op).format(proj))
+            p = Popen([script, proj, op, arg],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (output,err)=p.communicate()
             returncode = p.wait()
             logger.info("{0}".format(output))
@@ -1157,13 +1157,18 @@ if __name__ == '__main__':
         return CommandHandler().response(404, "Error")  
 
     # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
+    # curl -k -X GET https://10.0.2.15:8090/create/project/?password=blah
+    # curl -k -X GET https://10.0.2.15:8090/clone/projectSrc/projectDest?password=blah    
     @get('/anaconda/<op>/<proj>')
     def anaconda(op,proj):
         logger.info('Incoming REST Request:  GET /anaconda/{0}/{1}'.format(op, proj))
         if not Authentication().check():
             return Authentication().failed()
         # Blocking REST call here
-        if (Conda().anaconda(proj, op)):
+        arg = "default"
+        if (op == "clone"):
+            arg = request.params['src']
+        if (Conda().anaconda(op, proj, arg)):
             if (op == "list"):
                 with open('/tmp/' + proj + "__conda_list.json") as json_data:
                     data = json.loads(json_data)

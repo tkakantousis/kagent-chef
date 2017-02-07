@@ -1,19 +1,20 @@
 #!/bin/bash
 
 if [ $# -lt 2  ]; then
- echo "incorrect usage"
+    echo "<op> <proj> <arg>"
+    echo "incorrect usage"
  exit 1
 fi
 
 set -e
 
-PROJECT="$1"
-OP="$2"
+OP="$1"
+PROJECT="$2"
 
 CLONE=
 
-if [ $# -gt 2  ]; then
-   CLONE="$3"
+if [ $# -eq 3  ]; then
+   CLONE="--clone $3"
 fi
 
 if [ "$OP" == "create" ] ; then

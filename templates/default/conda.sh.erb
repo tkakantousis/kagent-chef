@@ -12,11 +12,10 @@ if [ $# -eq 5  ]; then
   VERSION="=${5}"
 fi
 
-
-PROJECT="$1"
-shift
 # {'install', 'remove', 'update', 'list'}
 OP="$1"
+shift
+PROJECT="$1"
 shift
 CHANNEL=
 # default channel_alias  is http://conda.anaconda.org/.
