@@ -790,7 +790,7 @@ class Conda():
                 command = "{0} {1} {2} {3} {4} {5} {6}".format(script, user, op, proj, channelurl, lib, version)
                 logger.info("{0}".format(command))                                            
                 returncode = p.wait()
-                msg = subprocess.check_output([script, user, op, proj, channelurl, lib, version])                
+                msg = subprocess.check_output(['sudo', script, user, op, proj, channelurl, lib, version])                
                 logger.info("{0}".format(msg))
                 conda_mutex.acquire()       
                 try:
@@ -816,7 +816,7 @@ class Conda():
     def anaconda(self, user, op, proj, arg):
         script = BIN_DIR + "/anaconda_env.sh"
         logger.info("{0} {1} {2} {3} {4}".format(script, user, op, proj, arg))
-        return subprocess.check_output([script, user, op, proj, arg])
+        return subprocess.check_output(['sudo', script, user, op, proj, arg])
 
 
 if __name__ == '__main__':
