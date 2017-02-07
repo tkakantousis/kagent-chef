@@ -790,7 +790,7 @@ class Conda():
                 command = "{0} {1} {2} {3} {4} {5} {6}".format(script, user, op, proj, channelurl, lib, version)
                 logger.info("{0}".format(command))                                            
                 returncode = p.wait()
-                msg = subprocess.check_output([script, user, op, proj, channelurl, lib, version])                
+                msg = subprocess.check_output(['sudo', script, user, op, proj, channelurl, lib, version])                
                 logger.info("{0}".format(msg))
                 conda_mutex.acquire()       
                 try:
@@ -815,7 +815,7 @@ class Conda():
             
     def anaconda(self, user, op, proj, arg):
         script = BIN_DIR + "/anaconda_env.sh"
-        logger.info("{0} {1} {2} {3} {4}".format(script, user, op, proj, arg))
+        logger.info("{0} {1} {2} {3} {4}".format('sudo', script, user, op, proj, arg))
         return subprocess.check_output([script, user, op, proj, arg])
 
 
@@ -1126,26 +1126,22 @@ if __name__ == '__main__':
         return HTTPResponse(status=400, output='Invalid command.')        
 
 
-    @get('/conda/<user>/<op>/<proj>/<channelurl>/<lib>/<version>')
+    @get('/conda/<user>/<op>/<proj>/<lib>/<version>')
     def conda(op,proj,channelurl,lib,version):
-        logger.info('Incoming REST Request:  GET /conda/{0}/{1}/{2}/{3}/{4}'.format(op, proj, channelurl, lib, version))
+        logger.info('Incoming REST Request:  GET /conda/{0}/{1}/{2}/{3}'.format(op, proj, lib, version))
         if not Authentication().check():
             return Authentication().failed()
-        # conda_mutex.acquire()
-        # if (conda_list[proj] != None):
-        #     conda_mutex.release()
-        #     return CommandHandler().response(404, "Error. Busy installing a library for this project. Retry in a few seconds.")              
-        # conda_mutex.release()
-        try:        
+        arg = request.params['channelurl']
+        if not channelurl:
+            channelurl="default"
+        try:
             msg = Conda().conda(op, proj, channelurl, lib, version)
             resp = HTTPResponse(status=HTTP_OK, output=msg)
             logger.info("{0}".format(resp))
             return resp            
-            
         except Exception as err:
             logger.error("{0}".format(err))            
             return CommandHandler().response(400, "Error")  
-
 
     # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
     # curl -k -X GET https://10.0.2.15:8090/create/project/?password=blah
