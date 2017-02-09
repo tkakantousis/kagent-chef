@@ -72,6 +72,8 @@ global conda_list
 conda_list = []
 # conda_list['project'] = {'op':'install', 'url':'', 'dep': '', 'version':'', 'status':'success'}
 
+global conda_ongoing
+conda_ongoing = {}
 
 
 cores = multiprocessing.cpu_count()
@@ -273,7 +275,7 @@ class Heartbeat():
                 if bool(conda_list):
                     payload["conda-ops"] = conda_list
                 conda_mutex.release()                
-                
+
                 if (public_ip != None):
                     payload["public-ip"] = public_ip                      
                 else:
@@ -296,7 +298,10 @@ class Heartbeat():
                     # Clear the list of conda ops to upload if the rest call is successful
                     conda_mutex.acquire()
                     conda_list = []
-                    conda_mutex.release()                                    
+                    conda_mutex.release()
+                    commands = resp.json()
+                    Conda().commands(commands)
+                    
             except Exception as err:
                 logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
                 logged_in = False
@@ -774,42 +779,97 @@ class SSLCherryPy(ServerAdapter):
 
 
 class Conda():
-    def conda(self, user, op, proj, channelurl, lib, version):
-        def target(user, op, proj, channelurl, lib, version):
-            global conda_list                    
+    def libOp(self, user, command_id, op, proj, channelUrl, lib, version):
+        def target(user, command_id, op, proj, channelUrl, lib, version):
+            global conda_ongoing
+            if not channelUrl:
+                channelUrl="default"
+            if not version:
+                version=""
+            if not command_id:
+                command_id=-1
+            global conda_list
             script = BIN_DIR + "/conda.sh"
             conda_op = {}
+            
             try:
-                command = "sudo {0} {1} {2} {3} {4} {5} {6}".format(script, user, op, proj, channelurl, lib, version)
+                command = "sudo {0} {1} {2} {3} {4} {5} {6}".format(script, user, op, proj, channelUrl, lib, version)
                 logger.info("{0}".format(command))                                            
-                returncode = p.wait()
-                msg = subprocess.check_output(['sudo', script, user, op, proj, channelurl, lib, version])                
+                msg = subprocess.check_output(['sudo', script, user, op, proj, channelUrl, lib, version])                
                 logger.info("{0}".format(msg))
                 conda_mutex.acquire()       
-                try:
-                    if returncode == 0:
-                        conda_op = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'INSTALLED'}                        
-                    else:
-                        conda_op = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'FAILED'}
-                finally:
-                    # TODO - write the 'conda_op' to disk, and then read from disk to enable failure-recovery
-                    conda_list.append(conda_op)
-                    conda_mutex.release()
+                if returncode == 0:
+                    conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'INSTALLED'}                        
+                else:
+                    conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED'}
+                # TODO - write the 'conda_op' to disk, and then read from disk to enable failure-recovery
+                conda_list.append(conda_op)
+                conda_mutex.release()
             except Exception as err:
                 conda_mutex.acquire()                
-                conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': channelurl, 'lib': lib, 'version': version, 'status': 'FAILED'}
+                conda_op[proj] = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED'}
                 # TODO - write the 'conda_op' to disk, and then read from disk to enable failure-recovery
                 conda_list.append(conda_op)                   
                 conda_mutex.release()
                 logger.error(err)
+            finally:
+                conda_ongoing[proj] = False
 
-        thread = threading.Thread(target=target, args=(user, op, proj, channelurl, lib, version,))
+        thread = threading.Thread(target=target, args=(user, command_id, op, proj, channelUrl, lib, version,))
         thread.start()
             
-    def anaconda(self, user, op, proj, arg):
+    def envOp(self, user, command_id, op, proj, arg):
+        global conda_ongoing
+        if not arg:
+            arg=""
+        if not command_id:
+            command_id=-1
         script = BIN_DIR + "/anaconda_env.sh"
         logger.info("sudo {0} {1} {2} {3} {4}".format(script, user, op, proj, arg))
-        return subprocess.check_output([script, user, op, proj, arg])
+        res=0
+        msg=""
+        conda_op = {}        
+        try:
+            msg = subprocess.check_output([script, user, op, proj, arg])
+        except Exception as err:
+            res=1
+            msg = err
+        finally:
+            conda_mutex.acquire()
+            if res == 0:
+                conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'INSTALLED'}
+            else:
+                conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'FAILED'}
+            # TODO - write the 'conda_op' to disk, and then read from disk to enable failure-recovery
+            conda_list.append(conda_op)                   
+            conda_mutex.release()
+            conda_ongoing[proj] = False
+        return msg
+
+    def commands(self, data):
+        global conda_ongoing
+        logger.info("Commands...")
+        if (data is None):
+            return;
+        if (len(data)==0):
+            return;
+        i = 0
+        while i < len(data):
+            i++
+            op = data[i]['op'].upper()
+            user = data[i]['user']
+            proj = data[i]['proj']
+            command_id = data[i]['id']
+            if (not conda_ongoing[proj] or conda_ongoing[proj] == True):
+                conda_ongoing[proj] = True
+                logger.info("Command {0}/{1}/{2}".format(user,op,proj))
+                if op == "REMOVE" or op == "CLONE" or op == "CREATE":
+                    self.envOp(user, command_id, op, proj, data[i]['arg'])
+                else:  # Conda package  commands (install, remove, upgrade)
+                    version = data[i]['version']
+                    channelUrl = data[i]['channelUrl']
+                    lib = data[i]['lib']
+                    self.libOp(user, command_id, op, proj, channelUrl, lib, version)
 
 
 if __name__ == '__main__':
@@ -1119,19 +1179,15 @@ if __name__ == '__main__':
         return HTTPResponse(status=400, output='Invalid command.')        
 
 
-    @get('/conda/<user>/<op>/<proj>/<lib>')
-    def conda(user,op,proj,lib):
+    @get('/conda/<user>/<command_id>/<op>/<proj>/<lib>')
+    def conda(user,command_id,op,proj,lib):
         logger.info('Incoming REST Request:  GET /conda/{0}/{1}/{2}'.format(op, proj, lib))
         if not Authentication().check():
             return Authentication().failed()
         channelurl = request.params['channelurl']
-        if not channelurl:
-            channelurl="default"
         version = request.params['version']
-        if not version:
-            version=""
         try:
-            msg = Conda().conda(user,op, proj, channelurl, lib, version)
+            msg = Conda().conda(user,command_id, op, proj, channelurl, lib, version)
             resp = HTTPResponse(status=HTTP_OK, output=msg)
             logger.info("{0}".format(resp))
             return resp            
@@ -1142,8 +1198,8 @@ if __name__ == '__main__':
     # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
     # curl -k -X GET https://10.0.2.15:8090/create/project?password=blah
     # curl -k -X GET https://10.0.2.15:8090/clone/projectSrc/projectDest?password=blah    
-    @get('/anaconda/<user>/<op>/<proj>')
-    def anaconda(user,op,proj):
+    @get('/anaconda/<user>/<command_id>/<op>/<proj>')
+    def anaconda(user,command_id,op,proj):
         logger.info('Incoming REST Request:  GET /anaconda/{0}/{1}/{2}'.format(user, op, proj))
         if not Authentication().check():
             return Authentication().failed()
@@ -1152,7 +1208,7 @@ if __name__ == '__main__':
         if (op == "clone"):
             arg = request.params['srcproj']
         try:
-            msg = Conda().anaconda(user, op, proj, arg)
+            msg = Conda().envOp(user, command_id, op, proj, arg)
             resp = HTTPResponse(status=HTTP_OK, output=msg)
             logger.info("{0}".format(resp))
             return resp            

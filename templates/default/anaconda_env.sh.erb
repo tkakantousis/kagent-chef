@@ -14,18 +14,18 @@ PROJECT=$3
 
 CLONE=
 
-if [ "$OP" == "clone" ] ; then
+if [ "$OP" == "CLONE" ] ; then
    CLONE="--clone $4"
 fi
 
-if [ "$OP" == "create" ] ; then
+if [ "$OP" == "CREATE" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q"
-elif [ "$OP" == "list" ] ; then
+elif [ "$OP" == "LIST" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json"
-elif [ "$OP" == "clone" ] ; then
+elif [ "$OP" == "CLONE" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT --clone $CLONE -y -q"
-elif [ "$OP" == "remove" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT --all -y -q"
+elif [ "$OP" == "REMOVE" ] ; then
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda-env remove -n $PROJECT -y -q"
     # Verify the environment has been deleted
     # Need to first make sure that projectnames are not partial names of other projectnames, else this might return a false positive (error)
     # One way would be to have environment names as follows: "projectname__" - '__' is not allowed as a sequence of chars in a projectname.

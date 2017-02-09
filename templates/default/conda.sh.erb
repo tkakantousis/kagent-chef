@@ -13,7 +13,7 @@ if [ $# -eq 6  ]; then
 fi
 
 EXEC_AS_USER=$1
-# {'install', 'remove', 'update', 'list'}
+shift
 OP="$1"
 shift
 PROJECT="$1"
@@ -34,11 +34,11 @@ if [ $? -ne 0 ] ; then
 fi
 
 res=0
-if [ "$OP" == "install" ] ; then
+if [ "$OP" == "INSTALL" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda install -n $PROJECT -q -y $CHANNEL $LIB"
-elif [ "$OP" == "upgrade" ] ; then
+elif [ "$OP" == "UPGRADE" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda upgrade -n $PROJECT -q -y $CHANNEL $LIB"
-elif [ "$OP" == "remove" ] ; then
+elif [ "$OP" == "UNINSTALL" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT -q -y $CHANNEL $LIB"
 else
   res=-5
