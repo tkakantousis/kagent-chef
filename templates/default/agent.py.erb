@@ -44,6 +44,7 @@ var="~#@#@!#@!#!@#@!#"
 config_mutex = Lock()
 tf_mutex = Lock()
 conda_mutex = Lock()
+block_report_mutex = Lock()
 
 HTTP_OK = 200
 
@@ -74,6 +75,9 @@ conda_list = []
 
 global conda_ongoing
 conda_ongoing = {}
+
+global block_report
+block_report = {}
 
 
 cores = multiprocessing.cpu_count()
@@ -183,7 +187,25 @@ except Exception, e:
 
 
 logged_in = False
- 
+
+# http://stackoverflow.com/questions/12435211/python-threading-timer-repeat-function-every-n-seconds
+def setInterval(interval):
+    def decorator(function):
+        def wrapper(*args, **kwargs):
+            stopped = threading.Event()
+
+            def loop(): # executed in another thread
+                while not stopped.wait(interval): # until stopped
+                    function(*args, **kwargs)
+
+            t = threading.Thread(target=loop)
+            t.daemon = True # stop if the program exits
+            t.start()
+            return stopped
+        return wrapper
+    return decorator
+
+
 class Util():
     
     def logging_level(self, level):
@@ -276,6 +298,11 @@ class Heartbeat():
                     payload["conda-ops"] = conda_list
                 conda_mutex.release()                
 
+                block_report_mutex.acquire()
+                if bool(block_report):
+                    payload["block-report"] = block_report
+                block_report_mutex.release()
+                
                 if (public_ip != None):
                     payload["public-ip"] = public_ip                      
                 else:
@@ -291,6 +318,9 @@ class Heartbeat():
                 payload['memory-capacity'] = memory_info.total                            
                 logger.info("Sending heartbeat...")
                 resp = session.post(heartbeat_url, data=json.dumps(payload), headers=headers, verify=False)
+                block_report_mutex.acquire()
+                block_report = {}
+                block_report_mutex.release()
                 if not resp.status_code == HTTP_OK:
                     raise Exception('Heartbeat could not be sent (Status code: {0})'.format(resp.status_code))
                     logged_in = False
@@ -299,14 +329,17 @@ class Heartbeat():
                     conda_mutex.acquire()
                     conda_list = []
                     conda_mutex.release()
-                    commands = resp.json()
-                    Conda().commands(commands)
-                    
+                    try:
+                        Conda().commands(resp.json())
+                    except Exception as err:
+                        logger.info("No commands to execute")
             except Exception as err:
                 logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
                 logged_in = False
 
 
+
+                
 class Alert:
     @staticmethod    
     def send(cluster, service, role, time, status):
@@ -799,15 +832,15 @@ class Conda():
                 logger.info("{0}".format(msg))
                 conda_mutex.acquire()       
                 if returncode == 0:
-                    conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'INSTALLED'}                        
+                    conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'SUCCESS', 'id': command_id}
                 else:
-                    conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED'}
+                    conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED', 'id': command_id}
                 # TODO - write the 'conda_op' to disk, and then read from disk to enable failure-recovery
                 conda_list.append(conda_op)
                 conda_mutex.release()
             except Exception as err:
                 conda_mutex.acquire()                
-                conda_op[proj] = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED'}
+                conda_op[proj] = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED', 'id': command_id}
                 # TODO - write the 'conda_op' to disk, and then read from disk to enable failure-recovery
                 conda_list.append(conda_op)                   
                 conda_mutex.release()
@@ -830,37 +863,67 @@ class Conda():
         msg=""
         conda_op = {}        
         try:
-            msg = subprocess.check_output([script, user, op, proj, arg])
+            msg = subprocess.check_output(['sudo', script, user, op, proj, arg])
         except Exception as err:
             res=1
             msg = err
         finally:
             conda_mutex.acquire()
             if res == 0:
-                conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'INSTALLED'}
+                conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'SUCCESS', 'id': command_id, 'arg': arg}
             else:
-                conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'FAILED'}
-            # TODO - write the 'conda_op' to disk, and then read from disk to enable failure-recovery
+                # Pass msg back to DB if there is an error as 'arg'.                
+                conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'FAILED', 'id': command_id, 'arg': msg}
             conda_list.append(conda_op)                   
             conda_mutex.release()
             conda_ongoing[proj] = False
         return msg
 
+    def blockReport(self):
+        global block_report
+        script = BIN_DIR + "/anaconda_env.sh"
+        try:
+            msg = subprocess.check_output(['sudo', script, 'glassfish', "LIST_ENVS", val, ""])
+        except Exception as err:
+            res=1
+            logger.warn("Could not list conda environments to do a block report. Err: ".format(err))
+            return
+        with open('/tmp/conda_envs.json') as envs_file:    
+            envsDict = json.load(envs_file)
+        envs = envsDict['envs']
+        report = {}
+        for i, val in enumerate(envs):
+            val = os.path.basename(val)
+            msg = subprocess.check_output(['sudo', script, 'glassfish', "LIST", val, ""])
+            with open('/tmp/' + val + '__conda_list.json') as libs_file:    
+                arrayLibs = json.load(libs_file)
+                report[val]=arrayLibs
+        logger.info(json.dumps(report, indent=2))
+
+        # The above code building up a block report could take a long time to execute, meaning
+        # that partially written block-reports get sent up. We want to make them available for heartbeats
+        # only at the very end of building up the state needed.
+        block_report_mutex.acquire()
+        block_report = report
+        block_report_mutex.release()
+
+    
     def commands(self, data):
         global conda_ongoing
-        logger.info("Commands...")
         if (data is None):
             return;
         if (len(data)==0):
             return;
         i = 0
+        logger.info("Commands to execute: {0}".format(len(data))        
         while i < len(data):
-            i++
             op = data[i]['op'].upper()
             user = data[i]['user']
             proj = data[i]['proj']
             command_id = data[i]['id']
+            logger.info("Command to execute: {0}/{1}/{2}".format(op,proj,command_id)                    
             if (not conda_ongoing[proj] or conda_ongoing[proj] == True):
+                logger.info("Command to execute: {0}/{1}/{2}".format(op,proj,command_id)                                            
                 conda_ongoing[proj] = True
                 logger.info("Command {0}/{1}/{2}".format(user,op,proj))
                 if op == "REMOVE" or op == "CLONE" or op == "CREATE":
@@ -870,7 +933,9 @@ class Conda():
                     channelUrl = data[i]['channelUrl']
                     lib = data[i]['lib']
                     self.libOp(user, command_id, op, proj, channelUrl, lib, version)
-
+            else:
+                logger.warn("Conda busy executing a command for project: {0}".format(proj)                            
+            i=i+1
 
 if __name__ == '__main__':
     
@@ -901,7 +966,20 @@ if __name__ == '__main__':
             my_thread.start()
         else:
             logger.info("Not watching {0}/{1}".format(cluster, service))        
-#
+
+
+# start block reports in 3600 secs                            
+@setInterval(10)
+def startBlockReporting():
+    Conda().blockReport()
+
+stop = startBlockReporting() # start timer
+#stop.set() # stop the loop
+#stop = startBlockReporting() # start new timer
+#stop.set()     
+
+
+                            #
 # The REST code uses a CherryPy webserver, but Bottle for the REST endpoints
 # WSGI server for SSL
 # For a a tutorial on the REST code below, see http://bottlepy.org/docs/dev/tutorial.html

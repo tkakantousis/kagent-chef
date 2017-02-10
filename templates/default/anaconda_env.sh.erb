@@ -19,7 +19,9 @@ if [ "$OP" == "CLONE" ] ; then
 fi
 
 if [ "$OP" == "CREATE" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q"
+    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q"
+elif [ "$OP" == "LIST_ENVS" ] ; then
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda env list --json > /tmp/conda_envs.json"    
 elif [ "$OP" == "LIST" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json"
 elif [ "$OP" == "CLONE" ] ; then
