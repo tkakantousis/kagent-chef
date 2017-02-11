@@ -269,7 +269,8 @@ class Heartbeat():
     def send():
         global logged_in
         global session
-        global conda_list        
+        global conda_list
+        global block_report
         if not logged_in:
            logger.info('Logging in to Hopsworks....')
            Heartbeat.login()
@@ -317,6 +318,7 @@ class Heartbeat():
                 payload["disk-capacity"] = disk_info.capacity    
                 payload['memory-capacity'] = memory_info.total                            
                 logger.info("Sending heartbeat...")
+                logger.info(json.dumps(payload, indent=2))
                 resp = session.post(heartbeat_url, data=json.dumps(payload), headers=headers, verify=False)
                 block_report_mutex.acquire()
                 block_report = {}
@@ -336,8 +338,9 @@ class Heartbeat():
             except Exception as err:
                 logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
                 logged_in = False
-
-
+                block_report_mutex.acquire()
+                block_report = {}
+                block_report_mutex.release()
 
                 
 class Alert:
@@ -755,11 +758,15 @@ class CommandHandler():
             p = Popen(command , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             out, err = p.communicate()        
             return CommandHandler().response(200, out)
-        
         except Exception as err:
             logger.error(err)
             return CommandHandler().response(400, "Could not execute.")                
-                
+                    stop = startBlockReporting() # start timer
+#stop.set() # stop the loop
+#stop = startBlockReporting() # start new timer
+#stop.set()     
+
+
     def refresh(self):
         Heartbeat.send(False);
         return CommandHandler().response(200, "OK")
@@ -883,7 +890,7 @@ class Conda():
         global block_report
         script = BIN_DIR + "/anaconda_env.sh"
         try:
-            msg = subprocess.check_output(['sudo', script, 'glassfish', "LIST_ENVS", val, ""])
+            msg = subprocess.check_output(['sudo', script, 'glassfish', "LIST_ENVS", "", ""])
         except Exception as err:
             res=1
             logger.warn("Could not list conda environments to do a block report. Err: ".format(err))
@@ -915,17 +922,16 @@ class Conda():
         if (len(data)==0):
             return;
         i = 0
-        logger.info("Commands to execute: {0}".format(len(data))        
+        logger.info("Commands to execute: {0}".format(len(data)))
         while i < len(data):
             op = data[i]['op'].upper()
             user = data[i]['user']
             proj = data[i]['proj']
             command_id = data[i]['id']
-            logger.info("Command to execute: {0}/{1}/{2}".format(op,proj,command_id)                    
-            if (not conda_ongoing[proj] or conda_ongoing[proj] == True):
-                logger.info("Command to execute: {0}/{1}/{2}".format(op,proj,command_id)                                            
+            logger.info("Command to execute: {0}/{1}/{2}".format(op,proj,command_id))
+            if (proj in conda_ongoing == False or conda_ongoing[proj] == False):
                 conda_ongoing[proj] = True
-                logger.info("Command {0}/{1}/{2}".format(user,op,proj))
+                logger.info("Executing Command {0}/{1}/{2}".format(user,op,proj))
                 if op == "REMOVE" or op == "CLONE" or op == "CREATE":
                     self.envOp(user, command_id, op, proj, data[i]['arg'])
                 else:  # Conda package  commands (install, remove, upgrade)
@@ -969,14 +975,12 @@ if __name__ == '__main__':
 
 
 # start block reports in 3600 secs                            
-@setInterval(10)
-def startBlockReporting():
-    Conda().blockReport()
+    @setInterval(10)
+    def startBlockReporting():
+        Conda().blockReport()
 
-stop = startBlockReporting() # start timer
-#stop.set() # stop the loop
-#stop = startBlockReporting() # start new timer
-#stop.set()     
+    stop = startBlockReporting() # start timer
+
 
 
                             #
