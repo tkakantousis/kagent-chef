@@ -6,8 +6,6 @@ if [ $# -lt 3  ]; then
  exit 1
 fi
 
-set -e
-
 EXEC_AS_USER=$1
 OP=$2
 PROJECT=$3
@@ -19,17 +17,13 @@ if [ "$OP" == "CLONE" ] ; then
 fi
 
 function exists() {
-    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda info --envs | grep '^{$PROJECT} '
-    exists = $?
-    if [ $exists -eq 0 ] ; 
-      return  0
-    fi
-    return 1
+    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda info --envs | grep '^{$PROJECT} '"
+    return $?
 }
-
+# 
 if [ "$OP" == "CREATE" ] ; then
-    # If the env already exists, return OK
-    if (exists() -eq 0) ; then
+    exists
+    if [ $? -eq 0 ] ; then	# 
        exit 0
     fi
     su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q"
@@ -41,7 +35,9 @@ elif [ "$OP" == "CLONE" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT --clone $CLONE -y -q"
 elif [ "$OP" == "REMOVE" ] ; then
     # If the env has already been removed, return OK
-    if (exists() -ne 0) ; then
+    exists
+    if [ $? -ne 0 ] ; then
+       echo "Cannot remove environment that doesn't exist"
        exit 0
     fi
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda-env remove -n $PROJECT -y -q"

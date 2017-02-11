@@ -26,8 +26,14 @@ fi
 shift
 # Name of virtualenv python dependency
 #PACKAGES="$@"
+LIB_NAME=$1
 LIB="${1}${VERSION}"
 
+
+function exists() {
+    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT | grep '^{$LIB_NAME} '"
+    return $?
+}
 
 if [ $? -ne 0 ] ; then
  exit 2
@@ -35,15 +41,23 @@ fi
 
 res=0
 if [ "$OP" == "INSTALL" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda install -n $PROJECT -q -y $CHANNEL $LIB"
+  exists
+  if [ $? -ne 0 ] ; then
+      su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda install -n $PROJECT -q -y $CHANNEL $LIB"
+  fi
 elif [ "$OP" == "UPGRADE" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda upgrade -n $PROJECT -q -y $CHANNEL $LIB"
+  exists
+  if [ $? -eq 0 ] ; then
+      su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda upgrade -n $PROJECT -q -y $CHANNEL $LIB"
+  fi
 elif [ "$OP" == "UNINSTALL" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT -q -y $CHANNEL $LIB"
+  exists
+  if [ $? -ne 0 ] ; then
+      su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda remove -n $PROJECT -q -y $CHANNEL $LIB"
+  fi
 else
   res=-5
 fi
-
 if [ $? -ne 0 ] ; then
   res=1
 fi
