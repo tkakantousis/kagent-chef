@@ -17,7 +17,7 @@ if [ "$OP" == "CLONE" ] ; then
 fi
 
 function exists() {
-    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda info --envs | grep '^{$PROJECT} '"
+    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda info --envs | grep '^${PROJECT} '"
     return $?
 }
 # 

@@ -31,7 +31,7 @@ LIB="${1}${VERSION}"
 
 
 function exists() {
-    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT | grep '^{$LIB_NAME} '"
+    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT | grep '^${LIB_NAME} '"
     return $?
 }
 

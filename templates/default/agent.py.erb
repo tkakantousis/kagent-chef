@@ -36,6 +36,7 @@ import netifaces
 from IPy import IP
 import pexpect
 import re
+from collections import defaultdict
 
 global mysql_process
 mysql_process = None
@@ -74,7 +75,7 @@ conda_list = []
 # conda_list['project'] = {'op':'install', 'url':'', 'dep': '', 'version':'', 'status':'success'}
 
 global conda_ongoing
-conda_ongoing = {}
+conda_ongoing = defaultdict(lambda: False)
 
 global block_report
 block_report = {}
@@ -326,21 +327,32 @@ class Heartbeat():
                 if not resp.status_code == HTTP_OK:
                     raise Exception('Heartbeat could not be sent (Status code: {0})'.format(resp.status_code))
                     logged_in = False
+                    conda_mutex.acquire()
+                    conda_list = []
+                    conda_mutex.release()
                 else:
                     # Clear the list of conda ops to upload if the rest call is successful
                     conda_mutex.acquire()
                     conda_list = []
                     conda_mutex.release()
+                    theResponse = resp.json()
                     try:
-                        Conda().commands(resp.json())
+                        Conda().commands(theResopnse)
                     except Exception as err:
                         logger.info("No commands to execute")
+                        for data in theResponse:
+                            proj = data['proj']
+                            conda_ongoing[proj] = False                            
+                        
             except Exception as err:
                 logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
                 logged_in = False
                 block_report_mutex.acquire()
                 block_report = {}
                 block_report_mutex.release()
+                conda_mutex.acquire()
+                conda_list = []
+                conda_mutex.release()
 
                 
 class Alert:
@@ -761,7 +773,6 @@ class CommandHandler():
         except Exception as err:
             logger.error(err)
             return CommandHandler().response(400, "Could not execute.")                
-                    stop = startBlockReporting() # start timer
 
 
     def refresh(self):
@@ -823,34 +834,30 @@ class Conda():
                 channelUrl="default"
             if not version:
                 version=""
-            if not command_id:
-                command_id=-1
+#            if not command_id:
+#                command_id=-1
             global conda_list
             script = BIN_DIR + "/conda.sh"
             conda_op = {}
-            
+            returncode = 1
             try:
                 command = "sudo {0} {1} {2} {3} {4} {5} {6}".format(script, user, op, proj, channelUrl, lib, version)
                 logger.info("{0}".format(command))                                            
                 msg = subprocess.check_output(['sudo', script, user, op, proj, channelUrl, lib, version])                
                 logger.info("{0}".format(msg))
-                conda_mutex.acquire()       
-                if returncode == 0:
-                    conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'SUCCESS', 'id': command_id}
-                else:
-                    conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED', 'id': command_id}
-                # TODO - write the 'conda_op' to disk, and then read from disk to enable failure-recovery
-                conda_list.append(conda_op)
-                conda_mutex.release()
-            except Exception as err:
-                conda_mutex.acquire()                
-                conda_op[proj] = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED', 'id': command_id}
-                # TODO - write the 'conda_op' to disk, and then read from disk to enable failure-recovery
-                conda_list.append(conda_op)                   
-                conda_mutex.release()
-                logger.error(err)
+            except subprocess.CalledProcessError, e:
+                logger.info("Execption in envOp {0}".format(e.output))
+                logger.info("Execption in envOp. Ret code: {0}".format(e.returncode))
             finally:
-                conda_ongoing[proj] = False
+                conda_ongoing[proj] = False                
+                if command_id != -1:                
+                    conda_mutex.acquire()                     
+                    if returncode == 0:
+                        conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'SUCCESS', 'id': str(command_id) }
+                    else:
+                        conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED', 'id':  str(command_id) }
+                    conda_list.append(conda_op)                                           
+                    conda_mutex.release()                
 
         thread = threading.Thread(target=target, args=(user, command_id, op, proj, channelUrl, lib, version,))
         thread.start()
@@ -859,8 +866,6 @@ class Conda():
         global conda_ongoing
         if not arg:
             arg=""
-        if not command_id:
-            command_id=-1
         script = BIN_DIR + "/anaconda_env.sh"
         logger.info("sudo {0} {1} {2} {3} {4}".format(script, user, op, proj, arg))
         res=0
@@ -868,16 +873,19 @@ class Conda():
         conda_op = {}        
         try:
             msg = subprocess.check_output(['sudo', script, user, op, proj, arg])
-        except Exception as err:
+        except subprocess.CalledProcessError, e:
+            logger.info("Execption in envOp {0}".format(e.output))
+            logger.info("Execption in envOp. Ret code: {0}".format(e.returncode))
             res=1
-            msg = err
+            msg = e.output
         finally:
             conda_mutex.acquire()
-            if res == 0:
-                conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'SUCCESS', 'id': command_id, 'arg': arg}
-            else:
+            if command_id != -1:
+                if res == 0:
+                    conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'SUCCESS', 'id': str(command_id), 'arg': arg}
+                else:
                 # Pass msg back to DB if there is an error as 'arg'.                
-                conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'FAILED', 'id': command_id, 'arg': msg}
+                    conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'FAILED', 'id':  str(command_id), 'arg': msg}
             conda_list.append(conda_op)                   
             conda_mutex.release()
             conda_ongoing[proj] = False
@@ -912,34 +920,32 @@ class Conda():
         block_report_mutex.release()
 
     
-    def commands(self, data):
+    def commands(self, dataArray):
         global conda_ongoing
-        if (data is None):
+        if (dataArray is None):
             return;
-        if (len(data)==0):
-            return;
-        i = 0
-        logger.info("Commands to execute: {0}".format(len(data)))
-        while i < len(data):
-            op = data[i]['op'].upper()
-            user = data[i]['user']
-            proj = data[i]['proj']
-            command_id = data[i]['id']
+        logger.info("Commands to execute: {0}".format(len(dataArray)))
+        for data in dataArray:
+            logger.info(json.dumps(data, indent=2))            
+            op = data['op'].upper()
+            user = data['user']
+            proj = data['proj']
+            command_id = data['id']
             logger.info("Command to execute: {0}/{1}/{2}".format(op,proj,command_id))
-            if (proj in conda_ongoing == False or conda_ongoing[proj] == False):
+            if (conda_ongoing[proj] == False):
                 conda_ongoing[proj] = True
                 logger.info("Executing Command {0}/{1}/{2}".format(user,op,proj))
                 if op == "REMOVE" or op == "CLONE" or op == "CREATE":
-                    self.envOp(user, command_id, op, proj, data[i]['arg'])
+                    self.envOp(user, command_id, op, proj, data['arg'])
                 else:  # Conda package  commands (install, remove, upgrade)
-                    version = data[i]['version']
-                    channelUrl = data[i]['channelUrl']
-                    lib = data[i]['lib']
+                    version = data['version']
+                    channelUrl = data['channelUrl']
+                    lib = data['lib']
                     self.libOp(user, command_id, op, proj, channelUrl, lib, version)
             else:
-                logger.warn("Conda busy executing a command for project: {0}".format(proj)                            
-            i=i+1
+                logger.warn("Conda busy executing a command for project: {0}".format(proj))
 
+                            
 if __name__ == '__main__':
     
     if len(sys.argv) > 1:
