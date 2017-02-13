@@ -298,6 +298,7 @@ class Heartbeat():
                 conda_mutex.acquire()
                 if bool(conda_list):
                     payload["conda-ops"] = conda_list
+                    logger.info(json.dumps(payload, indent=2))                    
                 conda_mutex.release()                
 
                 block_report_mutex.acquire()
@@ -319,7 +320,6 @@ class Heartbeat():
                 payload["disk-capacity"] = disk_info.capacity    
                 payload['memory-capacity'] = memory_info.total                            
                 logger.info("Sending heartbeat...")
-                logger.info(json.dumps(payload, indent=2))
                 resp = session.post(heartbeat_url, data=json.dumps(payload), headers=headers, verify=False)
                 block_report_mutex.acquire()
                 block_report = {}
@@ -337,7 +337,7 @@ class Heartbeat():
                     conda_mutex.release()
                     theResponse = resp.json()
                     try:
-                        Conda().commands(theResopnse)
+                        Conda().commands(theResponse)
                     except Exception as err:
                         logger.info("No commands to execute")
                         for data in theResponse:
@@ -834,28 +834,24 @@ class Conda():
                 channelUrl="default"
             if not version:
                 version=""
-#            if not command_id:
-#                command_id=-1
             global conda_list
             script = BIN_DIR + "/conda.sh"
             conda_op = {}
-            returncode = 1
             try:
                 command = "sudo {0} {1} {2} {3} {4} {5} {6}".format(script, user, op, proj, channelUrl, lib, version)
                 logger.info("{0}".format(command))                                            
-                msg = subprocess.check_output(['sudo', script, user, op, proj, channelUrl, lib, version])                
+                msg = subprocess.check_output(['sudo', script, user, op, proj, channelUrl, lib, version])
+                logger.info("Lib op finished without errror.")
                 logger.info("{0}".format(msg))
+                conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'SUCCESS', 'id': str(command_id) }                
             except subprocess.CalledProcessError, e:
                 logger.info("Execption in envOp {0}".format(e.output))
                 logger.info("Execption in envOp. Ret code: {0}".format(e.returncode))
+                conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED', 'id':  str(command_id) }                
             finally:
                 conda_ongoing[proj] = False                
                 if command_id != -1:                
                     conda_mutex.acquire()                     
-                    if returncode == 0:
-                        conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'SUCCESS', 'id': str(command_id) }
-                    else:
-                        conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED', 'id':  str(command_id) }
                     conda_list.append(conda_op)                                           
                     conda_mutex.release()                
 
@@ -868,25 +864,20 @@ class Conda():
             arg=""
         script = BIN_DIR + "/anaconda_env.sh"
         logger.info("sudo {0} {1} {2} {3} {4}".format(script, user, op, proj, arg))
-        res=0
         msg=""
         conda_op = {}        
         try:
             msg = subprocess.check_output(['sudo', script, user, op, proj, arg])
+            conda_op = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'SUCCESS', 'id': str(command_id), 'arg': arg}            
         except subprocess.CalledProcessError, e:
             logger.info("Execption in envOp {0}".format(e.output))
             logger.info("Execption in envOp. Ret code: {0}".format(e.returncode))
-            res=1
             msg = e.output
+            conda_op = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'FAILED', 'id':  str(command_id), 'arg': msg}
         finally:
             conda_mutex.acquire()
             if command_id != -1:
-                if res == 0:
-                    conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'SUCCESS', 'id': str(command_id), 'arg': arg}
-                else:
-                # Pass msg back to DB if there is an error as 'arg'.                
-                    conda_op[proj] = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'FAILED', 'id':  str(command_id), 'arg': msg}
-            conda_list.append(conda_op)                   
+                conda_list.append(conda_op)                   
             conda_mutex.release()
             conda_ongoing[proj] = False
         return msg
