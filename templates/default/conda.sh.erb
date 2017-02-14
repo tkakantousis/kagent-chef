@@ -27,6 +27,11 @@ shift
 # Name of virtualenv python dependency
 #PACKAGES="$@"
 LIB_NAME=$1
+
+#No versions allowed with upgrade
+if [ "$OP" == "UPGRADE" ] ; then
+  VERSION=""
+fi    
 LIB="${1}${VERSION}"
 
 
