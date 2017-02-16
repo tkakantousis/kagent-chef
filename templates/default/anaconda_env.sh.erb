@@ -26,13 +26,13 @@ if [ "$OP" == "CREATE" ] ; then
     if [ $? -eq 0 ] ; then	# 
        exit 0
     fi
-    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q"
+    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q --offline"
 elif [ "$OP" == "LIST_ENVS" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda env list --json > /tmp/conda_envs.json"    
 elif [ "$OP" == "LIST" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json"
 elif [ "$OP" == "CLONE" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT --clone $CLONE -y -q"
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT --offline --clone $CLONE -y -q"
 elif [ "$OP" == "REMOVE" ] ; then
     # If the env has already been removed, return OK
     exists
