@@ -333,14 +333,6 @@ file node.default.kagent.services do
   action :create_if_missing
 end
 
-file node.default.tf.services do
-  owner node.kagent.user
-  group node.kagent.group
-  mode "755"
-  action :create_if_missing
-end
-
-
 if node.ntp.install == "true"
   include_recipe "ntp::default"
 end
@@ -391,25 +383,6 @@ end
     mode 0750
   end
 end
-
-
-id=0
-node.tf.cpu_ids.each do |cpu|
-  kagent_tf id do
-    resource "cpu" 
-  end
-  id+=1
-end
-
-id=0
-
-node.tf.gpu_ids.each do |gpu|
-  kagent_tf id do
-    resource "gpu" 
-  end
-  id+=1
-end
-
 
 
 # set_my_hostname

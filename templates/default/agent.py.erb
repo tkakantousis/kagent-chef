@@ -43,7 +43,6 @@ mysql_process = None
 var="~#@#@!#@!#!@#@!#"
 
 config_mutex = Lock()
-tf_mutex = Lock()
 conda_mutex = Lock()
 block_report_mutex = Lock()
 
@@ -52,7 +51,6 @@ HTTP_OK = 200
 BIN_DIR = "<%= node[:kagent][:base_dir] %>/bin"
 CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config.ini"
 SERVICES_FILE = "<%= node[:kagent][:base_dir] %>/services"
-TF_SERVICES_FILE = "<%= node[:kagent][:base_dir] %>/tf_services"
 LOG_FILE = "<%= node[:kagent][:base_dir] %>/agent.log"
 
 CERT_FILE = "<%= node[:kagent][:certs_dir] %>/pub.pem"
@@ -64,10 +62,6 @@ CLIENT_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_client_truststore.jks"
 
 global states
 states = {}
-
-# tensorflow resources: gpu, cpus
-global tfstates
-tfstates = {}
 
 # Conda install/remove/update/clone events
 global conda_list
@@ -171,20 +165,8 @@ try:
         if services.has_option(s, "role") :        
             states[services.get(s, "role")] = {'status':'Stopped', 'start-time':''}
 
-# TODO - for loop to see if there are running tensorflow  programs. Updates states to reflect situation.
 except Exception, e:
     logger.error("Exception while reading {0} file: {1}".format(SERVICES_FILE, e))
-    sys.exit(1)     
-
-
-try:
-    resources = ConfigParser.ConfigParser()
-    resources.read(TF_SERVICES_FILE)
-    for s in services.sections():
-        if (services.has_option(s, "resource") and services.has_option(s, "id")):        
-            tfstates[services.get(s, "resource")][services.get(s, "id")] = {'status':'free', 'start-time':'', 'proj-user':'','pid-file':'', 'program':'', 'args':''}
-except Exception, e:
-    logger.error("Exception while reading {0} file: {1}".format(TF_SERVICES_FILE, e))
     sys.exit(1)     
 
 
@@ -486,51 +468,6 @@ class Config():
         return val                
 
 
-class TfConfig(): 
-
-    def section_name(self, cluster, resource, id=None):
-        if id == None:
-            return "{0}-{1}".format(cluster, resource)
-        else:
-            return "{0}-{1}-{2}".format(cluster, resource, id)   
-        
-    # select items so that the key does not contain 'file' or 'script'
-    def read_all_for_heartbeat(self):
-        tf_mutex.acquire()       
-        resources_list = []     
-        try:
-            for s in resources.sections():
-                   item = {}
-                   item['status'] = Heartbeat.resourceKey(resources.get(s, "id"), 'status')
-                   resources_list.append(item)   
-                   for key, val in resources.items(s):
-                       if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
-                           item[key] = val
-                       resources_list.append(item)                
-        finally:
-            tf_mutex.release()
-        return resources_list
-        
-    def get_section(self, section):
-        tf_mutex.acquire()
-        items = {}
-        try:
-            for key, val in resources.items(section):
-                items[key] = val
-        finally:
-            tf_mutex.release()
-        return items
-    
-    def get(self, section, option):
-        tf_mutex.acquire()
-        val = ""
-        try:         
-            val = resources.get(section, option)
-        finally:
-            tf_mutex.release()
-        return val                
-
-     
 class Service:
     
     # need to be completed. Set the status to Initialize?
@@ -1140,126 +1077,9 @@ if __name__ == '__main__':
             else:       
                 return CommandHandler().execute(cluster, service, role, command, params);
         return CommandHandler().response(404, "Error")  
-                
-    '''
-    Tensorflow REST API.
-    Operations to allocate/free resources for Tensorflow programs.
-    Start/stop Tensorflow programs.
-    Serve/stop-serving Tensorflow models.
-    '''
-
-    @post('/tf/alloc')
-    def tf_alloc():
-        global tfstates
-     # Extract the projectname, username
-     # Extract the resource request (cpu or gpu). How many?
-     # Check tfstate to see if there is a free cpu or gpu
-     # Update tfstate, then write it to the file. Then return allocated response
-        if (password != request.json['password']):
-            return Authentication().failed()
-
-        proj_user = request.json['proj-user']
-        resource = request.json['resource']
-        if (resource != "cpu" or resource != "gpu"):
-            return HTTPResponse(status=400, output='Invalid resource type requested. Valid types: cpu, gpu.')
-        resource_id = int(request.json['id'])
-        if (tfstates[resource][resource_id]['status'] != 'free'):
-            return HTTPResponse(status=400, output='Resource is busy.')
-        now = long(time.mktime(datetime.now().timetuple()))
-        tfstates[resource][resource_id]['status'] = 'busy'
-        tfstates[resource][resource_id]['start-time'] = now
-        tfstates[resource][resource_id]['proj-user'] = proj_user
-        # Write to the resources file that i have updated the resource
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/free')
-    def tf_free():
-        global tfstates        
-        if (password != request.json['password']):
-            return Authentication().failed()
-        proj_user = request.json['proj-user']
-        resource = request.json['resource']
-        if (resource != "cpu" or resource != "gpu"):
-            return HTTPResponse(status=400, output='Invalid resource type requested. Valid types: cpu, gpu.')
-        resource_id = int(request.json['id'])
-        if (tfstates[resource][resource_id]['status'] != 'free'):
-            return HTTPResponse(status=400, output='Resource is busy.')
-        now = long(time.mktime(datetime.now().timetuple()))
-        tfstates[resource][resource_id]['status'] = 'busy'
-        tfstates[resource][resource_id]['start-time'] = now
-        tfstates[resource][resource_id]['proj-user'] = proj_user
-
-        # Write to the resources file that i have updated the resource
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/runcpu/<projuser>/<pythonprog>/<args>')
-    def tf_run_cpu(projuser, pythonprog, args):
-        if (password != request.json['password']):
-            return Authentication().failed()
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/rungpu/<projuser>/<pythonprog>/<args>')
-    def tf_run_gpu(projuser, pythonprog, args):
-        if (password != request.json['password']):
-            return Authentication().failed()
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/poll/<projuser>')
-    def tf_poll(projuser):
-        if (password != request.json['password']):
-            return Authentication().failed()
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/uploadserver/<projuser>')
-    def tf_start_serving(projuser):
-        if (password != request.json['password']):
-            return Authentication().failed()
-        model = request.json
-        try:
-#            model_filename = request.POST.get('model')
-            for i in request.files.getlist('file'):
-                filepath = os.path.join('./models/uploaded',thisuser.data.get('model'))
-                fileobj = i.file
-                with open(filepath,"wb") as target_file:
-                    while True:
-                        datachunk = fileobj.read(1024)
-                        if not datachunk:
-                            break
-                    target_file.write(datachunk)
-
-        except:
-            print("error: " + sys.exc_info())
-
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/startserving/<projuser>/<modelfilename>/<args>')
-    def tf_start_serving(projuser,modelfilename,args):
-        if (password != request.json['password']):
-            return Authentication().failed()
-        try:
-            rawData = cherrypy.request.body.read(int(cherrypy.request.headers['Content-Length']))
-            b = json.loads(rawData)
-#            return json.dumps({'x': 4, 'c': b})
-#            return {'x': 4, 'c': b}
-            model_filename = request.POST.get('model')
-            args = request.POST.get('args')
-#            response.content_type = 'application/json'
-            return json.dumps(tfcase.search(searchterm,images_only))
-        except:
-            print("error: " + sys.exc_info())
-        return HTTPResponse(status=400, output='Invalid command.')        
 
 
-    @get('/tf/stopserving')
-    def tf_stop_serving():
-        if (password != request.json['password']):
-            return Authentication().failed()
-        proj_user = request.json['projuser'];
-        model_name = request.json['model-name'];
-
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-
+    
     @get('/conda/<user>/<command_id>/<op>/<proj>/<lib>')
     def conda(user,command_id,op,proj,lib):
         logger.info('Incoming REST Request:  GET /conda/{0}/{1}/{2}'.format(op, proj, lib))

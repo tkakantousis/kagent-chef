@@ -64,7 +64,6 @@ default.kagent[:default][:private_ips]     = ['10.0.2.15']
 # services file contains locally installed services
 
 default.kagent.services                    = node.kagent.base_dir + "/services"
-default.tf.services                        = node.kagent.base_dir + "/tf_services"
 
 # name of cluster as shown in Dashboard
 default.kagent.cluster                     = "Hops"
@@ -94,10 +93,11 @@ node.normal.ntp.servers                    = ['0.europe.pool.ntp.org', '1.europe
 
 node.normal.ntp.peers                      = ['time0.int.example.org', 'time1.int.example.org']
 
-
-node.default.tf.cpu_ids                    = ['']
-node.default.tf.gpu_ids                    = ['']
-
 default.kagent.test                        = false
+
+
+default.kagent.keystore                    = "#{node.kagent.base_dir}/node_server_keystore.jks"
+default.kagent.keystore_password           = "changeit"
+
 
 default.services.enabled                   = "false"
