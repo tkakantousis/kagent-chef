@@ -309,6 +309,14 @@ directory "#{node.kagent.base_dir}/tf/log" do
   recursive true
 end
 
+directory "#{node.kagent.base_dir}/anaconda" do
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+end
+
+
 
 directory node.kagent.keystore_dir do
   owner node.kagent.user
@@ -324,14 +332,6 @@ file node.default.kagent.services do
   mode "755"
   action :create_if_missing
 end
-
-file node.default.tf.services do
-  owner node.kagent.user
-  group node.kagent.group
-  mode "755"
-  action :create_if_missing
-end
-
 
 if node.ntp.install == "true"
   include_recipe "ntp::default"
@@ -385,47 +385,8 @@ end
 end
 
 
-template "/etc/sudoers.d/kagent" do
-  source "kagent_sudoers.erb"
-  owner "root"
-  group "root"
-  mode "0440"
-  variables({
-                :user => node.kagent.user,
-                :start => "#{node.kagent.base_dir}/bin/start-service.sh",
-                :stop => "#{node.kagent.base_dir}/bin/stop-service.sh",
-                :restart => "#{node.kagent.base_dir}/bin/restart-service.sh",
-                :status => "#{node.kagent.base_dir}/bin/status-service.sh",
-                :startall => "#{node.kagent.base_dir}/bin/start-all-local-services.sh",
-                :stopall => "#{node.kagent.base_dir}/bin/shutdown-all-local-services.sh",
-                :statusall => "#{node.kagent.base_dir}/bin/status-all-local-services.sh"
-              })
-  action :create
-end  
-
-
-id=0
-node.tf.cpu_ids.each do |cpu|
-  kagent_tf id do
-    resource "cpu" 
-  end
-  id+=1
-end
-
-id=0
-
-node.tf.gpu_ids.each do |gpu|
-  kagent_tf id do
-    resource "gpu" 
-  end
-  id+=1
-end
-
-
-
 # set_my_hostname
 if node.vagrant === "true" || node.vagrant == true 
-
     node[:kagent][:default][:private_ips].each_with_index do |ip, index| 
       hostsfile_entry "#{ip}" do
         hostname  "dn#{index}"
@@ -433,5 +394,43 @@ if node.vagrant === "true" || node.vagrant == true
         unique    true
       end
     end
-
 end
+
+
+template "#{node.kagent.home}/bin/conda.sh" do
+  source "conda.sh.erb"
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+end
+
+template "#{node.kagent.home}/bin/anaconda_env.sh" do
+  source "anaconda_env.sh.erb"
+  owner node.kagent.user
+  group node.kagent.group
+  mode "755"
+  action :create
+end
+
+
+template "/etc/sudoers.d/kagent" do
+  source "sudoers.erb"
+  owner "root"
+  group "root"
+  mode "0440"
+  variables({
+                :user => node.kagent.user,
+                :conda =>  "#{node.kagent.base_dir}/bin/conda.sh",
+                :anaconda =>  "#{node.kagent.base_dir}/bin/anaconda_env.sh",
+                :start => "#{node.kagent.base_dir}/bin/start-service.sh",
+                :stop => "#{node.kagent.base_dir}/bin/stop-service.sh",
+                :restart => "#{node.kagent.base_dir}/bin/restart-service.sh",
+                :status => "#{node.kagent.base_dir}/bin/status-service.sh",
+                :startall => "#{node.kagent.base_dir}/bin/start-all-local-services.sh",
+                :stopall => "#{node.kagent.base_dir}/bin/shutdown-all-local-services.sh",
+                :statusall => "#{node.kagent.base_dir}/bin/status-all-local-services.sh"                
+              })
+  action :create
+end  
+

@@ -120,6 +120,7 @@ template "#{node.kagent.base_dir}/bin/start-all-local-services.sh" do
   mode 0740
 end
 
+
 template "#{node.kagent.base_dir}/bin/shutdown-all-local-services.sh" do
   source "shutdown-all-local-services.sh.erb"
   owner node.kagent.user

@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 
 '''
-Created on 6 October 2013
-
-@author: Hamidreza Afzali <afzali@kth.se>
-@author: Jim Dowling <jdowling@kth.se>
-
 Install:
  requests:    easy_install requests
  bottle:      easy_install bottle
@@ -36,25 +31,26 @@ from OpenSSL import crypto
 import socket
 from os.path import exists, join
 import MySQLdb
-from bottle import Bottle, run, get, post, request, HTTPResponse, server_names, ServerAdapter
+from bottle import Bottle, run, get, post, request, HTTPResponse, server_names, ServerAdapter, response
 import netifaces 
 from IPy import IP
 import pexpect
 import re
+from collections import defaultdict
 
 global mysql_process
 mysql_process = None
 var="~#@#@!#@!#!@#@!#"
 
 config_mutex = Lock()
-tf_mutex = Lock()
+conda_mutex = Lock()
+block_report_mutex = Lock()
 
 HTTP_OK = 200
 
 BIN_DIR = "<%= node[:kagent][:base_dir] %>/bin"
 CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config.ini"
 SERVICES_FILE = "<%= node[:kagent][:base_dir] %>/services"
-TF_SERVICES_FILE = "<%= node[:kagent][:base_dir] %>/tf_services"
 LOG_FILE = "<%= node[:kagent][:base_dir] %>/agent.log"
 
 CERT_FILE = "<%= node[:kagent][:certs_dir] %>/pub.pem"
@@ -67,9 +63,16 @@ CLIENT_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_client_truststore.jks"
 global states
 states = {}
 
-# tensorflow resources: gpu, cpus
-global tfstates
-tfstates = {}
+# Conda install/remove/update/clone events
+global conda_list
+conda_list = []
+# conda_list['project'] = {'op':'install', 'url':'', 'dep': '', 'version':'', 'status':'success'}
+
+global conda_ongoing
+conda_ongoing = defaultdict(lambda: False)
+
+global block_report
+block_report = {}
 
 
 cores = multiprocessing.cpu_count()
@@ -98,7 +101,8 @@ try:
     mysql_socket = config.get('agent', 'mysql-socket')          
     network_interface = config.get('agent', 'network-interface')          
     group_name = config.get('agent', 'group-name')          
-
+    env_report_freq_in_secs = config.getint('agent', 'env-report-freq-in-secs')
+    
     group_name = config.get('agent', 'group-name')
 
 # TODO find public/private IP addresses 
@@ -161,25 +165,31 @@ try:
         if services.has_option(s, "role") :        
             states[services.get(s, "role")] = {'status':'Stopped', 'start-time':''}
 
-# TODO - for loop to see if there are running tensorflow  programs. Updates states to reflect situation.
 except Exception, e:
     logger.error("Exception while reading {0} file: {1}".format(SERVICES_FILE, e))
     sys.exit(1)     
 
 
-try:
-    resources = ConfigParser.ConfigParser()
-    resources.read(TF_SERVICES_FILE)
-    for s in services.sections():
-        if (services.has_option(s, "resource") and services.has_option(s, "id")):        
-            tfstates[services.get(s, "resource")][services.get(s, "id")] = {'status':'free', 'start-time':'', 'proj-user':'','pid-file':'', 'program':'', 'args':''}
-except Exception, e:
-    logger.error("Exception while reading {0} file: {1}".format(TF_SERVICES_FILE, e))
-    sys.exit(1)     
-
-
 logged_in = False
- 
+
+# http://stackoverflow.com/questions/12435211/python-threading-timer-repeat-function-every-n-seconds
+def setInterval(interval):
+    def decorator(function):
+        def wrapper(*args, **kwargs):
+            stopped = threading.Event()
+
+            def loop(): # executed in another thread
+                while not stopped.wait(interval): # until stopped
+                    function(*args, **kwargs)
+
+            t = threading.Thread(target=loop)
+            t.daemon = True # stop if the program exits
+            t.start()
+            return stopped
+        return wrapper
+    return decorator
+
+
 class Util():
     
     def logging_level(self, level):
@@ -233,6 +243,7 @@ class Heartbeat():
 
     @staticmethod
     def serviceKey(*keys):
+            global states
             ob = states
             for key in keys:
                 ob = ob[key]
@@ -242,6 +253,8 @@ class Heartbeat():
     def send():
         global logged_in
         global session
+        global conda_list
+        global block_report
         if not logged_in:
            logger.info('Logging in to Hopsworks....')
            Heartbeat.login()
@@ -265,6 +278,18 @@ class Heartbeat():
                 payload["group-name"] = group_name
                 payload["hostname"] = hostname
 
+                conda_mutex.acquire()
+                if bool(conda_list):
+                    payload["conda-ops"] = conda_list
+                    logger.info(json.dumps(payload, indent=2))                    
+                conda_mutex.release()                
+
+                block_report_mutex.acquire()
+                if bool(block_report):
+                    logger.info("Sending a block report...")
+                    payload["block-report"] = block_report
+                block_report_mutex.release()
+                
                 if (public_ip != None):
                     payload["public-ip"] = public_ip                      
                 else:
@@ -280,14 +305,40 @@ class Heartbeat():
                 payload['memory-capacity'] = memory_info.total                            
                 logger.info("Sending heartbeat...")
                 resp = session.post(heartbeat_url, data=json.dumps(payload), headers=headers, verify=False)
+                block_report_mutex.acquire()
+                block_report = {}
+                block_report_mutex.release()
                 if not resp.status_code == HTTP_OK:
                     raise Exception('Heartbeat could not be sent (Status code: {0})'.format(resp.status_code))
                     logged_in = False
+                    conda_mutex.acquire()
+                    conda_list = []
+                    conda_mutex.release()
+                else:
+                    # Clear the list of conda ops to upload if the rest call is successful
+                    conda_mutex.acquire()
+                    conda_list = []
+                    conda_mutex.release()
+                    theResponse = resp.json()
+                    try:
+                        Conda().commands(theResponse)
+                    except Exception as err:
+                        logger.info("No commands to execute")
+                        for data in theResponse:
+                            proj = data['proj']
+                            conda_ongoing[proj] = False                            
+                        
             except Exception as err:
                 logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
                 logged_in = False
+                block_report_mutex.acquire()
+                block_report = {}
+                block_report_mutex.release()
+                conda_mutex.acquire()
+                conda_list = []
+                conda_mutex.release()
 
-
+                
 class Alert:
     @staticmethod    
     def send(cluster, service, role, time, status):
@@ -355,6 +406,7 @@ class ExtProcess():  # external process
         
     @staticmethod        
     def watch(cluster, service, role):
+        global states        
         while True:
             try:
                 section = Config().section_name(cluster, service, role)
@@ -416,51 +468,6 @@ class Config():
         return val                
 
 
-class TfConfig(): 
-
-    def section_name(self, cluster, resource, id=None):
-        if id == None:
-            return "{0}-{1}".format(cluster, resource)
-        else:
-            return "{0}-{1}-{2}".format(cluster, resource, id)   
-        
-    # select items so that the key does not contain 'file' or 'script'
-    def read_all_for_heartbeat(self):
-        tf_mutex.acquire()       
-        resources_list = []     
-        try:
-            for s in resources.sections():
-                   item = {}
-                   item['status'] = Heartbeat.resourceKey(resources.get(s, "id"), 'status')
-                   resources_list.append(item)   
-                   for key, val in resources.items(s):
-                       if (not 'file' in key) and (not 'script' in key) and (not 'command' in key):
-                           item[key] = val
-                       resources_list.append(item)                
-        finally:
-            tf_mutex.release()
-        return resources_list
-        
-    def get_section(self, section):
-        tf_mutex.acquire()
-        items = {}
-        try:
-            for key, val in resources.items(section):
-                items[key] = val
-        finally:
-            tf_mutex.release()
-        return items
-    
-    def get(self, section, option):
-        tf_mutex.acquire()
-        val = ""
-        try:         
-            val = resources.get(section, option)
-        finally:
-            tf_mutex.release()
-        return val                
-
-     
 class Service:
     
     # need to be completed. Set the status to Initialize?
@@ -498,6 +505,7 @@ class Service:
         
     def stop(self, cluster, service, role):
         script = BIN_DIR + "/stop-service.sh"
+        global states        
         try:
             subprocess.check_call(['sudo', script, role], close_fds=True)  # raises exception if not returncode == 0
             now = long(time.mktime(datetime.now().timetuple()))
@@ -543,11 +551,13 @@ class Service:
         return True
 
     def failed(self, cluster, service, role):
+        global states        
         now = long(time.mktime(datetime.now().timetuple()))
         states[role] = {'status':'Stopped', 'start-time':now}
         Alert.send(cluster, service, role, now, False)
 
     def started(self, cluster, service, role):
+        global states        
         now = long(time.mktime(datetime.now().timetuple()))
         states[role] = {'status':'Started', 'start-time':now}
         Alert.send(cluster, service, role, now, True)
@@ -589,6 +599,7 @@ class CommandHandler():
                 return CommandHandler().response(400, 'Error: Cannot initialize the service.')
     
     def start(self, cluster, service, role):
+        global states
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
             return CommandHandler().response(400, 'Role not installed.')
@@ -602,6 +613,7 @@ class CommandHandler():
                 return CommandHandler().response(200, "Role started.")
 
     def stop(self, cluster, service, role):
+        global states
         section = Config().section_name(cluster, service, role)
         if not services.has_section(section):
             return CommandHandler().response(400, 'Role not installed.')
@@ -697,11 +709,11 @@ class CommandHandler():
             p = Popen(command , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             out, err = p.communicate()        
             return CommandHandler().response(200, out)
-        
         except Exception as err:
             logger.error(err)
             return CommandHandler().response(400, "Could not execute.")                
-                
+
+
     def refresh(self):
         Heartbeat.send(False);
         return CommandHandler().response(200, "OK")
@@ -752,6 +764,121 @@ class SSLCherryPy(ServerAdapter):
         finally:  
             server.stop()
 
+
+class Conda():
+    def libOp(self, user, command_id, op, proj, channelUrl, lib, version):
+        def target(user, command_id, op, proj, channelUrl, lib, version):
+            global conda_ongoing
+            if not channelUrl:
+                channelUrl="default"
+            if not version:
+                version=""
+            global conda_list
+            script = BIN_DIR + "/conda.sh"
+            conda_op = {}
+            try:
+                command = "sudo {0} {1} {2} {3} {4} {5} {6}".format(script, user, op, proj, channelUrl, lib, version)
+                logger.info("{0}".format(command))                                            
+                msg = subprocess.check_output(['sudo', script, user, op, proj, channelUrl, lib, version])
+                logger.info("Lib op finished without errror.")
+                logger.info("{0}".format(msg))
+                conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'INSTALLED', 'id': str(command_id) }                
+            except subprocess.CalledProcessError, e:
+                logger.info("Execption in libOp {0}".format(e.output))
+                logger.info("Execption in libOp. Ret code: {0}".format(e.returncode))
+                conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED', 'id':  str(command_id) }                
+            finally:
+                conda_ongoing[proj] = False                
+                if command_id != -1:                
+                    conda_mutex.acquire()                     
+                    conda_list.append(conda_op)                                           
+                    conda_mutex.release()                
+
+        thread = threading.Thread(target=target, args=(user, command_id, op, proj, channelUrl, lib, version,))
+        thread.start()
+            
+    def envOp(self, user, command_id, op, proj, arg):
+        global conda_ongoing
+        if not arg:
+            arg=""
+        script = BIN_DIR + "/anaconda_env.sh"
+        logger.info("sudo {0} {1} {2} {3} {4}".format(script, user, op, proj, arg))
+        msg=""
+        conda_op = {}        
+        try:
+            msg = subprocess.check_output(['sudo', script, user, op, proj, arg])
+            conda_op = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'INSTALLED', 'id': str(command_id), 'arg': arg}            
+        except subprocess.CalledProcessError, e:
+            logger.info("Execption in envOp {0}".format(e.output))
+            logger.info("Execption in envOp. Ret code: {0}".format(e.returncode))
+            msg = e.output
+            conda_op = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'FAILED', 'id':  str(command_id), 'arg': msg}
+        finally:
+            conda_mutex.acquire()
+            if command_id != -1:
+                conda_list.append(conda_op)                   
+            conda_mutex.release()
+            conda_ongoing[proj] = False
+        return msg
+
+    def blockReport(self):
+        global block_report
+        script = BIN_DIR + "/anaconda_env.sh"
+        try:
+            msg = subprocess.check_output(['sudo', script, 'glassfish', "LIST_ENVS", "", ""])
+        except Exception as err:
+            res=1
+            logger.warn("Could not list conda environments to do a block report. Err: ".format(err))
+            return
+        with open('/tmp/conda_envs.json') as envs_file:    
+            envsDict = json.load(envs_file)
+        envs = envsDict['envs']
+        report = {}
+        for i, val in enumerate(envs):
+            val = os.path.basename(val)
+            msg = subprocess.check_output(['sudo', script, 'glassfish', "LIST", val, ""])
+            with open('/tmp/' + val + '__conda_list.json') as libs_file:    
+                arrayLibs = json.load(libs_file)
+                report[val]=arrayLibs
+        logger.info(json.dumps(report, indent=2))
+
+        # The above code building up a block report could take a long time to execute, meaning
+        # that partially written block-reports get sent up. We want to make them available for heartbeats
+        # only at the very end of building up the state needed.
+        block_report_mutex.acquire()
+        block_report = report
+        block_report_mutex.release()
+
+    
+    def commands(self, dataArray):
+        global conda_ongoing
+        if (dataArray is None):
+            return;
+        logger.info("Commands to execute: {0}".format(len(dataArray)))
+        for data in dataArray:
+            logger.info(json.dumps(data, indent=2))            
+            op = data['op'].upper()
+            user = data['user']
+            proj = data['proj']
+            command_id = data['id']
+            logger.info("Command to execute: {0}/{1}/{2}".format(op,proj,command_id))
+            if (conda_ongoing[proj] == False):
+                conda_ongoing[proj] = True
+                logger.info("Executing Command {0}/{1}/{2}".format(user,op,proj))
+                arg=""
+                if 'arg' in data:
+                    arg=data['arg']
+                if op == "REMOVE" or op == "CLONE" or op == "CREATE":
+                    self.envOp(user, command_id, op, proj, arg)
+                else:  # Conda package  commands (install, remove, upgrade)
+                    version = data['version']
+                    channelUrl = data['channelUrl']
+                    lib = data['lib']
+                    self.libOp(user, command_id, op, proj, channelUrl, lib, version)
+            else:
+                logger.warn("Conda busy executing a command for project: {0}".format(proj))
+
+                            
 if __name__ == '__main__':
     
     if len(sys.argv) > 1:
@@ -767,7 +894,6 @@ if __name__ == '__main__':
     logger.setLevel(Util().logging_level(logging_level))
 
     # Heartbeat, process watch (alerts) and REST API are available after the agent registers successfully 
-#    thread.start_new_thread(Heartbeat, ()) 
     hb_thread = threading.Thread(target=Heartbeat, args=())
     hb_thread.setDaemon(True)
     hb_thread.start()
@@ -777,13 +903,23 @@ if __name__ == '__main__':
         service = Config().get(s, "service")       
         if services.has_option(s, "role"):
             role = Config().get(s, "role")             
-#            thread.start_new_thread(ExtProcess.watch, (cluster, service, role))
             my_thread = threading.Thread(target=ExtProcess.watch, args=(cluster, service, role))
             my_thread.setDaemon(True)
             my_thread.start()
         else:
             logger.info("Not watching {0}/{1}".format(cluster, service))        
-#
+
+
+# send conda environment reports every env_report_freq_in_secs seconds
+    @setInterval(env_report_freq_in_secs)
+    def startBlockReporting():
+        Conda().blockReport()
+
+    stop = startBlockReporting() # start timer
+
+
+
+                            #
 # The REST code uses a CherryPy webserver, but Bottle for the REST endpoints
 # WSGI server for SSL
 # For a a tutorial on the REST code below, see http://bottlepy.org/docs/dev/tutorial.html
@@ -941,124 +1077,45 @@ if __name__ == '__main__':
             else:       
                 return CommandHandler().execute(cluster, service, role, command, params);
         return CommandHandler().response(404, "Error")  
-                
-    '''
-    Tensorflow REST API.
-    Operations to allocate/free resources for Tensorflow programs.
-    Start/stop Tensorflow programs.
-    Serve/stop-serving Tensorflow models.
-    '''
 
-    @post('/tf/alloc')
-    def tf_alloc():
-     # Extract the projectname, username
-     # Extract the resource request (cpu or gpu). How many?
-     # Check tfstate to see if there is a free cpu or gpu
-     # Update tfstate, then write it to the file. Then return allocated response
-        if (password != request.json['password']):
+
+    
+    @get('/conda/<user>/<command_id>/<op>/<proj>/<lib>')
+    def conda(user,command_id,op,proj,lib):
+        logger.info('Incoming REST Request:  GET /conda/{0}/{1}/{2}'.format(op, proj, lib))
+        if not Authentication().check():
             return Authentication().failed()
-
-        proj_user = request.json['proj-user']
-        resource = request.json['resource']
-        if (resource != "cpu" or resource != "gpu"):
-            return HTTPResponse(status=400, output='Invalid resource type requested. Valid types: cpu, gpu.')
-        resource_id = int(request.json['id'])
-        if (tfstates[resource][resource_id]['status'] != 'free'):
-            return HTTPResponse(status=400, output='Resource is busy.')
-        now = long(time.mktime(datetime.now().timetuple()))
-        tfstates[resource][resource_id]['status'] = 'busy'
-        tfstates[resource][resource_id]['start-time'] = now
-        tfstates[resource][resource_id]['proj-user'] = proj_user
-        # Write to the resources file that i have updated the resource
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/free')
-    def tf_free():
-        if (password != request.json['password']):
-            return Authentication().failed()
-        proj_user = request.json['proj-user']
-        resource = request.json['resource']
-        if (resource != "cpu" or resource != "gpu"):
-            return HTTPResponse(status=400, output='Invalid resource type requested. Valid types: cpu, gpu.')
-        resource_id = int(request.json['id'])
-        if (tfstates[resource][resource_id]['status'] != 'free'):
-            return HTTPResponse(status=400, output='Resource is busy.')
-        now = long(time.mktime(datetime.now().timetuple()))
-        tfstates[resource][resource_id]['status'] = 'busy'
-        tfstates[resource][resource_id]['start-time'] = now
-        tfstates[resource][resource_id]['proj-user'] = proj_user
-
-        # Write to the resources file that i have updated the resource
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/runcpu/<projuser>/<pythonprog>/<args>')
-    def tf_run_cpu(projuser, pythonprog, args):
-        if (password != request.json['password']):
-            return Authentication().failed()
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/rungpu/<projuser>/<pythonprog>/<args>')
-    def tf_run_gpu(projuser, pythonprog, args):
-        if (password != request.json['password']):
-            return Authentication().failed()
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/poll/<projuser>')
-    def tf_poll(projuser):
-        if (password != request.json['password']):
-            return Authentication().failed()
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/uploadserver/<projuser>')
-    def tf_start_serving(projuser):
-        if (password != request.json['password']):
-            return Authentication().failed()
-        model = request.json
+        channelurl = request.params['channelurl']
+        version = request.params['version']
         try:
-#            model_filename = request.POST.get('model')
-            for i in request.files.getlist('file'):
-                filepath = os.path.join('./models/uploaded',thisuser.data.get('model'))
-                fileobj = i.file
-                with open(filepath,"wb") as target_file:
-                    while True:
-                        datachunk = fileobj.read(1024)
-                        if not datachunk:
-                            break
-                    target_file.write(datachunk)
+            msg = Conda().conda(user,command_id, op, proj, channelurl, lib, version)
+            resp = HTTPResponse(status=HTTP_OK, output=msg)
+            logger.info("{0}".format(resp))
+            return resp            
+        except Exception as err:
+            logger.error("{0}".format(err))            
+            return CommandHandler().response(400, "Error")  
 
-        except:
-            print("error: " + sys.exc_info())
-
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-    @post('/tf/startserving/<projuser>/<modelfilename>/<args>')
-    def tf_start_serving(projuser,modelfilename,args):
-        if (password != request.json['password']):
+    # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
+    # curl -k -X GET https://10.0.2.15:8090/create/project?password=blah
+    # curl -k -X GET https://10.0.2.15:8090/clone/projectSrc/projectDest?password=blah    
+    @get('/anaconda/<user>/<command_id>/<op>/<proj>')
+    def anaconda(user,command_id,op,proj):
+        logger.info('Incoming REST Request:  GET /anaconda/{0}/{1}/{2}'.format(user, op, proj))
+        if not Authentication().check():
             return Authentication().failed()
+        # Blocking REST call here
+        arg = "default"
+        if (op == "clone"):
+            arg = request.params['srcproj']
         try:
-            rawData = cherrypy.request.body.read(int(cherrypy.request.headers['Content-Length']))
-            b = json.loads(rawData)
-#            return json.dumps({'x': 4, 'c': b})
-#            return {'x': 4, 'c': b}
-            model_filename = request.POST.get('model')
-            args = request.POST.get('args')
-#            response.content_type = 'application/json'
-            return json.dumps(tfcase.search(searchterm,images_only))
-        except:
-            print("error: " + sys.exc_info())
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-
-    @get('/tf/stopserving')
-    def tf_stop_serving():
-        if (password != request.json['password']):
-            return Authentication().failed()
-        proj_user = request.json['projuser'];
-        model_name = request.json['model-name'];
-
-        return HTTPResponse(status=400, output='Invalid command.')        
-
-
+            msg = Conda().envOp(user, command_id, op, proj, arg)
+            resp = HTTPResponse(status=HTTP_OK, output=msg)
+            logger.info("{0}".format(resp))
+            return resp            
+        except Exception as err:
+            logger.error("{0}".format(err))            
+            return CommandHandler().response(400, "Error")  
 
     logger.info("RESTful service started.")
     run(host='0.0.0.0', port=agent_restport, server='sslcherrypy')

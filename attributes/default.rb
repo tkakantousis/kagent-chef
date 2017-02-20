@@ -1,3 +1,5 @@
+include_attribute "anaconda"
+
 # Default values for configuration parameters
 default.kagent.version                     = "0.1.0"
 default.kagent.user                        = "kagent"
@@ -6,6 +8,14 @@ default.kagent.certs_group                 = "certs"
 default.kagent.dir                         = "/var/lib"
 default.kagent.base_dir                    = "#{node.kagent.dir}/kagent"
 default.kagent.home                        = "#{node.kagent.dir}/kagent-#{node.kagent.version}"
+
+node.override.anaconda.user                = "anaconda"
+node.override.anaconda.group               = node.kagent.group
+default.anaconda.dir                       = node.kagent.dir + "/anaconda"
+default.anaconda.home                      = node.anaconda.install_root + "/" + node.anaconda.version
+default.anaconda.base_dir                  = node.anaconda.install_root + "/anaconda"
+
+default.anaconda.default_libs              = %w{ numpy hdfs3 scikit-learn matplotlib pandas tensorflow }
 
 default.kagent.enabled                     = "true"
 
@@ -34,7 +44,7 @@ default.kagent.certificate_file            = "server.pem"
 # dashboard ip:port endpoint
 default.kagent.dashboard.ip                = "10.0.2.15"
 default.kagent.dashboard.port              = "8080"  
-default.kagent.dashboard_app               = "hopsworks"
+default.kagent.dashboard_app               = "hopsworks-api"
 
 
 # local settings for agent
@@ -44,6 +54,7 @@ default.kagent.watch_interval              = 2
 default.kagent.pid_file                    = node.kagent.base_dir + "/kagent.pid"
 default.kagent.logging_level               = "INFO"
 default.kagent.max_log_size                = "10000000"
+default.kagent.env_report_freq_in_secs     = "10"
 
 default.kagent.network.interface           = ""
 
@@ -53,7 +64,6 @@ default.kagent[:default][:private_ips]     = ['10.0.2.15']
 # services file contains locally installed services
 
 default.kagent.services                    = node.kagent.base_dir + "/services"
-default.tf.services                        = node.kagent.base_dir + "/tf_services"
 
 # name of cluster as shown in Dashboard
 default.kagent.cluster                     = "Hops"
@@ -83,10 +93,11 @@ node.normal.ntp.servers                    = ['0.europe.pool.ntp.org', '1.europe
 
 node.normal.ntp.peers                      = ['time0.int.example.org', 'time1.int.example.org']
 
-
-node.default.tf.cpu_ids                    = ['']
-node.default.tf.gpu_ids                    = ['']
-
 default.kagent.test                        = false
+
+
+default.kagent.keystore                    = "#{node.kagent.base_dir}/node_server_keystore.jks"
+default.kagent.keystore_password           = "changeit"
+
 
 default.services.enabled                   = "false"

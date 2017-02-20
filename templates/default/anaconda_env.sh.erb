@@ -1,0 +1,47 @@
+#!/bin/bash
+
+if [ $# -lt 3  ]; then
+    echo "<user> <op> <proj> <arg>"
+    echo "incorrect usage"
+ exit 1
+fi
+
+EXEC_AS_USER=$1
+OP=$2
+PROJECT=$3
+
+CLONE=
+
+if [ "$OP" == "CLONE" ] ; then
+   CLONE="--clone $4"
+fi
+
+function exists() {
+    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda info --envs | grep '^${PROJECT} '"
+    return $?
+}
+# 
+if [ "$OP" == "CREATE" ] ; then
+    exists
+    if [ $? -eq 0 ] ; then	# 
+       exit 0
+    fi
+    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT -y -q --offline"
+elif [ "$OP" == "LIST_ENVS" ] ; then
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda env list --json > /tmp/conda_envs.json"    
+elif [ "$OP" == "LIST" ] ; then
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json"
+elif [ "$OP" == "CLONE" ] ; then
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT --offline --clone $CLONE -y -q"
+elif [ "$OP" == "REMOVE" ] ; then
+    # If the env has already been removed, return OK
+    exists
+    if [ $? -ne 0 ] ; then
+       echo "Cannot remove environment that doesn't exist"
+       exit 0
+    fi
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda-env remove -n $PROJECT -y -q"
+else
+    exit -1
+fi
+
