@@ -215,3 +215,5 @@ if node.kagent.allow_ssh_access == 'true'
   end
 end
 
+
+include_recipe "kagent::anaconda"
