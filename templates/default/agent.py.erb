@@ -86,13 +86,13 @@ try:
     register_url = server_url + config.get('server', 'path-register')
     heartbeat_url = server_url + config.get('server', 'path-heartbeat')
     alert_url = server_url + config.get('server', 'path-alert')
-            
+
+        
     server_username = config.get('server', 'username')
     server_password = config.get('server', 'password')
-    
+
     logging_level = config.get('agent', 'logging-level').upper()
     max_log_size = config.getint('agent', 'max-log-size')    
-    user = config.get('agent', 'username')
     password = config.get('agent', 'password')          
     agent_pidfile = config.get('agent', 'pid-file')
     agent_restport = config.getint('agent', 'restport')
@@ -102,6 +102,7 @@ try:
     network_interface = config.get('agent', 'network-interface')          
     group_name = config.get('agent', 'group-name')          
     env_report_freq_in_secs = config.getint('agent', 'env-report-freq-in-secs')
+    conda_enabled = server_url + config.get('agent', 'conda')
     
     group_name = config.get('agent', 'group-name')
 
@@ -845,6 +846,7 @@ class Conda():
         # The above code building up a block report could take a long time to execute, meaning
         # that partially written block-reports get sent up. We want to make them available for heartbeats
         # only at the very end of building up the state needed.
+
         block_report_mutex.acquire()
         block_report = report
         block_report_mutex.release()
@@ -911,15 +913,15 @@ if __name__ == '__main__':
 
 
 # send conda environment reports every env_report_freq_in_secs seconds
-    @setInterval(env_report_freq_in_secs)
-    def startBlockReporting():
-        Conda().blockReport()
+    if conda_enabled == "true":
+        @setInterval(env_report_freq_in_secs)
+        def startBlockReporting():
+           Conda().blockReport()
 
-    stop = startBlockReporting() # start timer
+        stop = startBlockReporting() # start timer
 
 
 
-                            #
 # The REST code uses a CherryPy webserver, but Bottle for the REST endpoints
 # WSGI server for SSL
 # For a a tutorial on the REST code below, see http://bottlepy.org/docs/dev/tutorial.html

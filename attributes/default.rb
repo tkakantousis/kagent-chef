@@ -8,6 +8,7 @@ default.kagent.certs_group                 = "certs"
 default.kagent.dir                         = "/var/lib"
 default.kagent.base_dir                    = "#{node.kagent.dir}/kagent"
 default.kagent.home                        = "#{node.kagent.dir}/kagent-#{node.kagent.version}"
+default.kagent.conda_enabled               = "true"
 
 node.override.anaconda.user                = "anaconda"
 node.override.anaconda.group               = node.kagent.group
@@ -98,3 +99,4 @@ default.kagent.keystore_password           = "changeit"
 
 
 default.services.enabled                   = "false"
+

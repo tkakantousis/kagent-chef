@@ -201,7 +201,6 @@ try:
     login_url = server_url + config.get('server', 'path-login')
     server_username = config.get('server', 'username')
     server_password = config.get('server', 'password')
-    agent_password_config_ini = config.get('agent', 'password')
     heartbeat_interval = config.getfloat('agent', 'heartbeat-interval')
     logging_level = config.get('agent', 'logging-level').upper()
     max_log_size = config.getint('agent', 'max-log-size')
@@ -218,14 +217,15 @@ try:
     else:
         host_id = hostname
 
-    if agent_password_config_ini == "":
-        agent_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8))
+# First time we run csr.py, it will generate an agent password and store it in the config.ini file.
+# The agent password is then stored in the 'hosts' table in hopsworks.
+    if (config.has_option("agent", "password")):
+        agent_password = config.get('agent', 'password')
     else:
-        agent_password = agent_password_config_ini
-        
-    config.set('agent', 'password', agent_password)
-    with open(CONFIG_FILE, 'wb') as configfile:
-        config.write(configfile)
+        agent_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8))
+        config.set('agent', 'password', agent_password)
+        with open(CONFIG_FILE, 'wb') as configfile:
+            config.write(configfile)
 
 # TODO find public/private IP addresses
     public_ip = None
