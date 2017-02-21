@@ -33,7 +33,7 @@ end
 execute "create_base" do
   user "root"
   command "su #{node.kagent.user} -c \"#{node.anaconda.base_dir}/bin/conda create -n #{node.kagent.user}\""
-  not_if "test -d /home/#{node.kagent.user}/.conda/envs/#{node.kagent.user}"
+  not_if "test -d #{node.anaconda.base_dir}/envs/#{node.kagent.user}"
 end
 
 
