@@ -200,19 +200,15 @@ end
 
 if node.kagent.allow_ssh_access == 'true'
 
-  if node.attribute? "kmon"
-    if node.kmon.attribute? "public_key"
-      bash "add_dashboards_public_key" do
-        user "root"
-        code <<-EOF
-         mkdir -p /root/.ssh
-         chmod 700 /root/.ssh
-         cat #{node.kmon.public_key} >> /root/.ssh/authorized_keys
-        EOF
-        not_if "test -f /root/.ssh/authorized_keys"
-      end
-    end
-  end
+homedir = "/home/#{node.kagent.user}"
+kagent_keys "#{homedir}" do
+  cb_user "#{node.kagent.user}"
+  cb_group "#{node.kagent.group}"
+  cb_name "hopsworks"
+  cb_recipe "default"  
+  action :get_publickey
+end  
+
 end
 
 
