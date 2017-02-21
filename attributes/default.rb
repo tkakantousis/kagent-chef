@@ -21,9 +21,6 @@ default.kagent.enabled                     = "true"
 
 default.kagent.certs_dir                   = "#{node.kagent.dir}/kagent-certs"
 
-# Username/Password for connecting to the agent
-default.kagent.rest_api.user               = "kagent@hops.io"
-
 # API calls
 default.kagent.dashboard.api.register      = "/api/agentservice/register"
 default.kagent.dashboard.api.login         = "/api/auth/login"
