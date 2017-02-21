@@ -15,7 +15,6 @@ watch-interval = <%= node[:kagent][:watch_interval] %>
 pid-file = <%= node[:kagent][:pid_file] %>
 logging-level = <%= node[:kagent][:logging_level] %>
 max-log-size = <%= node[:kagent][:max_log_size] %>
-username = <%= node[:kagent][:rest_api][:user] %>
 public-ip = <%= @public_ip %>
 private-ip = <%= @private_ip %>
 password = 
@@ -24,3 +23,4 @@ hostname = <%= @hostname %>
 network-interface = <%= @network_if %>
 group-name = <%= node[:kagent][:group_name] %>
 env-report-freq-in-secs = <%= node[:kagent][:env_report_freq_in_secs] %>
+
