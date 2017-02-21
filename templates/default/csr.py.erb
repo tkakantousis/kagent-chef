@@ -201,7 +201,7 @@ try:
     login_url = server_url + config.get('server', 'path-login')
     server_username = config.get('server', 'username')
     server_password = config.get('server', 'password')
-
+    agent_password_config_ini = config.get('agent', 'password')
     heartbeat_interval = config.getfloat('agent', 'heartbeat-interval')
     logging_level = config.get('agent', 'logging-level').upper()
     max_log_size = config.getint('agent', 'max-log-size')
@@ -218,8 +218,11 @@ try:
     else:
         host_id = hostname
 
-
-    agent_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8))
+    if agent_password_config_ini == "":
+        agent_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8))
+    else:
+        agent_password = agent_password_config_ini
+        
     config.set('agent', 'password', agent_password)
     with open(CONFIG_FILE, 'wb') as configfile:
         config.write(configfile)
