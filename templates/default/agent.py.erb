@@ -783,11 +783,11 @@ class Conda():
                 msg = subprocess.check_output(['sudo', script, user, op, proj, channelUrl, lib, version])
                 logger.info("Lib op finished without errror.")
                 logger.info("{0}".format(msg))
-                conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'INSTALLED', 'id': str(command_id) }                
+                conda_op = {'proj': proj, 'op': op, 'channelurl': channelUrl, 'lib': lib, 'version': version, 'status': 'INSTALLED', 'id': str(command_id) }                
             except subprocess.CalledProcessError, e:
                 logger.info("Execption in libOp {0}".format(e.output))
                 logger.info("Execption in libOp. Ret code: {0}".format(e.returncode))
-                conda_op = {'proj': proj, 'op': op, 'channelUrl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED', 'id':  str(command_id) }                
+                conda_op = {'proj': proj, 'op': op, 'channelurl': channelUrl, 'lib': lib, 'version': version, 'status': 'FAILED', 'id':  str(command_id) }                
             finally:
                 conda_ongoing[proj] = False                
                 if command_id != -1:                
