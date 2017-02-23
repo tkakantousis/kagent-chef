@@ -798,16 +798,16 @@ class Conda():
         thread = threading.Thread(target=target, args=(user, command_id, op, proj, channelUrl, lib, version,))
         thread.start()
             
-    def envOp(self, user, command_id, op, proj, arg):
+    def envOp(self, user, command_id, op, proj, arg, offline):
         global conda_ongoing
         if not arg:
             arg=""
         script = BIN_DIR + "/anaconda_env.sh"
-        logger.info("sudo {0} {1} {2} {3} {4}".format(script, user, op, proj, arg))
+        logger.info("sudo {0} {1} {2} {3} {4} {5}".format(script, user, op, proj, arg, offline))
         msg=""
         conda_op = {}        
         try:
-            msg = subprocess.check_output(['sudo', script, user, op, proj, arg])
+            msg = subprocess.check_output(['sudo', script, user, op, proj, arg, offline])
             conda_op = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'INSTALLED', 'id': str(command_id), 'arg': arg}            
         except subprocess.CalledProcessError, e:
             logger.info("Execption in envOp {0}".format(e.output))
@@ -871,7 +871,7 @@ class Conda():
                 if 'arg' in data:
                     arg=data['arg']
                 if op == "REMOVE" or op == "CLONE" or op == "CREATE":
-                    self.envOp(user, command_id, op, proj, arg)
+                    self.envOp(user, command_id, op, proj, arg, "")
                 else:  # Conda package  commands (install, remove, upgrade)
                     version = data['version']
                     channelUrl = data['channelUrl']
@@ -1101,8 +1101,8 @@ if __name__ == '__main__':
     # Normal client sets 'channel' to 'defaults' for http://conda.anaconda.org/ or 'system' to get system packages
     # curl -k -X GET https://10.0.2.15:8090/create/project?password=blah
     # curl -k -X GET https://10.0.2.15:8090/clone/projectSrc/projectDest?password=blah    
-    @get('/anaconda/<user>/<command_id>/<op>/<proj>')
-    def anaconda(user,command_id,op,proj):
+    @get('/anaconda/<user>/<command_id>/<op>/<proj>/<arg>')
+    def anaconda(user, command_id, op, proj, arg):
         logger.info('Incoming REST Request:  GET /anaconda/{0}/{1}/{2}'.format(user, op, proj))
         if not Authentication().check():
             return Authentication().failed()
@@ -1111,7 +1111,7 @@ if __name__ == '__main__':
         if (op == "clone"):
             arg = request.params['srcproj']
         try:
-            msg = Conda().envOp(user, command_id, op, proj, arg)
+            msg = Conda().envOp(user, command_id, op, proj, arg, "")
             resp = HTTPResponse(status=HTTP_OK, output=msg)
             logger.info("{0}".format(resp))
             return resp            

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ $# -lt 4  ]; then
-    echo "<user> <op> <proj> <arg>"
+if [ $# -lt 5  ]; then
+    echo "<user> <op> <proj> <arg> <offline>"
     echo "incorrect usage."
     echo "<arg> is the python version for 'create' and the source env for 'clone'."
  exit 1
@@ -11,8 +11,10 @@ EXEC_AS_USER=$1
 OP=$2
 PROJECT=$3
 PYTHON_VERSION=$4
+OFFLINE=$5
 
 CLONE=
+
 
 if [ "$OP" == "CLONE" ] ; then
    CLONE="--clone $4"
@@ -28,13 +30,13 @@ if [ "$OP" == "CREATE" ] ; then
     if [ $? -eq 0 ] ; then 
        exit 0
     fi
-    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT python=$PYTHON_VERSION -y -q --offline"
+    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT python=$PYTHON_VERSION -y -q $OFFLINE"
 elif [ "$OP" == "LIST_ENVS" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda env list --json > /tmp/conda_envs.json"    
 elif [ "$OP" == "LIST" ] ; then
   su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json"
 elif [ "$OP" == "CLONE" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT --offline --clone $CLONE -y -q"
+  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT --clone $CLONE -y -q $OFFLINE"
 elif [ "$OP" == "REMOVE" ] ; then
     exists    # If the env has already been removed, return OK
     if [ $? -ne 0 ] ; then
