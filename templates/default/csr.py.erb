@@ -78,6 +78,7 @@ class Register():
                 payload["agent-password"] = agent_password
                 payload["host-id"] = host_id
                 logger.info("Registering with HopsWorks...")
+                logger.info("Password: {0}".format(agent_password))                
 		session = requests.Session()
 		session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
 		resp = session.post(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
