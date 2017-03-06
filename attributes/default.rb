@@ -5,7 +5,9 @@ default.kagent.version                     = "0.1.0"
 default.kagent.user                        = "kagent"
 default.kagent.group                       = node.kagent.user   
 default.kagent.certs_group                 = "certs"
-default.kagent.dir                         = "/var/lib"
+
+default.install.dir                        = ""
+default.kagent.dir                         = node.install.dir.empty? ? node.install.dir : "/var/lib"
 default.kagent.base_dir                    = "#{node.kagent.dir}/kagent"
 default.kagent.home                        = "#{node.kagent.dir}/kagent-#{node.kagent.version}"
 default.kagent.conda_enabled               = "true"
@@ -100,4 +102,4 @@ default.kagent.keystore_password           = "changeit"
 
 default.services.enabled                   = "false"
 
-default.install.dir                        = ""
+
