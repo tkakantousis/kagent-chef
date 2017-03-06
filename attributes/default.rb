@@ -100,3 +100,4 @@ default.kagent.keystore_password           = "changeit"
 
 default.services.enabled                   = "false"
 
+default.install.dir                        = ""
