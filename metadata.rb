@@ -31,6 +31,10 @@ attribute "kagent/user",
           :description => "Username to run kagent as",
           :type => 'string'
 
+attribute "kagent/group",
+          :description => "group to run kagent as",
+          :type => 'string'
+
 attribute "kagent/dir",
           :description => "Installation directory for kagent",
           :type => 'string'
