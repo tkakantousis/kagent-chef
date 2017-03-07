@@ -24,8 +24,10 @@ end
 #
 for lib in node.anaconda.default_libs do
   execute "install_anconda_default_libs" do
-  user "root"
+    user "root"
     command "su #{node.anaconda.user} -c \"#{node.anaconda.base_dir}/bin/conda install -q -y #{lib}\""
+# The guard checks if the library is installed. Be careful with library names like 'sphinx' and 'sphinx_rtd_theme' - add space so that 'sphinx' doesnt match both.
+    not_if  "su #{node.anaconda.user} -c \"#{node.anaconda.base_dir}/bin/conda list | grep \"#{lib} \"\""
   end
 end
 
