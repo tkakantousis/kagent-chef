@@ -31,10 +31,6 @@ if node.systemd == "true"
   end
 
 
-  # kagent_config  do
-  #   action :systemd_reload
-  # end
-
   case node.platform_family
   when "rhel"
     systemd_script = "/usr/lib/systemd/system/#{service_name}.service" 
@@ -59,6 +55,10 @@ end
     to "#{node.kagent.base_dir}/#{service_name}.service" 
   end
 
+  kagent_config  do
+    action :systemd_reload
+  end
+  
 else # sysv
 
   service "#{service_name}" do
@@ -66,10 +66,6 @@ else # sysv
     supports :restart => true, :start => true, :stop => true, :enable => true
     action :nothing
   end
-
-  # kagent_config  do
-  #   action :systemd_reload
-  # end
 
   template "/etc/init.d/#{service_name}" do
     source "#{service_name}.erb"
@@ -83,8 +79,6 @@ end
   end
 
 end
-
-
 
 private_ip = my_private_ip()
 public_ip = my_public_ip()
@@ -172,7 +166,9 @@ template "#{node.kagent.base_dir}/config.ini" do
               :hostname => hostname,
               :network_if => network_if
             })
+if node.services.enabled == "true"  
   notifies :enable, "service[#{service_name}]"
+end
   notifies :restart, "service[#{service_name}]", :delayed
 end
 

@@ -284,8 +284,6 @@ directory "#{node.kagent.base_dir}/anaconda" do
   action :create
 end
 
-
-
 directory node.kagent.keystore_dir do
   owner node.kagent.user
   group node.kagent.group

@@ -7,6 +7,7 @@ default.kagent.group                       = node.kagent.user
 default.kagent.certs_group                 = "certs"
 
 default.install.dir                        = ""
+
 default.kagent.dir                         = node.install.dir.empty? ? "/var/lib" : node.install.dir
 default.kagent.base_dir                    = "#{node.kagent.dir}/kagent"
 default.kagent.home                        = "#{node.kagent.dir}/kagent-#{node.kagent.version}"
