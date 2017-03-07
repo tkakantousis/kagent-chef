@@ -277,12 +277,12 @@ directory "#{node.kagent.base_dir}/bin" do
   recursive true
 end
 
-directory "#{node.kagent.base_dir}/anaconda" do
-  owner node.kagent.user
-  group node.kagent.group
-  mode "755"
-  action :create
-end
+# directory "#{node.kagent.base_dir}/anaconda" do
+#   owner node.kagent.user
+#   group node.kagent.group
+#   mode "755"
+#   action :create
+# end
 
 directory node.kagent.keystore_dir do
   owner node.kagent.user

@@ -15,7 +15,7 @@ default.kagent.conda_enabled               = "true"
 
 node.override.anaconda.user                = "anaconda"
 node.override.anaconda.group               = node.kagent.group
-default.anaconda.dir                       = node.kagent.dir + "/anaconda"
+default.anaconda.dir                       = "/opt/anaconda"
 default.anaconda.home                      = node.anaconda.install_root + "/" + node.anaconda.version
 default.anaconda.base_dir                  = node.anaconda.install_root + "/anaconda"
 

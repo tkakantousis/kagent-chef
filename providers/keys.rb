@@ -1,15 +1,13 @@
 action :csr do
 
   bash "sign-local-csr-key" do
-    user node.kagent.user
-    group node.kagent.group 
+    user "root"
     code <<-EOF
       set -eo pipefail 
       export PYTHON_EGG_CACHE=/tmp
       #{node.kagent.certs_dir}/csr.py
-      touch #{signed}
   EOF
-    not_if { ::File.exists?( "#{node.kagent.certs_dir}/pub.pem" ) }
+    not_if { ::File.exists?( "#{node.kagent.keystore_dir}/node_client_truststore.jks" ) }
   end
 
 

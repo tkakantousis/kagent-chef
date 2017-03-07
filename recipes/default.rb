@@ -49,15 +49,16 @@ end
     notifies :restart, "service[#{service_name}]", :delayed
   end
 
-  link "/etc/systemd/system/#{service_name}.service" do
-    only_if { node.systemd == "true" }
-    owner "root"
-    to "#{node.kagent.base_dir}/#{service_name}.service" 
-  end
-
-  kagent_config  do
-    action :systemd_reload
-  end
+# This causes systemctl enable to fail with too many symlinks
+# https://github.com/systemd/systemd/issues/3010
+  # link "/etc/systemd/system/#{service_name}.service" do
+  #   only_if { node.systemd == "true" }
+  #   owner "root"
+  #   to "#{node.kagent.base_dir}/#{service_name}.service" 
+  # end
+#  kagent_config  do
+#    action :systemd_reload
+#  end
   
 else # sysv
 
