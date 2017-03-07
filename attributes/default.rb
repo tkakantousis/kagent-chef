@@ -100,6 +100,6 @@ default.kagent.keystore                    = "#{node.kagent.base_dir}/node_serve
 default.kagent.keystore_password           = "changeit"
 
 
-default.services.enabled                   = "false"
+default.services.enabled                   = "true"
 
 
