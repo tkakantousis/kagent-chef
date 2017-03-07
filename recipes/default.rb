@@ -159,6 +159,10 @@ if node.kagent.attribute?("hostname") then
 end
 
 
+file "#{node.kagent.base_dir}/config.ini" do
+  action :delete
+end
+
 template "#{node.kagent.base_dir}/config.ini" do
   source "config.ini.erb"
   owner node.kagent.user
@@ -188,7 +192,6 @@ execute "rm -f #{node.kagent.pid_file}"
 
 case node.platform_family
 when "rhel"
-
   bash "disable-iptables" do
     code <<-EOH
     service iptables stop
