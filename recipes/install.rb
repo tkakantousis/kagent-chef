@@ -238,7 +238,6 @@ directory node.kagent.dir  do
   group node.kagent.group
   mode "755"
   action :create
-  recursive true
   not_if { File.directory?("#{node.kagent.dir}") }
 end
 
@@ -247,7 +246,6 @@ directory node.kagent.home do
   group node.kagent.group
   mode "755"
   action :create
-  recursive true
 end
 
 directory node.kagent.certs_dir do
@@ -255,7 +253,6 @@ directory node.kagent.certs_dir do
   group node.kagent.certs_group
   mode "750"
   action :create
-  recursive true
 end
 
 
@@ -277,7 +274,6 @@ directory "#{node.kagent.base_dir}/bin" do
   group node.kagent.group
   mode "755"
   action :create
-  recursive true
 end
 
 # directory "#{node.kagent.base_dir}/anaconda" do
@@ -292,7 +288,6 @@ directory node.kagent.keystore_dir do
   group node.kagent.group
   mode "755"
   action :create
-  recursive true
 end
 
 file node.default.kagent.services do
