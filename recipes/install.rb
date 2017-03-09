@@ -17,6 +17,9 @@ when "debian"
 #  end
 
 when "rhel"
+  package "epel-release" do
+    action :install
+  end
 # gcc, gcc-c++, kernel-devel are the equivalent of "build-essential" from apt.
   package "gcc" do
     action :install
