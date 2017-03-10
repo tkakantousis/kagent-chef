@@ -257,11 +257,6 @@ end
 
 
 link node.kagent.base_dir do
-  action :delete
-  only_if "test -L #{node.kagent.base_dir}"
-end
-
-link node.kagent.base_dir do
   owner node.kagent.user
   group node.kagent.group
   to node.kagent.home
