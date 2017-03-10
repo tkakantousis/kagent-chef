@@ -13,8 +13,14 @@ node.override.anaconda.python = "python2"
 #node.override.anaconda.install_root = node.anaconda.dir
 # Bug 2: it still installs as user 'anaconda'. Need to change ownership afterwards.
 
+case node.platform_family
+when "rhel"
+
+
+when "ubuntu"  
 include_recipe "anaconda::default"
 
+end
 
 link node.anaconda.base_dir do
   action :delete
