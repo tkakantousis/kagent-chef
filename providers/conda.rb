@@ -4,10 +4,10 @@ action :config do
 #   #{node.conda.base_dir}/bin/conda create -n hopsworksconda -y -q 
 # --file #{node.kagent.base_dir}/anaconda/spec-file.txt
 
-execute "change_owner_to_kagent" do
-  user "root"
-  command "chown -R #{node.kagent.user}:#{node.kagent.group} #{node.conda.home}"
-end
+# execute "change_owner_to_kagent" do
+#   user "root"
+#   command "chown -R #{node.kagent.user}:#{node.kagent.group} #{node.conda.home}"
+# end
   
 execute "update_conda" do
   user "root"

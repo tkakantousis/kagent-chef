@@ -194,16 +194,14 @@ when "rhel"
 end
 
 if node.kagent.allow_ssh_access == 'true'
-
-homedir = "/home/#{node.kagent.user}"
-kagent_keys "#{homedir}" do
-  cb_user "#{node.kagent.user}"
-  cb_group "#{node.kagent.group}"
-  cb_name "hopsworks"
-  cb_recipe "default"  
-  action :get_publickey
-end  
-
+  homedir = "/home/#{node.kagent.user}"
+  kagent_keys "#{homedir}" do
+    cb_user "#{node.kagent.user}"
+    cb_group "#{node.kagent.group}"
+    cb_name "hopsworks"
+    cb_recipe "default"  
+    action :get_publickey
+  end  
 end
 
 
