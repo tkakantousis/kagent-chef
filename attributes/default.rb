@@ -1,5 +1,3 @@
-include_attribute "conda"
-
 default.install.dir                        = ""
 default.install.user                       = ""
 
@@ -14,9 +12,6 @@ default.kagent.dir                         = node.install.dir.empty? ? "/var/lib
 default.kagent.base_dir                    = "#{node.kagent.dir}/kagent"
 default.kagent.home                        = "#{node.kagent.dir}/kagent-#{node.kagent.version}"
 default.kagent.conda_enabled               = "true"
-
-node.override.conda.user                   = "conda"
-node.override.conda.group                  = node.kagent.group
 
 default.conda.default_libs                 = %w{ numpy hdfs3 scikit-learn matplotlib pandas tensorflow }
 

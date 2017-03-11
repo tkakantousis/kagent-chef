@@ -22,6 +22,7 @@ depends 'conda'
 depends 'magic_shell'
 
 
+recipe "kagent::install", "Installs the Karamel agent and python dependencies"
 recipe "kagent::default", "Installs and configures the Karamel agent, including anaconda"
 recipe "kagent::hops", "Installs and configures the Karamel agent for hops"
 recipe "kagent::purge", "Deletes the Karamel agent files"
