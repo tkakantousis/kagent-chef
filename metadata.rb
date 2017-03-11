@@ -115,3 +115,11 @@ attribute "install/dir",
 attribute "install/user",
           :description => "User to install the services as",
           :type => "string"
+
+attribute "hops/yarn/user",
+          :description => "Yarn user for conda",
+          :type => "string"
+
+attribute "hops/group",
+          :description => "Haodop group for conda",
+          :type => "string"
