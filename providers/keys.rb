@@ -17,8 +17,8 @@ action :csr do
       set -eo pipefail 
       cd #{node.kagent.certs_dir}
       chown -R root:#{node.kagent.certs_group} #{node.kagent.keystore_dir}
-      chown #{node.kagent.user}:#{node.kagent.group} pub.pem ca_pub.pem priv.key
-#      chown root:#{node.kagent.group} pub.pem ca_pub.pem priv.key
+#      chown #{node.kagent.user}:#{node.kagent.group} pub.pem ca_pub.pem priv.key
+      chown root:#{node.kagent.group} pub.pem ca_pub.pem priv.key
     EOH
   end
 
