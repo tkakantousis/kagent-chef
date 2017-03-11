@@ -10,6 +10,7 @@ if node.attribute?(:hops) and node.hops.attribute?(:yarn) and node.hops.yarn.att
   node.override.conda.group = node.hops.group
 end                             
 
+include_recipe "conda::install"
 include_recipe "conda::default"
 
 kagent_conda "packages" do
