@@ -21,7 +21,7 @@ if [ "$OP" == "CLONE" ] ; then
 fi
 
 function exists() {
-    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda info --envs | grep '^${PROJECT} '"
+    su $EXEC_AS_USER -c "<%= node.conda.base_dir %>/bin/conda info --envs | grep '^${PROJECT} '"
     return $?
 }
 
@@ -30,20 +30,20 @@ if [ "$OP" == "CREATE" ] ; then
     if [ $? -eq 0 ] ; then 
        exit 0
     fi
-    su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT python=$PYTHON_VERSION -y -q $OFFLINE"
+    su $EXEC_AS_USER -c "<%= node.conda.base_dir %>/bin/conda create -n $PROJECT python=$PYTHON_VERSION -y -q $OFFLINE"
 elif [ "$OP" == "LIST_ENVS" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda env list --json > /tmp/conda_envs.json"    
+  su $EXEC_AS_USER -c "<%= node.conda.base_dir %>/bin/conda env list --json > /tmp/conda_envs.json"    
 elif [ "$OP" == "LIST" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json"
+  su $EXEC_AS_USER -c "<%= node.conda.base_dir %>/bin/conda list -n $PROJECT --json > /tmp/${PROJECT}__conda_list.json"
 elif [ "$OP" == "CLONE" ] ; then
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda create -n $PROJECT --clone $CLONE -y -q $OFFLINE"
+  su $EXEC_AS_USER -c "<%= node.conda.base_dir %>/bin/conda create -n $PROJECT --clone $CLONE -y -q $OFFLINE"
 elif [ "$OP" == "REMOVE" ] ; then
     exists    # If the env has already been removed, return OK
     if [ $? -ne 0 ] ; then
        echo "Cannot remove environment that doesn't exist"
        exit 0
     fi
-  su $EXEC_AS_USER -c "<%= node.anaconda.base_dir %>/bin/conda-env remove -n $PROJECT -y -q"
+  su $EXEC_AS_USER -c "<%= node.conda.base_dir %>/bin/conda-env remove -n $PROJECT -y -q"
 else
     exit -1
 fi

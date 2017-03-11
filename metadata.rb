@@ -18,7 +18,7 @@ depends 'sudo'
 depends 'hostsfile'
 depends 'ntp'
 depends 'poise-python'
-depends 'anaconda'
+depends 'conda'
 depends 'magic_shell'
 
 

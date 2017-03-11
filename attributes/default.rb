@@ -1,4 +1,4 @@
-include_attribute "anaconda"
+include_attribute "conda"
 
 default.install.dir                        = ""
 default.install.user                       = ""
@@ -15,13 +15,10 @@ default.kagent.base_dir                    = "#{node.kagent.dir}/kagent"
 default.kagent.home                        = "#{node.kagent.dir}/kagent-#{node.kagent.version}"
 default.kagent.conda_enabled               = "true"
 
-node.override.anaconda.user                = "anaconda"
-node.override.anaconda.group               = node.kagent.group
-default.anaconda.dir                       = "/opt/anaconda"
-default.anaconda.home                      = node.anaconda.install_root + "/" + node.anaconda.version
-default.anaconda.base_dir                  = node.anaconda.install_root + "/anaconda"
+node.override.conda.user                   = "conda"
+node.override.conda.group                  = node.kagent.group
 
-default.anaconda.default_libs              = %w{ numpy hdfs3 scikit-learn matplotlib pandas tensorflow }
+default.conda.default_libs                 = %w{ numpy hdfs3 scikit-learn matplotlib pandas tensorflow }
 
 default.kagent.enabled                     = "true"
 
