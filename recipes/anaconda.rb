@@ -10,6 +10,10 @@ if node.attribute?(:hops) and node.hops.attribute?(:yarn) and node.hops.yarn.att
   node.override.conda.group = node.hops.group
 end                             
 
+if node.attribute?(:install) and node.hops.attribute?(:dir)
+     
+fi  
+
 include_recipe "conda::install"
 include_recipe "conda::default"
 
