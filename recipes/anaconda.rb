@@ -10,8 +10,13 @@ if node.attribute?(:hops) and node.hops.attribute?(:yarn) and node.hops.yarn.att
   node.override.conda.group = node.hops.group
 end                             
 
-if node.attribute?(:install) and node.hops.attribute?(:dir)
-     
+if node.attribute?(:install) and node.hops.attribute?(:dir) and node.install.dir.empty? == false
+  node.override.conda.dir = node.install.dir
+fi  
+
+if node.attribute?(:install) and node.hops.attribute?(:user) and node.install.user.empty? == false
+  node.override.conda.user = node.install.user
+  node.override.conda.group = node.install.group
 fi  
 
 include_recipe "conda::install"
@@ -20,5 +25,3 @@ include_recipe "conda::default"
 kagent_conda "packages" do
   action :config
 end
-
-
