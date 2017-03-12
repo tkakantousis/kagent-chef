@@ -12,12 +12,12 @@ end
 
 if node.attribute?(:install) and node.hops.attribute?(:dir) and node.install.dir.empty? == false
   node.override.conda.dir = node.install.dir
-fi  
+end  
 
 if node.attribute?(:install) and node.hops.attribute?(:user) and node.install.user.empty? == false
   node.override.conda.user = node.install.user
   node.override.conda.group = node.install.group
-fi  
+end
 
 include_recipe "conda::install"
 include_recipe "conda::default"
