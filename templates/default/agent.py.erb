@@ -167,6 +167,7 @@ try:
             states[services.get(s, "role")] = {'status':'Stopped', 'start-time':''}
 
 except Exception, e:
+    print "Error in the services file. Check its formatting: {0}: {1}".format(SERVICE_FILE, e)
     logger.error("Exception while reading {0} file: {1}".format(SERVICES_FILE, e))
     sys.exit(1)     
 

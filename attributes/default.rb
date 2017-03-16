@@ -95,6 +95,14 @@ default.kagent.keystore                    = "#{node.kagent.base_dir}/node_serve
 default.kagent.keystore_password           = "changeit"
 
 
+default.smtp.host                          = "smtp.gmail.com"
+default.smtp.port                          = "587"
+default.smtp.ssl_port                      = "465"
+default.smtp.email                         = "smtp@gmail.com"
+default.smtp.email_password                = "password"
+default.smtp.gmail.placeholder             = "http://snurran.sics.se/hops/hopsworks.email"
+
+
 default.services.enabled                   = "true"
 
 

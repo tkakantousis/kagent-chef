@@ -10,11 +10,11 @@ if node.attribute?(:hops) and node.hops.attribute?(:yarn) and node.hops.yarn.att
   node.override.conda.group = node.hops.group
 end                             
 
-if node.attribute?(:install) and node.hops.attribute?(:dir) and node.install.dir.empty? == false
+if node.attribute?(:install) and node.install.attribute?(:dir) and node.install.dir.empty? == false
   node.override.conda.dir = node.install.dir
 end  
 
-if node.attribute?(:install) and node.hops.attribute?(:user) and node.install.user.empty? == false
+if node.attribute?(:install) and node.install.attribute?(:user) and node.install.user.empty? == false
   node.override.conda.user = node.install.user
   node.override.conda.group = node.install.group
 end
