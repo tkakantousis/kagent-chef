@@ -80,7 +80,7 @@ action :get_publickey do
   cb_group = "#{new_resource.cb_group}"
 
   key_contents = node["#{cb}"]["#{recipeName}"][:public_key]
-  guard = ".#{cb}_#{recipeName}_key_authorized"
+#  guard = ".#{cb}_#{recipeName}_key_authorized"
   Chef::Log.debug "Public key read is: #{key_contents}"
   bash "add_#{cb}_#{recipeName}_public_key" do
     user cb_user
@@ -91,8 +91,9 @@ action :get_publickey do
         mkdir #{homedir}/.ssh
       fi
       echo "#{key_contents}" >> #{homedir}/.ssh/authorized_keys
-      touch #{homedir}/.ssh/#{guard}
+#      touch #{homedir}/.ssh/#{guard}
   EOF
-    not_if { ::File.exists?( "#{homedir}/.ssh/#{guard}" || "#{key_contents}".empty? ) }
+    #    not_if { ::File.exists?( "#{homedir}/.ssh/#{guard}" || "#{key_contents}".empty? ) }
+        not_if "grep #{key_contents} #{homedir}/.ssh/authorized_keys"
   end
 end
