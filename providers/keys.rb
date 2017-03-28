@@ -82,14 +82,15 @@ action :get_publickey do
   key_contents = node["#{cb}"]["#{recipeName}"][:public_key]
   Chef::Log.debug "Public key read is: #{key_contents}"
   bash "add_#{cb}_#{recipeName}_public_key" do
-    user cb_user
-    group cb_group
+    user "root"
     code <<-EOF
       set -e
       if [ ! -d #{homedir}/.ssh ] ; then
         mkdir #{homedir}/.ssh
       fi
+      chmod 700 #{homedir}/.ssh
       echo "#{key_contents}" >> #{homedir}/.ssh/authorized_keys
+      chown -R #{cb_user}:#{cb_group} #{homedir}/.ssh
   EOF
      not_if "grep #{key_contents} #{homedir}/.ssh/authorized_keys"
   end
