@@ -7,6 +7,9 @@ node.override.conda.accept_license = "yes"
 
 if node.attribute?(:hops) and node.hops.attribute?(:yarn) and node.hops.yarn.attribute?(:user)
   node.override.conda.user = node.hops.yarn.user
+end                             
+
+if node.attribute?(:hops) and node.hops.attribute?(:group)
   node.override.conda.group = node.hops.group
 end                             
 
