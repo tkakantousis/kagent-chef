@@ -90,6 +90,7 @@ action :get_publickey do
       fi
       chmod 700 #{homedir}/.ssh
       echo "#{key_contents}" >> #{homedir}/.ssh/authorized_keys
+      chmod 600 #{homedir}/.ssh/authorized_keys
       chown -R #{cb_user}:#{cb_group} #{homedir}/.ssh
   EOF
      not_if "grep #{key_contents} #{homedir}/.ssh/authorized_keys"
