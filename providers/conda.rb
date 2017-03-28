@@ -8,16 +8,18 @@ action :config do
 #   user "root"
 #   command "chown -R #{node.kagent.user}:#{node.kagent.group} #{node.conda.home}"
 # end
-  
-execute "update_conda" do
-  user "root"
-  command "su #{node.kagent.user} -c \"#{node.conda.base_dir}/bin/conda update conda -y -q\""
-end
 
-execute "update_anconda" do
-  user "root"
-  command "su #{node.kagent.user} -c \"#{node.conda.base_dir}/bin/conda update anaconda -y -q\""
-end
+
+  
+ execute "update_conda" do
+   user "root"
+   command "su #{node.conda.user} -c \"#{node.conda.base_dir}/bin/conda update conda -y -q\""
+ end
+
+ execute "update_anconda" do
+   user "root"
+   command "su #{node.conda.user} -c \"#{node.conda.base_dir}/bin/conda update anaconda -y -q\""
+ end
 
 #
 # Install libraries into the root environment
@@ -34,8 +36,8 @@ end
 
 execute "create_base" do
   user "root"
-  command "su #{node.kagent.user} -c \"#{node.conda.base_dir}/bin/conda create -n #{node.kagent.user}\""
-  not_if "test -d #{node.conda.base_dir}/envs/#{node.kagent.user}"
+  command "su #{node.conda.user} -c \"#{node.conda.base_dir}/bin/conda create -n #{node.conda.user}\""
+  not_if "test -d #{node.conda.base_dir}/envs/#{node.conda.user}"
 end
 
 
