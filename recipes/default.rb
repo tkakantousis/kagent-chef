@@ -40,9 +40,9 @@ if node.systemd == "true"
 
   template systemd_script do
     source "#{service_name}.service.erb"
-    owner node.kagent.user
-    group node.kagent.group
-    mode 0650
+    owner "root"
+    group "root"
+    mode 0755
 if node.services.enabled == "true"
     notifies :enable, resources(:service => service_name)
 end
@@ -70,9 +70,9 @@ else # sysv
 
   template "/etc/init.d/#{service_name}" do
     source "#{service_name}.erb"
-    owner node.kagent.user
-    group node.kagent.group
-    mode 0650
+    owner "root"
+    group "root"
+    mode 0755
 if node.services.enabled == "true"
     notifies :enable, resources(:service => service_name)
 end
