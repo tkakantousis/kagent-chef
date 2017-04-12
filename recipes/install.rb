@@ -309,6 +309,10 @@ template"#{node.kagent.certs_dir}/csr.py" do
   owner node.kagent.user
   group node.kagent.certs_group
   mode 0710
+  variables({
+              :kstore => "#{node.kagent.keystore_dir}/#{my_hostname}__kstore.jks",
+              :tstore => "#{node.kagent.keystore_dir}/#{my_hostname}__tstore.jks"
+            })
 end
 
 
