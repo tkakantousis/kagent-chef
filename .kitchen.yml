@@ -24,7 +24,8 @@ suites:
   - name: default
     run_list:
       - recipe[kagent::install]
-      - recipe[kagent::default]
+      - recipe[kagent::anaconda]
+      #- recipe[kagent::default]
     attributes:
          kagent:
             test: true

@@ -1,18 +1,23 @@
+default.install.dir                        = ""
+default.install.user                       = ""
+
 # Default values for configuration parameters
 default.kagent.version                     = "0.1.0"
-default.kagent.user                        = "kagent"
-default.kagent.group                       = node.kagent.user   
+default.kagent.user                        = node.install.user.empty? ? "kagent" : node.install.user
+default.kagent.group                       = node.install.user.empty? ? "kagent" : node.install.user
 default.kagent.certs_group                 = "certs"
-default.kagent.dir                         = "/var/lib"
+
+
+default.kagent.dir                         = node.install.dir.empty? ? "/var/lib" : node.install.dir
 default.kagent.base_dir                    = "#{node.kagent.dir}/kagent"
 default.kagent.home                        = "#{node.kagent.dir}/kagent-#{node.kagent.version}"
+default.kagent.conda_enabled               = "true"
+
+default.conda.default_libs                 = %w{ numpy hdfs3 scikit-learn matplotlib pandas tensorflow }
 
 default.kagent.enabled                     = "true"
 
 default.kagent.certs_dir                   = "#{node.kagent.dir}/kagent-certs"
-
-# Username/Password for connecting to the agent
-default.kagent.rest_api.user               = "kagent@hops.io"
 
 # API calls
 default.kagent.dashboard.api.register      = "/api/agentservice/register"
@@ -34,7 +39,7 @@ default.kagent.certificate_file            = "server.pem"
 # dashboard ip:port endpoint
 default.kagent.dashboard.ip                = "10.0.2.15"
 default.kagent.dashboard.port              = "8080"  
-default.kagent.dashboard_app               = "hopsworks"
+default.kagent.dashboard_app               = "hopsworks-api"
 
 
 # local settings for agent
@@ -44,6 +49,7 @@ default.kagent.watch_interval              = 2
 default.kagent.pid_file                    = node.kagent.base_dir + "/kagent.pid"
 default.kagent.logging_level               = "INFO"
 default.kagent.max_log_size                = "10000000"
+default.kagent.env_report_freq_in_secs     = "10"
 
 default.kagent.network.interface           = ""
 
@@ -53,7 +59,6 @@ default.kagent[:default][:private_ips]     = ['10.0.2.15']
 # services file contains locally installed services
 
 default.kagent.services                    = node.kagent.base_dir + "/services"
-default.tf.services                        = node.kagent.base_dir + "/tf_services"
 
 # name of cluster as shown in Dashboard
 default.kagent.cluster                     = "Hops"
@@ -83,10 +88,21 @@ node.normal.ntp.servers                    = ['0.europe.pool.ntp.org', '1.europe
 
 node.normal.ntp.peers                      = ['time0.int.example.org', 'time1.int.example.org']
 
-
-node.default.tf.cpu_ids                    = ['']
-node.default.tf.gpu_ids                    = ['']
-
 default.kagent.test                        = false
 
-default.services.enabled                   = "false"
+
+default.kagent.keystore                    = "#{node.kagent.base_dir}/node_server_keystore.jks"
+default.kagent.keystore_password           = "changeit"
+
+
+default.smtp.host                          = "smtp.gmail.com"
+default.smtp.port                          = "587"
+default.smtp.ssl_port                      = "465"
+default.smtp.email                         = "smtp@gmail.com"
+default.smtp.email_password                = "password"
+default.smtp.gmail.placeholder             = "http://snurran.sics.se/hops/hopsworks.email"
+
+
+default.services.enabled                   = "true"
+
+

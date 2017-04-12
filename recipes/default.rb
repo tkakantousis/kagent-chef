@@ -31,10 +31,6 @@ if node.systemd == "true"
   end
 
 
-  # kagent_config  do
-  #   action :systemd_reload
-  # end
-
   case node.platform_family
   when "rhel"
     systemd_script = "/usr/lib/systemd/system/#{service_name}.service" 
@@ -44,21 +40,26 @@ if node.systemd == "true"
 
   template systemd_script do
     source "#{service_name}.service.erb"
-    owner node.kagent.user
-    group node.kagent.group
-    mode 0650
+    owner "root"
+    group "root"
+    mode 0755
 if node.services.enabled == "true"
     notifies :enable, resources(:service => service_name)
 end
     notifies :restart, "service[#{service_name}]", :delayed
   end
 
-  link "/etc/systemd/system/#{service_name}.service" do
-    only_if { node.systemd == "true" }
-    owner "root"
-    to "#{node.kagent.base_dir}/#{service_name}.service" 
-  end
-
+# This causes systemctl enable to fail with too many symlinks
+# https://github.com/systemd/systemd/issues/3010
+  # link "/etc/systemd/system/#{service_name}.service" do
+  #   only_if { node.systemd == "true" }
+  #   owner "root"
+  #   to "#{node.kagent.base_dir}/#{service_name}.service" 
+  # end
+#  kagent_config  do
+#    action :systemd_reload
+#  end
+  
 else # sysv
 
   service "#{service_name}" do
@@ -67,15 +68,11 @@ else # sysv
     action :nothing
   end
 
-  # kagent_config  do
-  #   action :systemd_reload
-  # end
-
   template "/etc/init.d/#{service_name}" do
     source "#{service_name}.erb"
-    owner node.kagent.user
-    group node.kagent.group
-    mode 0650
+    owner "root"
+    group "root"
+    mode 0755
 if node.services.enabled == "true"
     notifies :enable, resources(:service => service_name)
 end
@@ -83,8 +80,6 @@ end
   end
 
 end
-
-
 
 private_ip = my_private_ip()
 public_ip = my_public_ip()
@@ -119,6 +114,7 @@ template "#{node.kagent.base_dir}/bin/start-all-local-services.sh" do
   group node.kagent.group
   mode 0740
 end
+
 
 template "#{node.kagent.base_dir}/bin/shutdown-all-local-services.sh" do
   source "shutdown-all-local-services.sh.erb"
@@ -157,7 +153,6 @@ if node.kagent.attribute?("hostname") then
  hostname = node.kagent.hostname
 end
 
-
 template "#{node.kagent.base_dir}/config.ini" do
   source "config.ini.erb"
   owner node.kagent.user
@@ -171,7 +166,9 @@ template "#{node.kagent.base_dir}/config.ini" do
               :hostname => hostname,
               :network_if => network_if
             })
+if node.services.enabled == "true"  
   notifies :enable, "service[#{service_name}]"
+end
   notifies :restart, "service[#{service_name}]", :delayed
 end
 
@@ -187,30 +184,25 @@ execute "rm -f #{node.kagent.pid_file}"
 
 case node.platform_family
 when "rhel"
-
-  bash "disable-iptables" do
-    code <<-EOH
-    service iptables stop
-  EOH
-    only_if "test -f /etc/init.d/iptables && service iptables status"
-  end
+  # bash "disable-iptables" do
+  #   code <<-EOH
+  #   service iptables stop
+  # EOH
+  #   only_if "test -f /etc/init.d/iptables && service iptables status"
+  # end
   
 end
 
 if node.kagent.allow_ssh_access == 'true'
-
-  if node.attribute? "kmon"
-    if node.kmon.attribute? "public_key"
-      bash "add_dashboards_public_key" do
-        user "root"
-        code <<-EOF
-         mkdir -p /root/.ssh
-         chmod 700 /root/.ssh
-         cat #{node.kmon.public_key} >> /root/.ssh/authorized_keys
-        EOF
-        not_if "test -f /root/.ssh/authorized_keys"
-      end
-    end
-  end
+  homedir = "/home/#{node.kagent.user}"
+  kagent_keys "#{homedir}" do
+    cb_user "#{node.kagent.user}"
+    cb_group "#{node.kagent.group}"
+    cb_name "hopsworks"
+    cb_recipe "default"  
+    action :get_publickey
+  end  
 end
 
+
+include_recipe "kagent::anaconda"
