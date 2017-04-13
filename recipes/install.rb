@@ -290,7 +290,7 @@ if node.ntp.install == "true"
 end
 
 require 'resolv'
-my_hostname = Resolv.getname my_public_ip()
+my_hostname = Resolv.getname my_private_ip()
 
 template "#{node.kagent.base_dir}/agent.py" do
   source "agent.py.erb"
