@@ -56,8 +56,8 @@ LOG_FILE = "<%= node[:kagent][:base_dir] %>/agent.log"
 CERT_FILE = "<%= node[:kagent][:certs_dir] %>/pub.pem"
 CA_FILE = "<%= node[:kagent][:certs_dir] %>/ca_pub.pem"
 KEY_FILE = "<%= node[:kagent][:certs_dir] %>/priv.key"
-SERVER_KEYSTORE = "<%= node.kagent.keystore_dir %>/node_server_keystore.jks"
-SERVER_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_server_truststore.jks"
+SERVER_KEYSTORE = "<%= @kstore %>"
+SERVER_TRUSTSTORE = "<%= @tstore %>"
 CLIENT_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_client_truststore.jks"
 
 global states

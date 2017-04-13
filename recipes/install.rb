@@ -289,13 +289,18 @@ if node.ntp.install == "true"
   include_recipe "ntp::default"
 end
 
-
+require 'resolv'
+my_hostname = Resolv.getname my_private_ip()
 
 template "#{node.kagent.base_dir}/agent.py" do
   source "agent.py.erb"
   owner node.kagent.user
   group node.kagent.group
   mode 0710
+  variables({
+              :kstore => "#{node.kagent.keystore_dir}/#{my_hostname}__kstore.jks",
+              :tstore => "#{node.kagent.keystore_dir}/#{my_hostname}__tstore.jks"
+            })
 end
 
 
@@ -304,6 +309,10 @@ template"#{node.kagent.certs_dir}/csr.py" do
   owner node.kagent.user
   group node.kagent.certs_group
   mode 0710
+  variables({
+              :kstore => "#{node.kagent.keystore_dir}/#{my_hostname}__kstore.jks",
+              :tstore => "#{node.kagent.keystore_dir}/#{my_hostname}__tstore.jks"
+            })
 end
 
 
