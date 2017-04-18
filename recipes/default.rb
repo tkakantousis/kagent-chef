@@ -159,7 +159,7 @@ template "#{node.kagent.base_dir}/config.ini" do
   group node.kagent.group
   mode 0600
   variables({
-              :rest_url => "http://#{dashboard_endpoint}/#{node.kagent.dashboard_app}",
+              :rest_url => "http://#{dashboard_endpoint}/",
               :rack => '/default',
               :public_ip => public_ip,
               :private_ip => private_ip,
