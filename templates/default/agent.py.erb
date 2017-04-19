@@ -58,7 +58,7 @@ CA_FILE = "<%= node[:kagent][:certs_dir] %>/ca_pub.pem"
 KEY_FILE = "<%= node[:kagent][:certs_dir] %>/priv.key"
 SERVER_KEYSTORE = "<%= @kstore %>"
 SERVER_TRUSTSTORE = "<%= @tstore %>"
-CLIENT_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_client_truststore.jks"
+CLIENT_TRUSTSTORE = "<%= node[:kagent][:keystore_dir] %>/node_client_truststore.jks"
 
 global states
 states = {}
@@ -746,8 +746,8 @@ class SSLCherryPy(ServerAdapter):
         # cherrypy.config.update({
         # 'environment': 'production',
         # 'log.screen': False,
-        # 'log.access_file': "<%= node.kagent.base_dir %>/access.log",
-        # 'log.error_file': "<%= node.kagent.base_dir %>/error.log",
+        # 'log.access_file': "<%= node[:kagent][:base_dir] %>/access.log",
+        # 'log.error_file': "<%= node[:kagent][:base_dir] %>/error.log",
         # 'server.socket_host': '0.0.0.0',
         # 'server.socket_port': agent_restport,
         # 'tools.caching.on': False,

@@ -191,7 +191,7 @@ CA_FILE = "<%= node[:kagent][:certs_dir] %>/ca_pub.pem"
 KEY_FILE = "<%= node[:kagent][:certs_dir] %>/priv.key"
 SERVER_KEYSTORE = "<%= @kstore %>"
 SERVER_TRUSTSTORE = "<%= @tstore %>"
-CLIENT_TRUSTSTORE = "<%= node.kagent.keystore_dir %>/node_client_truststore.jks"
+CLIENT_TRUSTSTORE = "<%= node["kagent"]["keystore_dir"] %>/node_client_truststore.jks"
 
 # reading config
 try:

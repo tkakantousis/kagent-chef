@@ -6,15 +6,15 @@ end
 
 action :add do
 
-  path = "#{new_resource.path}"
-  cookbook = "#{new_resource.cookbook}"
-  recipe = "#{new_resource.recipe}"
-  subrecipe = "#{new_resource.subrecipe}"
-  subsubrecipe = "#{new_resource.subsubrecipe}"
-  param = "#{new_resource.param}"
-  value = "#{new_resource.value}"
-  executing_cookbook = "#{new_resource.executing_cookbook}"
-  executing_recipe = "#{new_resource.executing_recipe}"
+  path = "#{new_resource["path"]}"
+  cookbook = "#{new_resource["cookbook"]}"
+  recipe = "#{new_resource["recipe"]}"
+  subrecipe = "#{new_resource["subrecipe"]}"
+  subsubrecipe = "#{new_resource["subsubrecipe"]}"
+  param = "#{new_resource["param"]}"
+  value = "#{new_resource["value"]}"
+  executing_cookbook = "#{new_resource["executing_cookbook"]}"
+  executing_recipe = "#{new_resource["executing_recipe"]}"
 
 # The result will be written to file in this json format
   if subrecipe.empty?

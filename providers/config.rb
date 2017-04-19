@@ -1,9 +1,9 @@
 action :add do
 
-  ini_file = IniFile.load("#{new_resource.services_file}", :comment => ';#')
-  cluster = "#{node.kagent.cluster}"
-  service = "#{new_resource.service}"
-  role = "#{new_resource.role}"
+  ini_file = IniFile.load("#{new_resource["services_file"]}", :comment => ';#')
+  cluster = "#{node["kagent"]["cluster"]}"
+  service = "#{new_resource["service"]}"
+  role = "#{new_resource["role"]}"
 
 #
 # A section name will have the format: ${CLUSTERNAME}-${SERVICENAME}-${ROLENAME}
@@ -27,12 +27,12 @@ action :add do
     'cluster' => "#{cluster}",
     'service'  => "#{service}",
     'role'  => "#{role}",
-    'web-port' => new_resource.web_port,
-    'stdout-file'  => "#{new_resource.log_file}",
-    'config-file'  => "#{new_resource.config_file}"
-#    'command'  => "#{new_resource.command}",
-#    'command-user'  => "#{new_resource.command_user}",
-#    'command-script'  => "#{new_resource.command_script}",
+    'web-port' => new_resource["web_port"],
+    'stdout-file'  => "#{new_resource["log_file"]}",
+    'config-file'  => "#{new_resource["config_file"]}"
+#    'command'  => "#{new_resource["command"]}",
+#    'command-user'  => "#{new_resource["command_user"]}",
+#    'command-script'  => "#{new_resource["command_script"]}",
 #    'status' => 'Stopped'
   } 
   ini_file.save
@@ -44,7 +44,7 @@ end
 
 
 action :systemd_reload do
-  bash "start-if-not-running-#{new_resource.name}" do
+  bash "start-if-not-running-#{new_resource["name"]}" do
     user "root"
     code <<-EOH
      set -e

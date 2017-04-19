@@ -5,9 +5,9 @@ action :csr do
     code <<-EOF
       set -eo pipefail 
       export PYTHON_EGG_CACHE=/tmp
-      #{node.kagent.certs_dir}/csr.py
+      #{node["kagent"]["certs_dir"]}/csr.py
   EOF
-    not_if { ::File.exists?( "#{node.kagent.keystore_dir}/node_client_truststore.jks" ) }
+    not_if { ::File.exists?( "#{node["kagent"]["keystore_dir"]}/node_client_truststore.jks" ) }
   end
 
 
@@ -15,9 +15,9 @@ action :csr do
     user "root"
     code <<-EOH
       set -eo pipefail 
-      cd #{node.kagent.certs_dir}
-      chown -R root:#{node.kagent.certs_group} #{node.kagent.keystore_dir}
-      chown root:#{node.kagent.certs_group} pub.pem ca_pub.pem priv.key
+      cd #{node["kagent"]["certs_dir"]}
+      chown -R root:#{node["kagent"]["certs_group"]} #{node["kagent"]["keystore_dir"]}
+      chown root:#{node["kagent"]["certs_group"]} pub.pem ca_pub.pem priv.key
     EOH
   end
 
@@ -25,9 +25,9 @@ end
 
 
 action :generate do
-  homedir = "#{new_resource.homedir}"
-  cb_user = "#{new_resource.cb_user}"
-  cb_group = "#{new_resource.cb_group}"
+  homedir = "#{new_resource["homedir"]}"
+  cb_user = "#{new_resource["cb_user"]}"
+  cb_group = "#{new_resource["cb_group"]}"
 
   bash "generate-ssh-keypair-for-#{homedir}" do
     user cb_user
@@ -41,16 +41,16 @@ end
 
 
 action :return_publickey do
- homedir = "#{new_resource.homedir}"
+ homedir = "#{new_resource["homedir"]}"
  contents = ::IO.read("#{homedir}/.ssh/id_rsa.pub")
 
  raise if contents.empty?
  
  Chef::Log.info "Public key read is: #{contents}"
- cb = "#{new_resource.cb_name}"
- recipeName = "#{new_resource.cb_recipe}"
- cb_user = "#{new_resource.cb_user}"
- cb_group = "#{new_resource.cb_group}"
+ cb = "#{new_resource["cb_name"]}"
+ recipeName = "#{new_resource["cb_recipe"]}"
+ cb_user = "#{new_resource["cb_user"]}"
+ cb_group = "#{new_resource["cb_group"]}"
 
  node.default["#{cb}"]["#{recipeName}"][:public_key] = contents
 
@@ -73,11 +73,11 @@ action :return_publickey do
 end
 
 action :get_publickey do
-  homedir = "#{new_resource.homedir}"
-  cb = "#{new_resource.cb_name}" 
-  recipeName = "#{new_resource.cb_recipe}"
-  cb_user = "#{new_resource.cb_user}"
-  cb_group = "#{new_resource.cb_group}"
+  homedir = "#{new_resource["homedir"]}"
+  cb = "#{new_resource["cb_name"]}" 
+  recipeName = "#{new_resource["cb_recipe"]}"
+  cb_user = "#{new_resource["cb_user"]}"
+  cb_group = "#{new_resource["cb_group"]}"
 
   key_contents = node["#{cb}"]["#{recipeName}"][:public_key]
   Chef::Log.debug "Public key read is: #{key_contents}"

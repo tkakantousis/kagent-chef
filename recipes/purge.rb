@@ -31,19 +31,19 @@ end
 }
 
 # Remove the MySQL binaries and MySQL Cluster data directories
-directory node.kagent.base_dir do
+directory node["kagent"]["base_dir"] do
   recursive true
   action :delete
   ignore_failure true
 end
 
-directory node.kagent.home do
+directory node["kagent"]["home"] do
   recursive true
   action :delete
   ignore_failure true
 end
 
-directory node.kagent.certs_dir do
+directory node["kagent"]["certs_dir"] do
   recursive true
   action :delete
   ignore_failure true
