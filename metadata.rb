@@ -73,7 +73,7 @@ attribute "kagent/dashboard/user",
           :type => "string"
 
 attribute "kagent/hostname",
-          :description => "hostname to register with server",
+          :description => "hostname used to register with hopsworks",
           :type => "string"
 
 attribute "kagent/dashboard/password",
