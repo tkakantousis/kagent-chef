@@ -2,6 +2,7 @@ dependencies:
   - recipe: kagent::default
     global:  
       - hopsworks::default
+      - hopsworks::dev
       - kafka::default
       - epipe::default
       - livy::default
