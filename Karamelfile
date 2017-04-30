@@ -3,7 +3,3 @@ dependencies:
     global:  
       - hopsworks::default
       - hopsworks::dev
-      - kafka::default
-      - epipe::default
-      - livy::default
-      - drelephant::default
