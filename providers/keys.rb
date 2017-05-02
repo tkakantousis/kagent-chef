@@ -5,9 +5,9 @@ action :csr do
     code <<-EOF
       set -eo pipefail 
       export PYTHON_EGG_CACHE=/tmp
-      #{node.kagent.certs_dir}/csr.py
+      #{node["kagent"]["certs_dir"]}/csr.py
   EOF
-    not_if { ::File.exists?( "#{node.kagent.keystore_dir}/node_client_truststore.jks" ) }
+    not_if { ::File.exists?( "#{node["kagent"]["keystore_dir"]}/node_client_truststore.jks" ) }
   end
 
 
@@ -15,9 +15,9 @@ action :csr do
     user "root"
     code <<-EOH
       set -eo pipefail 
-      cd #{node.kagent.certs_dir}
-      chown -R root:#{node.kagent.certs_group} #{node.kagent.keystore_dir}
-      chown root:#{node.kagent.certs_group} pub.pem ca_pub.pem priv.key
+      cd #{node["kagent"]["certs_dir"]}
+      chown -R root:#{node["kagent"]["certs_group"]} #{node["kagent"]["keystore_dir"]}
+      chown root:#{node["kagent"]["certs_group"]} pub.pem ca_pub.pem priv.key
     EOH
   end
 

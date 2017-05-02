@@ -1,7 +1,7 @@
 action :add do
 
   ini_file = IniFile.load("#{new_resource.services_file}", :comment => ';#')
-  cluster = "#{node.kagent.cluster}"
+  cluster = "#{node["kagent"]["cluster"]}"
   service = "#{new_resource.service}"
   role = "#{new_resource.role}"
 
@@ -30,10 +30,6 @@ action :add do
     'web-port' => new_resource.web_port,
     'stdout-file'  => "#{new_resource.log_file}",
     'config-file'  => "#{new_resource.config_file}"
-#    'command'  => "#{new_resource.command}",
-#    'command-user'  => "#{new_resource.command_user}",
-#    'command-script'  => "#{new_resource.command_script}",
-#    'status' => 'Stopped'
   } 
   ini_file.save
   Chef::Log.info "Saved an updated copy of services file at the kagent after updating #{cluster}-#{service}-#{role}"
