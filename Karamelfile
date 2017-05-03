@@ -1,5 +1,6 @@
 dependencies: 
+  - recipe: kagent::install
+    global:  
   - recipe: kagent::default
     global:  
       - hopsworks::default
-      - hopsworks::dev
