@@ -1,5 +1,7 @@
 default["install"]["dir"]                          = ""
 default["install"]["user"]                         = ""
+default["install"]["ssl"]                          = "false"
+
 
 # Default values for configuration parameters
 default["kagent"]["version"]                       = "0.1.0"

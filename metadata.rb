@@ -116,6 +116,10 @@ attribute "install/user",
           :description => "User to install the services as",
           :type => "string"
 
+attribute "install/ssl",
+          :description => "Is SSL turned on for all services?",
+          :type => "string"
+
 attribute "hops/yarn/user",
           :description => "Yarn user for conda",
           :type => "string"
