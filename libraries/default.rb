@@ -36,6 +36,13 @@ module Kagent
       end
     end
 
+    def valid_attribute(cookbook, recipe, attr)
+      valid_recipe(cookbook, recipe)
+      if node[cookbook][recipe].attribute?(attr) == false 
+        Chef::Log.error "Invalid cookbook/recipe/attr name: #{cookbook}/#{recipe}/#{attr}"
+        raise ArgumentError, "Invalid Attribute for Recipe to cookbook #{cookbook}/#{recipe}", attr
+      end
+    end
 
     def public_recipe_ip(cookbook, recipe)
       valid_recipe(cookbook,recipe)
@@ -43,8 +50,12 @@ module Kagent
     end
 
     def private_recipe_ip(cookbook, recipe)
-      valid_recipe(cookbook,recipe)
+      valid_attribute(cookbook,recipe)
       ip = node[cookbook][recipe][:private_ips][0]
+      if ip.nil? || ip.empty? then
+        Chef::Log.error "No IP found for #{cookbook}/#{recipe}"
+        raise ArgumentError, "No IP found for Recipe to cookbook #{cookbook}/#{recipe}", recipe
+      end
     end
 
     def private_recipe_ips(cookbook, recipe)
