@@ -52,10 +52,10 @@ module Kagent
     def private_recipe_ip(cookbook, recipe)
       valid_recipe(cookbook,recipe)
       ip = node[cookbook][recipe][:private_ips][0]
-      if ip.nil? || ip.empty? then
-        Chef::Log.error "No IP found for #{cookbook}/#{recipe}"
-        raise ArgumentError, "No IP found for Recipe to cookbook #{cookbook}/#{recipe}", recipe
-      end
+#      if ip.nil? || ip.empty? then
+#        Chef::Log.error "No IP found for #{cookbook}/#{recipe}"
+#        raise ArgumentError, "No IP found for Recipe to cookbook #{cookbook}/#{recipe}", recipe
+#      end
     end
 
     def private_recipe_ips(cookbook, recipe)
