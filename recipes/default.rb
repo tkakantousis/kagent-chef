@@ -15,6 +15,7 @@ when "debian"
      end
 end
 
+include_recipe "kagent::anaconda"
 
 case node[:platform]
 when "ubuntu"
@@ -197,4 +198,3 @@ if node["kagent"]["allow_ssh_access"] == 'true'
 end
 
 
-include_recipe "kagent::anaconda"
