@@ -8,7 +8,13 @@ require 'resolv'
 module Kagent 
   module Helpers  
     def my_public_ip()
-      node["public_ips"][0]
+      if node.attribute?("public_ips") == true
+         if node["public_ips"]
+           node["public_ips"][0]
+         end
+      else
+        my_private_ip()
+      end
     end
 
     def my_dns_name()
