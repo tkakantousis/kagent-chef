@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # conda <user> <op> -n <proj> [-c <channel> --override-channels] lib[=version]
-# conda $1 -n $2 -c [$3] $4[$5]
+# conda $1 -n $2 -c [$3] $4 [$5]
 
 if [[ $# -lt 5 || $# -gt 6 ]]; then
  echo "incorrect usage"
@@ -57,7 +57,7 @@ elif [ "$OP" == "UPGRADE" ] ; then
   fi
 elif [ "$OP" == "UNINSTALL" ] ; then
   exists
-  if [ $? -ne 0 ] ; then
+  if [ $? -eq 0 ] ; then
       su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/bin/conda remove -n $PROJ -q -y $CHANNEL $LIB_NAME"
   fi
 else
