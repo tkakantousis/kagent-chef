@@ -107,3 +107,4 @@ default["smtp"]["gmail.placeholder"]               = "http://snurran.sics.se/hop
 
 default["services"]["enabled"]                     = ""
 
+default["certs"]["dir"]                            = node["install"]["dir"].empty? ? node["kagent"]["dir"] + "/certs-dir" : node["install"]["dir"] + "/certs-dir"

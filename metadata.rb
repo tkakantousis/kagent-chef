@@ -152,3 +152,8 @@ attribute "smtp/email_password",
           :description => "Password for email account. ",
           :required => "required",
           :type => 'string'
+
+
+attribute "certs/dir",
+          :description => "Installation directory for ssl/tls certs",
+          :type => 'string'
