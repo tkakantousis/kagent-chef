@@ -6,15 +6,14 @@ require 'resolv'
 # hostname -fqdn   is used by the tasktracker
 
 module Kagent 
-  module Helpers  
+  module Helpers
+# If the public-ip is empty, return a private-ip instead    
     def my_public_ip()
-      if node.attribute?("public_ips") == true
-         if node["public_ips"]
-           node["public_ips"][0]
-         end
-      else
-        my_private_ip()
+      if node.attribute?("public_ips") == false || node["public_ips"].empty?
+         Chef::Log.error "Could not find a public_ip for this host"
+         raise ArgumentError, "No public_ip found", node['host']
       end
+      return node["public_ips"][0]
     end
 
     def my_dns_name()
@@ -30,7 +29,11 @@ module Kagent
     end
 
     def my_private_ip()
-      node["private_ips"][0]
+      if node.attribute?("private_ips") == false || node["private_ips"].empty?      
+         Chef::Log.error "Could not find a private_ip for this host"
+         raise ArgumentError, "No private_ip found", node['host']
+      end
+      return node["private_ips"][0]
     end
 
     def valid_cookbook(cookbook)
