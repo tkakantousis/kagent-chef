@@ -1,0 +1,31 @@
+# Port-forwarding rules for mysqld
+*mangle
+:PREROUTING ACCEPT [32904:37797207]
+:INPUT ACCEPT [32904:37797207]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [30438:21350889]
+:POSTROUTING ACCEPT [30438:21350889]
+COMMIT
+
+*nat
+:PREROUTING ACCEPT [172:10320]
+:INPUT ACCEPT [175:10452]
+:OUTPUT ACCEPT [2596:155760]
+:POSTROUTING ACCEPT [2596:155760]
+
+# Forward incoming packets from the public interface with destination port 3306
+# to the private ip and vice-versa
+-A PREROUTING -i <%= @pub_net_if %> -p tcp -m tcp --dport 3306 -j DNAT --to-destination <%= @private_ip %>
+-A POSTROUTING -d <%= @private_ip %>/32 -o <%= @priv_net_if %> -p tcp -m tcp --dport 3306 -j SNAT --to-source <%= @public_ip %>
+COMMIT
+
+*filter
+:INPUT ACCEPT [16774:18730415]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [15460:10671720]
+
+# Accept incoming traffic in case the FORWARD chain has default DROP rule
+-A FORWARD -i <%= @pub_net_if %> -o <%= @priv_net_if %> -p tcp -m tcp --dport 3306 --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack --ctstate NEW -j ACCEPT
+-A FORWARD -i <%= @pub_net_if %> -o <%= @priv_net_if %> -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -i <%= @priv_net_if %> -o <%= @pub_net_if %> -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+COMMIT
