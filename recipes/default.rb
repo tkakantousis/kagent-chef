@@ -81,7 +81,11 @@ dashboard_endpoint = "10.0.2.15"  + ":" + node["kagent"]["dashboard"]["port"]
 
 if node.attribute? "hopsworks"
   begin
-    dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node["kagent"]["dashboard"]["port"]
+    if node["hopsworks"].attribute? "port"
+      dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node["hopsworks"]["port"]
+    else
+      dashboard_endpoint = private_recipe_ip("hopsworks","default")  + ":" + node["kagent"]["dashboard"]["port"]
+    end
   rescue
     dashboard_endpoint =
     Chef::Log.warn "could not find the hopsworks server ip to register kagent to!"
