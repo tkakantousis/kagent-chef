@@ -202,3 +202,12 @@ if node["kagent"]["allow_ssh_access"] == 'true'
 end
 
 
+
+if node["kagent"]["cleanup_downloads"] == 'true'
+
+  file "/tmp/#{d}*.tgz" do
+    action :delete
+    ignore_failure true
+  end
+
+fi  

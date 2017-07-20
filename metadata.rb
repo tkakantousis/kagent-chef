@@ -120,6 +120,10 @@ attribute "install/ssl",
           :description => "Is SSL turned on for all services?",
           :type => "string"
 
+attribute "install/cleanup_downloads",
+          :description => "Remove any zipped binaries that were downloaded and used to install services",
+          :type => "string"
+
 attribute "hops/yarn/user",
           :description => "Yarn user for conda",
           :type => "string"

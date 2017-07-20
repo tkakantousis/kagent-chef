@@ -1,6 +1,7 @@
 default["install"]["dir"]                          = ""
 default["install"]["user"]                         = ""
 default["install"]["ssl"]                          = "false"
+default["install"]["cleanup_downloads"]            = "false"
 
 
 # Default values for configuration parameters
