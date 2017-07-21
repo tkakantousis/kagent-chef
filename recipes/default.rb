@@ -210,4 +210,4 @@ if node["kagent"]["cleanup_downloads"] == 'true'
     ignore_failure true
   end
 
-fi  
+end
