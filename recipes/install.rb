@@ -359,7 +359,7 @@ end
 if node["vagrant"] === "true" || node["vagrant"] == true 
     node[:kagent][:default][:private_ips].each_with_index do |ip, index| 
       hostsfile_entry "#{ip}" do
-        hostname  "dn#{index}"
+        hostname  "hopsworks#{index}"
         action    :create
         unique    true
       end
