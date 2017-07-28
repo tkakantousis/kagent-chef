@@ -1,6 +1,6 @@
 action :add do
 
-  ini_file = IniFile.load("#{new_resource.services_file}", :comment => ';#')
+  ini_file = IniFile.load("#{new_resource.services_file}", :comment => ';#') # 
   cluster = "#{node["kagent"]["cluster"]}"
   service = "#{new_resource.service}"
   role = "#{new_resource.role}"
@@ -34,6 +34,15 @@ action :add do
   ini_file.save
   Chef::Log.info "Saved an updated copy of services file at the kagent after updating #{cluster}-#{service}-#{role}"
 
+  bash "restart-kagent-after-update" do
+    user "root"
+    code <<-EOH
+     set -e
+     service kagent restart
+    EOH
+  end
+
+  
   new_resource.updated_by_last_action(true)
 end
 
