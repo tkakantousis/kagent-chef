@@ -9,5 +9,6 @@ attribute :config_file, :kind_of => String, :default => ""
 attribute :command, :kind_of => String, :default => ""
 attribute :command_user, :kind_of => String, :default => ""
 attribute :command_script, :kind_of => String, :default => ""
+attribute :restart_agent, :kind_of => [TrueClass, FalseClass], :default => true
 
 default_action :add

@@ -40,6 +40,7 @@ action :add do
      set -e
      service kagent restart
     EOH
+    not_if {new_resource.restart_agent == false}
   end
 
   
