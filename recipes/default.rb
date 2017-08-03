@@ -60,7 +60,7 @@ else # sysv
     supports :restart => true, :start => true, :stop => true, :enable => true
     action :nothing
   end
-
+  
   template "/etc/init.d/#{service_name}" do
     source "#{service_name}.erb"
     owner "root"
@@ -72,6 +72,10 @@ end
     notifies :restart, "service[#{service_name}]", :delayed
   end
 
+  kagent_config do
+    action :systemd_reload
+  end
+  
 end
 
 private_ip = my_private_ip()
