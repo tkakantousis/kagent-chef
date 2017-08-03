@@ -154,11 +154,17 @@ if node["kagent"].attribute?("hostname") then
  hostname = node["kagent"]["hostname"]
 end
 
+#
+# use :create_if_missing, as if there is a failure during/after the csr.py program,
+# you will get a failure. csr.py adds a password entry to the [agent] section. 
+# The file will be created without the agent->pasword if it is re-run and the password will be lost. 
+#
 template "#{node["kagent"]["base_dir"]}/config.ini" do
   source "config.ini.erb"
   owner node["kagent"]["user"]
   group node["kagent"]["group"]
   mode 0600
+  action :create_if_missing
   variables({
               :rest_url => "http://#{dashboard_endpoint}/",
               :rack => '/default',
