@@ -161,3 +161,7 @@ attribute "smtp/email_password",
 attribute "certs/dir",
           :description => "Installation directory for ssl/tls certs",
           :type => 'string'
+
+attribute "hops/dir",
+          :description => "Installation directory for Hops",
+          :type => 'string'

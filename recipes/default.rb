@@ -154,6 +154,11 @@ if node["kagent"].attribute?("hostname") then
  hostname = node["kagent"]["hostname"]
 end
 
+
+hops_dir=node['install']['dir']
+if node.attribute?("hops") && node["hops"].attribute?("dir") then
+  hops_dir=node['hops']['dir']
+end
 #
 # use :create_if_missing, as if there is a failure during/after the csr.py program,
 # you will get a failure. csr.py adds a password entry to the [agent] section. 
@@ -171,7 +176,8 @@ template "#{node["kagent"]["base_dir"]}/config.ini" do
               :public_ip => public_ip,
               :private_ip => private_ip,
               :hostname => hostname,
-              :network_if => network_if
+              :network_if => network_if,
+              :hops_dir => hops_dir
             })
 if node["services"]["enabled"] == "true"  
   notifies :enable, "service[#{service_name}]"
