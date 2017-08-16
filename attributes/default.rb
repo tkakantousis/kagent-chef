@@ -106,6 +106,6 @@ default["smtp"]["email_password"]                  = "password"
 default["smtp"]["gmail.placeholder"]               = "http://snurran.sics.se/hops/hopsworks.email"
 
 
-default["services"]["enabled"]                     = ""
+default["services"]["enabled"]                     = "true"
 
 default["certs"]["dir"]                            = node["install"]["dir"].empty? ? node["kagent"]["dir"] + "/certs-dir" : node["install"]["dir"] + "/certs-dir"
