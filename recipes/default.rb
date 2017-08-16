@@ -150,14 +150,18 @@ end
 
 # Default to hostname found in /etc/hosts, but allow user to override it.
 hostname = node['hostname']
-if node["kagent"].attribute?("hostname") then
+if node["kagent"].attribute?("hostname") 
  hostname = node["kagent"]["hostname"]
 end
 
 
 hops_dir=node['install']['dir']
-if node.attribute?("hops") && node["hops"].attribute?("dir") then
+if node.attribute?("hops") && node["hops"].attribute?("dir") 
   hops_dir=node['hops']['dir']
+end
+if hops_dir == "" 
+ # Guess that it is the default value
+ hops_dir = "/srv/hops/hadoop"
 end
 #
 # use :create_if_missing, as if there is a failure during/after the csr.py program,
