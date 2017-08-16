@@ -12,7 +12,7 @@ OP=$2
 PROJECT=$3
 PYTHON_VERSION=$4
 OFFLINE=$5
-
+#HADOOP_DIR=
 CLONE=
 
 
@@ -31,7 +31,9 @@ if [ "$OP" == "CREATE" ] ; then
        exit 0
     fi
     su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/bin/conda create -n $PROJECT python=$PYTHON_VERSION -y -q $OFFLINE"
-    su $EXEC_AS_USER -c "export HADOOP_HOME=<%= node["hops"]["base_dir"] %> && <%= node["conda"]["base_dir"] %>/bin/pip install hdfscontents -y"
+    su $EXEC_AS_USER -c "export HADOOP_HOME=<%= node['hops']['base_dir'] %> && <%= node["conda"]["base_dir"] %>/bin/pip install hdfscontents -y"
+    su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/bin/pip install hopsutil -y"
+#    su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/bin/pip install tfspark -y"        
 elif [ "$OP" == "LIST_ENVS" ] ; then
   su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/bin/conda env list --json > /tmp/conda_envs.json"    
 elif [ "$OP" == "LIST" ] ; then
