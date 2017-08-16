@@ -815,7 +815,8 @@ class Conda():
             logger.info("Execption in envOp {0}".format(e.output))
             logger.info("Execption in envOp. Ret code: {0}".format(e.returncode))
             msg = e.output
-            conda_op = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'FAILED', 'id':  str(command_id), 'arg': msg}
+            truncated = (msg[:250] + '...') if len(msg) > 255 else msg
+            conda_op = {'proj': proj, 'op': op, 'channelurl': 'default', 'lib': '', 'version': '', 'status': 'FAILED', 'id':  str(command_id), 'arg': truncated}
         finally:
             conda_mutex.acquire()
             if command_id != -1:
