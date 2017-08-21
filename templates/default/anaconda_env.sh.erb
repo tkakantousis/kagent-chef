@@ -35,7 +35,9 @@ if [ "$OP" == "CREATE" ] ; then
     su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install hopsutil"
     su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install tfspark"
 
-    sudo <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/python  -m ipykernel install --prefix=<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/ --name "python-${PROJECT}"
+    if [ "<%= node['jupyter']['python'] %>" != "false" ] ; then
+	sudo <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/python  -m ipykernel install --prefix=<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/ --name "python-${PROJECT}"
+    fi
     if [ $? -eq 0 ] ; then
 	sudo jupyter-kernelspec install <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/share/jupyter/kernels/python-${PROJECT}
     else
@@ -54,7 +56,9 @@ elif [ "$OP" == "REMOVE" ] ; then
        exit 0
     fi
     su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/bin/conda-env remove -n $PROJECT -y -q"
-    sudo jupyter-kernelspec remove -y python-${PROJECT}
+    if [ "<%= node['jupyter']['python'] %>" != "false" ] ; then    
+	sudo jupyter-kernelspec remove -y python-${PROJECT}
+    fi
 else
     exit -1
 fi
