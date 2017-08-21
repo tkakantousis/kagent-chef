@@ -35,7 +35,7 @@ if [ "$OP" == "CREATE" ] ; then
     su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install hopsutil"
     su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install tfspark"
 
-    sudo <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/python  -m ipykernel install --prefix=<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/ --name 'python-${PROJECT}'
+    sudo <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/python  -m ipykernel install --prefix=<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/ --name "python-${PROJECT}"
     if [ $? -eq 0 ] ; then
 	sudo jupyter-kernelspec install <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/share/jupyter/kernels/python-${PROJECT}
     else
