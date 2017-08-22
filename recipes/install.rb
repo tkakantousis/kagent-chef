@@ -366,10 +366,10 @@ if node["vagrant"] === "true" || node["vagrant"] == true
     end
 end
 
-python_kernel = "true"
+jupyter_python = "true"
 if node.attribute?("jupyter") 
   if node["jupyter"].attribute?("python") 
-    python_kernel = "#{node['jupyter']['python']}".downcase
+    jupyter_python = "#{node['jupyter']['python']}".downcase
   end
 end
 
@@ -389,7 +389,7 @@ template "#{node["kagent"]["home"]}/bin/anaconda_env.sh" do
   mode "755"
   action :create
   variables({
-        :python_kernel => python_kernel
+        :jupyter_python => jupyter_python
   })
 end
 
