@@ -246,7 +246,7 @@ end
 directory node["kagent"]["home"] do
   owner node["kagent"]["user"]
   group node["kagent"]["group"]
-  mode "755"
+  mode "750"
   action :create
 end
 
@@ -276,7 +276,7 @@ end
 directory node["kagent"]["keystore_dir"] do
   owner node["kagent"]["user"]
   group node["kagent"]["group"]
-  mode "755"
+  mode "750"
   action :create
 end
 
