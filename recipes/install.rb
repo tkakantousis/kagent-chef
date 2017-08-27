@@ -373,6 +373,13 @@ if node.attribute?("jupyter")
   end
 end
 
+hadoop_version = "2.7.3"
+if node.attribute?("hops") 
+  if node["hops"].attribute?("version") 
+    hadoop_version = node['hops']['version']
+  end
+end
+
 
 template "#{node["kagent"]["home"]}/bin/conda.sh" do
   source "conda.sh.erb"
@@ -389,7 +396,8 @@ template "#{node["kagent"]["home"]}/bin/anaconda_env.sh" do
   mode "755"
   action :create
   variables({
-        :jupyter_python => jupyter_python
+        :jupyter_python => jupyter_python,
+        :hadoop_version => hadoop_version
   })
 end
 
