@@ -32,3 +32,18 @@ include_recipe "conda::default"
 kagent_conda "packages" do
   action :config
 end
+
+
+#
+# Download python wheels for tensorflow to be installed by kagent/conda for each project
+#
+packs=%w{ node["tensorflow"]["py36"]["url"] node["tensorflow"]["py27"]["url"] }
+for url in packs
+  bin=File.basename(url)
+  remote_file "#{node['conda']['base_path']}/pkgs/#{bin}" do
+    #  checksum installer_checksum  
+    source url
+    mode 0755
+    action :create
+  end
+end
