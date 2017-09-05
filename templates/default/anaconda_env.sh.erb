@@ -40,7 +40,11 @@ if [ "$OP" == "CREATE" ] ; then
     HADOOP_VERSION=$(echo $HADOOP_DIR | awk -F- '{print $NF}')
     echo "Hadoop dir is $HADOOP_DIR"
     echo "Hadoop version is $HADOOP_VERSION"
-    su $EXEC_AS_USER -c "export HADOOP_VERSION=$HADOOP_VERSION; export HADOOP_CONF_DIR=${HADOOP_DIR}/hadoop/etc; export HADOOP_HOME=$HADOOP_DIR ; <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade pydoop"
+    export HADOOP_VERSION=$HADOOP_VERSION
+    export HADOOP_CONF_DIR=${HADOOP_DIR}/hadoop/etc
+    export HADOOP_HOME=$HADOOP_DIR 
+    <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade pydoop"
+#    su $EXEC_AS_USER -c "export HADOOP_VERSION=$HADOOP_VERSION; export HADOOP_CONF_DIR=${HADOOP_DIR}/hadoop/etc; export HADOOP_HOME=$HADOOP_DIR ; <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade pydoop"
     su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade hopsutil"
 
     export PY=$(echo $PYTHON_VERSION | sed 's/\.//g')
