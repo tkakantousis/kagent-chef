@@ -40,11 +40,12 @@ if [ "$OP" == "CREATE" ] ; then
     HADOOP_VERSION=$(echo $HADOOP_DIR | awk -F- '{print $NF}')
     echo "Hadoop dir is $HADOOP_DIR"
     echo "Hadoop version is $HADOOP_VERSION"
-    su $EXEC_AS_USER -c "export HADOOP_VERSION=$HADOOP_VERSION; export HADOOP_CONF_DIR=${HADOOP_DIR}/hadoop/etc; export HADOOP_HOME=$HADOOP_DIR ; <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade hdfscontents"
+    su $EXEC_AS_USER -c "export HADOOP_VERSION=$HADOOP_VERSION; export HADOOP_CONF_DIR=${HADOOP_DIR}/hadoop/etc; export HADOOP_HOME=$HADOOP_DIR ; <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade pydoop"
     su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade hopsutil"
-    su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade <%= node["conda"]["base_dir"] %>/pkgs/tensorflow-<%= node['tensorflow']['version'] %>-cp${PYTHON_VERSION}-cp${PYTHON_VERSION}mu-manylinux1_x86_64.whl"
-    su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade tfspark"
 
+    export PY=$(echo $PYTHON_VERSION | sed 's/\.//g')
+    su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade <%= node["conda"]["base_dir"] %>/pkgs/tensorflow-<%= node['tensorflow']['version'] %>-cp${PY}-cp${PY}mu-manylinux1_x86_64.whl"
+    su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade tfspark"
     if [ "<%= @jupyter_python %>" == "true" ] ; then
 	if [ $CREATE_PYTHON_KERNEL -eq 1 ] ; then
    sudo <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/python -m ipykernel install --prefix=<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/ --name "python-${PROJECT}"

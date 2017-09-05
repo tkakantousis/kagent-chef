@@ -43,6 +43,8 @@ for url in ["#{url1}","#{url2}"]
   bin=File.basename(url)
   remote_file "#{node['conda']['base_dir']}/pkgs/#{bin}" do
     #  checksum installer_checksum  
+    owner node['conda']['user']
+    group node['conda']['group']
     source url
     mode 0755
     action :create
