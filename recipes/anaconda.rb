@@ -37,13 +37,15 @@ end
 #
 # Download python wheels for tensorflow to be installed by kagent/conda for each project
 #
-packs=%w{ node["tensorflow"]["py36"]["url"] node["tensorflow"]["py27"]["url"] }
-for url in packs
+url1 = node["tensorflow"]["py36"]["url"] 
+url2 = node["tensorflow"]["py27"]["url"] 
+for url in ["#{url1}","#{url2}"]
   bin=File.basename(url)
-  remote_file "#{node['conda']['base_path']}/pkgs/#{bin}" do
+  remote_file "#{node['conda']['base_dir']}/pkgs/#{bin}" do
     #  checksum installer_checksum  
     source url
     mode 0755
     action :create
   end
 end
+
