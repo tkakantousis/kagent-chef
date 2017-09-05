@@ -44,9 +44,9 @@ if [ "$OP" == "CREATE" ] ; then
     export HADOOP_CONF_DIR=${HADOOP_DIR}/hadoop/etc
     export HADOOP_HOME=$HADOOP_DIR 
     <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade pydoop"
-    chown -R <%= node['conda']['user']:node['conda']['group'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/lib/python2.7/site-packages/pydoop 
-    chown -R <%= node['conda']['user']:node['conda']['group'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pydoop 
-    chown -R <%= node['conda']['user']:node['conda']['group'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/config
+    chown -R <%= node['conda']['user'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/lib/python2.7/site-packages/pydoop 
+    chown -R <%= node['conda']['user'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pydoop 
+    chown -R <%= node['conda']['user'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/config
 #    su $EXEC_AS_USER -c "export HADOOP_VERSION=$HADOOP_VERSION; export HADOOP_CONF_DIR=${HADOOP_DIR}/hadoop/etc; export HADOOP_HOME=$HADOOP_DIR ; <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade pydoop"
     su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade hopsutil"
 
