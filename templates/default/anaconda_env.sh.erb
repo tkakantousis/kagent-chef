@@ -43,7 +43,7 @@ if [ "$OP" == "CREATE" ] ; then
     export HADOOP_VERSION=$HADOOP_VERSION
     export HADOOP_CONF_DIR=${HADOOP_DIR}/hadoop/etc
     export HADOOP_HOME=$HADOOP_DIR 
-    <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade pydoop"
+    <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade pydoop
     chown -R <%= node['conda']['user'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/lib/python2.7/site-packages/pydoop 
     chown -R <%= node['conda']['user'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pydoop 
     chown -R <%= node['conda']['user'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/config
