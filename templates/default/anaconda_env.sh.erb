@@ -37,17 +37,12 @@ if [ "$OP" == "CREATE" ] ; then
        CREATE_PYTHON_KERNEL=0
     fi
     su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/bin/conda create -n $PROJECT python=$PYTHON_VERSION -y -q $OFFLINE"
-    #HADOOP_VERSION=$(echo $HADOOP_DIR | awk -F- '{print $NF}')
+    HADOOP_VERSION=$(echo $HADOOP_DIR | awk -F- '{print $NF}')
     echo "Hadoop dir is $HADOOP_DIR"
-    #echo "Hadoop version is $HADOOP_VERSION"
-    #export HADOOP_VERSION=$HADOOP_VERSION
+    echo "Hadoop version is $HADOOP_VERSION"
     export HADOOP_CONF_DIR=${HADOOP_DIR}/hadoop/etc
     export HADOOP_HOME=$HADOOP_DIR 
-    sudo <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade pydoop
-    chown -R <%= node['conda']['user'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/lib/python2.7/site-packages/pydoop 
-    chown -R <%= node['conda']['user'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pydoop 
-    chown -R <%= node['conda']['user'] %> <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/config
-#    su $EXEC_AS_USER -c "export HADOOP_VERSION=$HADOOP_VERSION; export HADOOP_CONF_DIR=${HADOOP_DIR}/hadoop/etc; export HADOOP_HOME=$HADOOP_DIR ; <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade pydoop" 
+    su $EXEC_AS_USER -c "export HADOOP_VERSION=$HADOOP_VERSION; export HADOOP_CONF_DIR=${HADOOP_DIR}/hadoop/etc; export HADOOP_HOME=$HADOOP_DIR ; <%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install pydoop" 
 
     su $EXEC_AS_USER -c "<%= node["conda"]["base_dir"] %>/envs/${PROJECT}/bin/pip install --upgrade hopsutil" 
     export PY=$(echo $PYTHON_VERSION | sed 's/\.//g') 
