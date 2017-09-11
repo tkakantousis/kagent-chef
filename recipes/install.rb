@@ -119,6 +119,7 @@ end
 
 bash "install_python" do
   user node["kagent"]["user"]
+  ignore_failure true
   code <<-EOF
   pip install inifile
   pip install requests
