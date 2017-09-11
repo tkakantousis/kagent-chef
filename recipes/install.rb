@@ -93,50 +93,6 @@ group node["kagent"]["certs_group"] do
 end
 
 
-inifile_gem = "inifile-2.0.2.gem"
-cookbook_file "/tmp/#{inifile_gem}" do
-  source "#{inifile_gem}"
-  owner node["kagent"]["user"]
-  group node["kagent"]["user"]
-  mode 0755
-  action :create_if_missing
-end
-
-requests="requests-1.0.3"
-cookbook_file "/tmp/#{requests}.tar.gz" do
-  source "#{requests}.tar.gz"
-  owner node["kagent"]["user"]
-  group node["kagent"]["user"]
-  mode 0755
-  action :create_if_missing
-end
-
-bottle="bottle-0.11.4"
-cookbook_file "/tmp/#{bottle}.tar.gz" do
-  source "#{bottle}.tar.gz"
-  owner node["kagent"]["user"]
-  group node["kagent"]["user"]
-  mode 0755
-  action :create_if_missing
-end
-
-cherry="CherryPy-3.2.2"
-cookbook_file "/tmp/#{cherry}.tar.gz" do
-  source "#{cherry}.tar.gz"
-  owner node["kagent"]["user"]
-  group node["kagent"]["user"]
-  mode 0755
-end
-
-openSsl="pyOpenSSL-0.13"
-cookbook_file "/tmp/#{openSsl}.tar.gz" do
-  source "#{openSsl}.tar.gz"
-  owner node["kagent"]["user"]
-  group node["kagent"]["user"]
-  mode 0755
-  action :create_if_missing
-end
-
 # ubuntu python-mysqldb package install only works if we first run "apt-get update; apt-get upgrade"
 if platform?("ubuntu", "debian") 
   package "python-mysqldb" do
@@ -153,68 +109,120 @@ else
   end
 end
 
-netifaces="netifaces-0.8"
-cookbook_file "/tmp/#{netifaces}.tar.gz" do
-  source "#{netifaces}.tar.gz"
-  owner node["kagent"]["user"]
-  group node["kagent"]["user"]
-  mode 0755
-  action :create_if_missing
-end
+# inifile_gem = "inifile-2.0.2.gem"
+# cookbook_file "/tmp/#{inifile_gem}" do
+#   source "#{inifile_gem}"
+#   owner node["kagent"]["user"]
+#   group node["kagent"]["user"]
+#   mode 0755
+#   action :create_if_missing
+# end
 
-ipy="IPy-0.81"
-cookbook_file "/tmp/#{ipy}.tar.gz" do
-  source "#{ipy}.tar.gz"
-  owner node["kagent"]["user"]
-  group node["kagent"]["user"]
-  mode 0755
-  action :create_if_missing
-end
+# requests="requests-1.0.3"
+# cookbook_file "/tmp/#{requests}.tar.gz" do
+#   source "#{requests}.tar.gz"
+#   owner node["kagent"]["user"]
+#   group node["kagent"]["user"]
+#   mode 0755
+#   action :create_if_missing
+# end
 
-pexpect="pexpect-2.3"
-cookbook_file "/tmp/#{pexpect}.tar.gz" do
-  source "#{pexpect}.tar.gz"
-  owner node["kagent"]["user"]
-  group node["kagent"]["user"]
-  mode 0755
-  action :create_if_missing
-end
+# bottle="bottle-0.11.4"
+# cookbook_file "/tmp/#{bottle}.tar.gz" do
+#   source "#{bottle}.tar.gz"
+#   owner node["kagent"]["user"]
+#   group node["kagent"]["user"]
+#   mode 0755
+#   action :create_if_missing
+# end
+
+# cherry="CherryPy-3.2.2"
+# cookbook_file "/tmp/#{cherry}.tar.gz" do
+#   source "#{cherry}.tar.gz"
+#   owner node["kagent"]["user"]
+#   group node["kagent"]["user"]
+#   mode 0755
+# end
+
+# openSsl="pyOpenSSL-0.13"
+# cookbook_file "/tmp/#{openSsl}.tar.gz" do
+#   source "#{openSsl}.tar.gz"
+#   owner node["kagent"]["user"]
+#   group node["kagent"]["user"]
+#   mode 0755
+#   action :create_if_missing
+# end
+
+
+# netifaces="netifaces-0.8"
+# cookbook_file "/tmp/#{netifaces}.tar.gz" do
+#   source "#{netifaces}.tar.gz"
+#   owner node["kagent"]["user"]
+#   group node["kagent"]["user"]
+#   mode 0755
+#   action :create_if_missing
+# end
+
+# ipy="IPy-0.81"
+# cookbook_file "/tmp/#{ipy}.tar.gz" do
+#   source "#{ipy}.tar.gz"
+#   owner node["kagent"]["user"]
+#   group node["kagent"]["user"]
+#   mode 0755
+#   action :create_if_missing
+# end
+
+# pexpect="pexpect-2.3"
+# cookbook_file "/tmp/#{pexpect}.tar.gz" do
+#   source "#{pexpect}.tar.gz"
+#   owner node["kagent"]["user"]
+#   group node["kagent"]["user"]
+#   mode 0755
+#   action :create_if_missing
+# end
 
 
 bash "install_python" do
-  user "root"
+  user node["kagent"]["user"]
   code <<-EOF
-  cd /tmp
-  tar zxf "#{bottle}.tar.gz"
-  cd #{bottle}
-  python setup.py install
-  cd ..
-  tar zxf "#{requests}.tar.gz"
-  cd #{requests}
-  python setup.py install
-  cd ..
-  tar zxf "#{cherry}.tar.gz"
-  cd #{cherry}
-  python setup.py install
-  cd ..
-  tar zxf "#{openSsl}.tar.gz"
-  cd #{openSsl}
-  python setup.py install
-  cd ..
-  tar zxf "#{netifaces}.tar.gz"
-  cd #{netifaces}
-  python setup.py install
-  cd ..
-  tar zxf "#{ipy}.tar.gz"
-  cd #{ipy}
-  python setup.py install
-  cd ..
-  tar zxf "#{pexpect}.tar.gz"
-  cd #{pexpect}
-  python setup.py install
-  touch /tmp/.python_libs_installed
+  # cd /tmp
+  # tar zxf "#{bottle}.tar.gz"
+  # cd #{bottle}
+  # python setup.py install
+  # cd ..
+  # tar zxf "#{requests}.tar.gz"
+  # cd #{requests}
+  # python setup.py install
+  # cd ..
+  # tar zxf "#{cherry}.tar.gz"
+  # cd #{cherry}
+  # python setup.py install
+  # cd ..
+  # tar zxf "#{openSsl}.tar.gz"
+  # cd #{openSsl}
+  # python setup.py install
+  # cd ..
+  # tar zxf "#{netifaces}.tar.gz"
+  # cd #{netifaces}
+  # python setup.py install
+  # cd ..
+  # tar zxf "#{ipy}.tar.gz"
+  # cd #{ipy}
+  # python setup.py install
+  # cd ..
+  # tar zxf "#{pexpect}.tar.gz"
+  # cd #{pexpect}
+  # python setup.py install
+
+  pip install inifile
+  pip install requests
+  pip install bottle
+  pip install CherryPy
+  pip install pyOpenSSL
+  pip install netifaces
+#  touch /tmp/.python_libs_installed
  EOF
-  not_if "test -f /tmp/.python_libs_installed"
+#  not_if "test -f /tmp/.python_libs_installed"
 end
 
 
@@ -225,11 +233,6 @@ bash "make_gemrc_file" do
  EOF
   not_if "test -f ~/.python_libs_installed"
 end
-
-# gem_package "inifile" do
-#   source "/tmp/#{inifile_gem}"
-#   action :install
-# end
 
 chef_gem "inifile" do
   action :install
@@ -264,8 +267,6 @@ link node["kagent"]["base_dir"] do
   to node["kagent"]["home"]
 end
 
-
-
 directory "#{node["kagent"]["base_dir"]}/bin" do
   owner node["kagent"]["user"]
   group node["kagent"]["group"]
@@ -298,8 +299,6 @@ my_hostname = node['hostname']
 if node["kagent"].attribute?("hostname") then
  my_hostname = node["kagent"]["hostname"]
 end
-
-
 
 template "#{node["kagent"]["base_dir"]}/agent.py" do
   source "agent.py.erb"
@@ -423,19 +422,19 @@ template "/etc/sudoers.d/kagent" do
 end  
 
 
-case node[:platform_family]
-when "rhel"
-     package "pyOpenSSL" do
-      action :install
-     end
-     package "python-netifaces" do
-      action :install
-     end
+# case node[:platform_family]
+# when "rhel"
+#      package "pyOpenSSL" do
+#       action :install
+#      end
+#      package "python-netifaces" do
+#       action :install
+#      end
 
-when "debian"
-     package "python-openssl" do
-      action :install
-     end
-end
+# when "debian"
+#      package "python-openssl" do
+#       action :install
+#      end
+# end
 
 include_recipe "kagent::anaconda"
