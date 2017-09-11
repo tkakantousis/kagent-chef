@@ -117,19 +117,19 @@ end
 #   EOF
 # end
 
-# bash "install_python" do
-#   user "root"
-#   ignore_failure true
-#   code <<-EOF
-#   sudo -H pip install inifile
-#   sudo -H pip install requests
-#   sudo -H pip install bottle
-#   sudo -H pip install CherryPy
-#   sudo -H pip install pyOpenSSL
-#   sudo -H pip install netifaces
-#   sudo -H pip install IPy
-#  EOF
-# end
+bash "install_python" do
+  user node['kagent']['user']
+  ignore_failure true
+  code <<-EOF
+  pip install --no-cache-dir inifile
+  pip install --no-cache-dir requests
+  pip install --no-cache-dir bottle
+  pip install --no-cache-dir CherryPy
+  pip install --no-cache-dir pyOpenSSL
+  pip install --no-cache-dir netifaces
+  pip install --no-cache-dir IPy
+ EOF
+end
 
 
 inifile_gem = "inifile-2.0.2.gem"
