@@ -111,6 +111,7 @@ end
 
 bash "fix_permissions" do
   user "root"
+  ignore_failure true
   code <<-EOF
     chown -R #{node['kagent']['user']} /home/#{node['kagent']['user']}/.cache
   EOF
