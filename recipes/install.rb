@@ -109,6 +109,13 @@ else
   end
 end
 
+bash "fix_permissions" do
+  user "root"
+  code <<-EOF
+    chown -R #{node['kagent']['user']} /home/#{node['kagent']['user']}/.cache
+  EOF
+end
+
 bash "install_python" do
   user node["kagent"]["user"]
   code <<-EOF
