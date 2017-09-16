@@ -123,16 +123,52 @@ bash "install_python" do
   code <<-EOF
   sudo -H pip install inifile
   sudo -H pip install requests
-  sudo -H pip install bottle
-  sudo -H pip install CherryPy
+#  sudo -H pip install bottle
+#  sudo -H pip install CherryPy
   sudo -H pip install pyOpenSSL
   sudo -H pip install netifaces
   sudo -H pip install IPy
   sudo -H pip install pexpect
-  sudo -H pip install cherrypy-wsgiserver
-  sudo -H pip install wsgiserver
+#  sudo -H pip install cherrypy-wsgiserver
+#  sudo -H pip install wsgiserver
 
  EOF
+end
+
+
+
+bottle="bottle-0.11.4"
+cookbook_file "/tmp/#{bottle}.tar.gz" do
+  source "#{bottle}.tar.gz"
+  owner node["kagent"]["user"]
+  group node["kagent"]["user"]
+  mode 0755
+  action :create_if_missing
+end
+
+cherry="CherryPy-3.2.2"
+cookbook_file "/tmp/#{cherry}.tar.gz" do
+  source "#{cherry}.tar.gz"
+  owner node["kagent"]["user"]
+  group node["kagent"]["user"]
+  mode 0755
+end
+
+
+bash "install_python" do
+  user "root"
+  code <<-EOF
+  cd /tmp
+  tar zxf "#{bottle}.tar.gz"
+  cd #{bottle}
+  python setup.py install
+  cd ..
+  tar zxf "#{cherry}.tar.gz"
+  cd #{cherry}
+  python setup.py install
+  cd ..
+ EOF
+  not_if "python -m wsgiserver"
 end
 
 
