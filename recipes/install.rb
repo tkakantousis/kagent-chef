@@ -129,7 +129,7 @@ bash "install_python" do
   sudo -H pip install --upgrade netifaces
   sudo -H pip install --upgrade IPy
   sudo -H pip install --upgrade pexpect
-  sudo -H pip install --upgrade cherrypy-wsgiserver
+  # sudo -H pip install --upgrade cherrypy-wsgiserver
   sudo -H pip install --upgrade wsgiserver
  EOF
 end
