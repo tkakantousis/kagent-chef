@@ -165,7 +165,6 @@ template "#{node["kagent"]["base_dir"]}/config.ini" do
   variables({
               :rest_url => "http://#{dashboard_endpoint}/",
               :rack => '/default',
-              :gpu => gpu,
               :public_ip => public_ip,
               :private_ip => private_ip,
               :hostname => hostname,
