@@ -142,7 +142,6 @@ if node["kagent"].attribute?("hostname")
  hostname = node["kagent"]["hostname"]
 end
 
-
 hops_dir=node['install']['dir']
 if node.attribute?("hops") && node["hops"].attribute?("dir") 
 # Use versioned directory for hops
@@ -166,6 +165,7 @@ template "#{node["kagent"]["base_dir"]}/config.ini" do
   variables({
               :rest_url => "http://#{dashboard_endpoint}/",
               :rack => '/default',
+              :gpu => gpu,
               :public_ip => public_ip,
               :private_ip => private_ip,
               :hostname => hostname,
