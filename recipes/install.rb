@@ -121,16 +121,16 @@ bash "install_python" do
   user 'root'
   ignore_failure true
   code <<-EOF
-  sudo -H pip install --upgrade inifile
-  sudo -H pip install --upgrade requests
-  sudo -H pip install --upgrade bottle
-  sudo -H pip install --upgrade CherryPy
-  sudo -H pip install --upgrade pyOpenSSL
-  sudo -H pip install --upgrade netifaces
-  sudo -H pip install --upgrade IPy
-  sudo -H pip install --upgrade pexpect
+  pip install --upgrade inifile
+  pip install --upgrade requests
+  pip install --upgrade bottle
+  pip install --upgrade CherryPy
+  pip install --upgrade pyOpenSSL
+  pip install --upgrade netifaces
+  pip install --upgrade IPy
+  pip install --upgrade pexpect
   # sudo -H pip install --upgrade cherrypy-wsgiserver
-  sudo -H pip install --upgrade wsgiserver
+  pip install --upgrade wsgiserver
  EOF
 end
 
