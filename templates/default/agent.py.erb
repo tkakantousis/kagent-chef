@@ -814,7 +814,7 @@ class Conda():
         global block_report
         script = BIN_DIR + "/anaconda_env.sh"
         try:
-            msg = subprocess.check_output(['sudo', script, "<%= node['anaconda']['user'] %>", "LIST_ENVS", "", ""])
+            msg = subprocess.check_output(['sudo', script, "<%= node['conda']['user'] %>", "LIST_ENVS", "", ""])
         except Exception as err:
             res=1
             logger.warn("Could not list conda environments to do a block report. Err: ".format(err))
