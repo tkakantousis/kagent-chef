@@ -862,8 +862,7 @@ class Conda():
                     self.envOp(user, command_id, op, proj, arg, "")
                 if op == "LIB_SYNC":
                     arg=data['lib']
-                    // write 
-                    // open with 'w+' to overwrite the file if it exists
+                    # open with 'w+' to overwrite the file if it exists
                     with io.open('/tmp/' + proj + '_server.json', 'w+', encoding='utf-8') as outfile:
                         json.dumps(arg, outfile, ensure_ascii=False)                    
                     self.envOp(user, command_id, op, proj, arg, "")                    
