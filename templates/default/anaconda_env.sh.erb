@@ -78,7 +78,7 @@ elif [ "$OP" == "CLONE" ] ; then
 
 elif [ "$OP" == "LIB_SYNC" ] ; then
 
-    su <%= node['anaconda']['user'] %> -c "<%= node['conda']['base_dir'] %>/bin/conda list -n $1 --json > /tmp/${1}.json"
+    su <%= node['conda']['user'] %> -c "<%= node['conda']['base_dir'] %>/bin/conda list -n $1 --json > /tmp/${1}.json"
     if [ $? -ne 0 ] ; then
 	echo "Problem listing conda libraries for project $1"
 	exit 2
@@ -96,7 +96,7 @@ elif [ "$OP" == "LIB_SYNC" ] ; then
 	# If i cannot find the library installed locally, install it in this project
 	grep $i /tmp/${1}.libs
 	if [ $? -ne 0 ] ; then
-	    su <%= node['anaconda']['user'] %> -c "<%= node['conda']['base_dir'] %>/bin/conda install -n $1 -q -y $2 $i"
+	    su <%= node['conda']['user'] %> -c "<%= node['conda']['base_dir'] %>/bin/conda install -n $1 -q -y $2 $i"
 	fi
     done
     
