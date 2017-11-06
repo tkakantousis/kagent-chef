@@ -9,6 +9,7 @@ when "debian"
 #   apt-get -f upgrade -y 
    apt-get install build-essential -y 
    apt-get install libssl-dev -y 
+   apt-get install jq -y 
  EOF
   end
 
@@ -49,6 +50,9 @@ when "rhel"
     action :install
   end
   package "python-lxml" do 
+    action :install
+  end
+  package "jq" do
     action :install
   end
 end
