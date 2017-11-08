@@ -13,6 +13,14 @@ when "debian"
  EOF
   end
 
+# Change lograte policy
+  cookbook_file '/etc/logrotate.d/rsyslog' do
+    source 'rsyslog.ubuntu'
+    owner 'root'
+    group 'root'
+    mode '0644'
+  end
+
 #  package "python-openssl" eo
 #  action :install
 #  end
@@ -54,6 +62,14 @@ when "rhel"
   end
   package "jq" do
     action :install
+  end
+
+  # Change lograte policy
+  cookbook_file '/etc/logrotate.d/syslog' do
+    source 'syslog.centos'
+    owner 'root'
+    group 'root'
+    mode '0644'
   end
 end
 
