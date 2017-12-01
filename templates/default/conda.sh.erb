@@ -21,7 +21,8 @@ shift
 CHANNEL=
 # default channel_alias  is http://conda.anaconda.org/.
 if [ "$1" != "default" ] ; then
-  CHANNEL="-c $1 --override-channels"
+    #  CHANNEL="-c $1 --override-channels"
+  CHANNEL="-c $1"    
 fi
 shift
 # Name of virtualenv python dependency
