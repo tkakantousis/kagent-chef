@@ -148,7 +148,7 @@ if node.attribute?("hops") && node["hops"].attribute?("dir")
 end
 if hops_dir == "" 
  # Guess that it is the default value
- hops_dir = "/srv/hops/hadoop"
+ hops_dir = node['install']['dir'] + "/hadoop"
 end
 #
 # use :create_if_missing, as if there is a failure during/after the csr.py program,
