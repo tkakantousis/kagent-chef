@@ -72,6 +72,8 @@ default["kagent"]["hostid"]                        = 100
 
 default["kagent"]["hostname"]                      =
 
+default["kagent"]["password"]                      = ""
+  
 default["kagent"]["keystore_dir"] 		   = node["kagent"]["certs_dir"] + "/keystores"
 
 default["public_ips"]                              = ['10.0.2.15']
