@@ -879,8 +879,11 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         if (sys.argv[1] == "-v" or sys.argv[1] == "-verbose" or sys.argv[1] == "--verbose"):
             verbose=True
+        elif (sys.argv[1] == "-sync"):
+            Conda().blockReport()
         else:
-            print "usage: <prog> [-v|-verbose]"
+            print "usage: <prog> [-v|-verbose|-sync]"
+            print "-sync will try to sync up anaconda libraries with those already installed for all projects"
             sys.exit()
 
     agent_pid = str(os.getpid())
