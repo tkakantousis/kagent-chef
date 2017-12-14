@@ -66,7 +66,7 @@ if [ "$OP" == "CREATE" ] ; then
 
     if [ "$PY" == "36" ] ; then
 	pushd .
-        if [ ! -d "/tmp/pydoop" ] ;
+        if [ ! -d "/tmp/pydoop" ] ; then
            cd /tmp		   
            git config --global user.name "Hops Hadoop"
            git config --global user.email obama@hops.io   
