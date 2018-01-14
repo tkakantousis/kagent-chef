@@ -19,7 +19,8 @@ default["kagent"]["base_dir"]                      = "#{node["kagent"]["dir"]}/k
 default["kagent"]["home"]                          = "#{node["kagent"]["dir"]}/kagent-#{node["kagent"]["version"]}"
 default["kagent"]["conda_enabled"]                 = "true"
 
-default["conda"]["default_libs"]                   = %w{ numpy hdfs3 scikit-learn matplotlib pandas }
+default["conda"]["default_libs"]                   = %w{ }
+#numpy hdfs3 scikit-learn matplotlib pandas }
 
 default["kagent"]["enabled"]                       = "true"
 
