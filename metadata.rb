@@ -120,6 +120,10 @@ attribute "install/user",
           :description => "User to install the services as",
           :type => "string"
 
+attribute "install/upgrade",
+          :description => "User to upgrade the software",
+          :type => "string"
+
 attribute "install/ssl",
           :description => "Is SSL turned on for all services?",
           :type => "string"
