@@ -68,15 +68,17 @@ if [ "$OP" == "CREATE" ] ; then
     if [ "$PY" == "36" ] ; then
         su $EXEC_AS_USER -c -l "export HADOOP_HOME=$HADOOP_DIR && ${CONDA_DIR}/envs/${PROJECT}/bin/pip install git+https://github.com/crs4/pydoop.git@develop"
     else  # python 2.7
-       su $EXEC_AS_USER -c -l "export HADOOP_HOME=$HADOOP_DIR && ${CONDA_DIR}/envs/${PROJECT}/bin/pip install pydoop" 
+	su $EXEC_AS_USER -c -l "export HADOOP_HOME=$HADOOP_DIR && ${CONDA_DIR}/envs/${PROJECT}/bin/pip install pydoop"
+	# Tensorflow serving only works with Python2
+        su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/pip install --upgrade tensorflow-serving-api==<%= node['tensorflow']['version'] %>"	
     fi
     su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/pip install --upgrade hopsfacets"
     su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/pip install --upgrade hops"
     su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/pip install --upgrade tfspark"
     if [ "$WITH_PYTHON_KERNEL" == "true" ] ; then    
       su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/pip install ipykernel"
-      su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/conda install pandas"
-      su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/conda install numpy"
+      #su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/conda install pandas"
+      #su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/conda install numpy"
     fi
     
 elif [ "$OP" == "LIST_ENVS" ] ; then
@@ -117,14 +119,23 @@ elif [ "$OP" == "LIB_SYNC" ] ; then
     done
     
 elif [ "$OP" == "REMOVE" ] ; then
+    PROJECTUSERNAME=$PYTHON_VERSION
     exists    # If the env has already been removed, return OK
     if [ $? -ne 0 ] ; then
        echo "Cannot remove environment that doesn't exist"
        exit 0
     fi
     su $EXEC_AS_USER -c "${CONDA_DIR}/bin/conda-env remove -n $PROJECT -y -q"
-    if [ "${WITH_PYTHON_KERNEL}" == "true" ] ; then    
-	sudo jupyter-kernelspec remove -y python-${PROJECT} || 0
+    if [ "${WITH_PYTHON_KERNEL}" == "true" ] ; then
+	kernelsToDelete=$(sudo jupyter-kernelspec list | grep ${PROJECT}__ | sed -e 's/.*\/usr\/local\/share\/jupyter\/kernels\///g')
+        echo "Kernels to delete:"
+        echo $kernelsToDelete
+        if [ "$kernelsToDelete" != "" ] ; then
+	  while read -r kernel; do
+             echo "sudo jupyter-kernelspec remove -y -f ${kernel}"
+             sudo jupyter-kernelspec remove -y -f ${kernel} || 0
+	  done <<< "$kernelsToDelete"
+        fi
     fi
 
 else
