@@ -25,44 +25,21 @@ when "debian"
 #  end
 
 when "rhel"
-  package "epel-release" do
-    action :install
-  end
-# gcc, gcc-c++, kernel-devel are the equivalent of "build-essential" from apt.
-  package "gcc" do
-    action :install
-  end
-  package "gcc-c++" do
-    action :install
-  end
-  package "kernel-devel" do
-    action :install
-  end
-  package "openssl" do
-    action :install
-  end
-  package "openssl-devel" do
-    action :install
-  end
-  package "openssl-libs" do
-    action :install
-  end
-  package "python" do 
-    action :install
-  end
-  package "python-pip" do 
-    action :install
-  end
-  package "python-devel" do 
-    action :install
-  end
-  package "python-lxml" do 
-    action :install
-  end
-  package "jq" do
-    action :install
-  end
+  package "epel-release"
 
+# gcc, gcc-c++, kernel-devel are the equivalent of "build-essential" from apt.
+  package "gcc"
+  package "gcc-c++"
+  package "kernel-devel" 
+  package "openssl" 
+  package "openssl-devel"
+  package "openssl-libs" 
+  package "python" 
+  package "python-pip" 
+  package "python-devel" 
+  package "python-lxml" 
+  package "jq" 
+  package "pyOpenSSL"
   # Change lograte policy
   cookbook_file '/etc/logrotate.d/syslog' do
     source 'syslog.centos'
@@ -140,47 +117,9 @@ bash "install_python" do
   pip install --upgrade netifaces
   pip install --upgrade IPy
   pip install --upgrade pexpect
-  # sudo -H pip install --upgrade cherrypy-wsgiserver
   pip install --upgrade wsgiserver
  EOF
 end
-
-
-
-# bottle="bottle-0.11.4"
-# cookbook_file "/tmp/#{bottle}.tar.gz" do
-#   source "#{bottle}.tar.gz"
-#   owner node["kagent"]["user"]
-#   group node["kagent"]["user"]
-#   mode 0755
-#   action :create_if_missing
-# end
-
-# cherry="CherryPy-3.2.2"
-# cookbook_file "/tmp/#{cherry}.tar.gz" do
-#   source "#{cherry}.tar.gz"
-#   owner node["kagent"]["user"]
-#   group node["kagent"]["user"]
-#   mode 0755
-# end
-
-
-# bash "install_python" do
-#   user "root"
-#   code <<-EOF
-#   cd /tmp
-#   tar zxf "#{bottle}.tar.gz"
-#   cd #{bottle}
-#   python setup.py install
-#   cd ..
-#   tar zxf "#{cherry}.tar.gz"
-#   cd #{cherry}
-#   python setup.py install
-#   cd ..
-#  EOF
-#   not_if "python -m wsgiserver"
-# end
-
 
 # ubuntu python-mysqldb package install only works if we first run "apt-get update; apt-get upgrade"
 if platform?("ubuntu", "debian") 
@@ -263,9 +202,6 @@ end
 if node["ntp"]["install"] == "true"
   include_recipe "ntp::default"
 end
-
-#require 'resolv'
-#my_hostname = Resolv.getname my_private_ip()
 
 my_hostname = node['hostname']
 if node["kagent"].attribute?("hostname") then
@@ -393,20 +329,5 @@ template "/etc/sudoers.d/kagent" do
   action :create
 end  
 
-
-# case node[:platform_family]
-# when "rhel"
-#      package "pyOpenSSL" do
-#       action :install
-#      end
-#      package "python-netifaces" do
-#       action :install
-#      end
-
-# when "debian"
-#      package "python-openssl" do
-#       action :install
-#      end
-# end
 
 include_recipe "kagent::anaconda"

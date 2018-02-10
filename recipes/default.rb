@@ -22,7 +22,7 @@ if node[:systemd] == "true"
 
   case node[:platform_family]
   when "rhel"
-    systemd_script = "/usr/lib/systemd/system/#{service_name}.service" 
+    systemd_script = "/usr/lib/systemd/system/#{service_name}.service"    
   else # debian
     systemd_script = "/lib/systemd/system/#{service_name}.service"
   end
