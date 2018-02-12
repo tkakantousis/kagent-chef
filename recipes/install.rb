@@ -249,6 +249,7 @@ end
     owner node["kagent"]["user"]
     group node["kagent"]["group"]
     mode 0644
+    action :create_if_missing
   end
 end
 
