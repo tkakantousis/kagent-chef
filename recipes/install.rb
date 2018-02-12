@@ -186,8 +186,8 @@ directory "#{node["kagent"]["base_dir"]}/bin" do
 end
 
 directory node["kagent"]["keystore_dir"] do
-  owner node["kagent"]["user"]
-  group node["kagent"]["group"]
+  owner "root"
+  group node["kagent"]["certs_group"]
   mode "750"
   action :create
 end
@@ -281,7 +281,7 @@ if node.attribute?("jupyter")
   end
 end
 
-hadoop_version = "2.7.3"
+hadoop_version = "2.8.2.3"
 if node.attribute?("hops") 
   if node["hops"].attribute?("version") 
     hadoop_version = node['hops']['version']
@@ -293,7 +293,7 @@ template "#{node["kagent"]["home"]}/bin/conda.sh" do
   source "conda.sh.erb"
   owner node["kagent"]["user"]
   group node["kagent"]["group"]
-  mode "755"
+  mode "750"
   action :create
 end
 
@@ -301,11 +301,11 @@ template "#{node["kagent"]["home"]}/bin/anaconda_env.sh" do
   source "anaconda_env.sh.erb"
   owner node["kagent"]["user"]
   group node["kagent"]["group"]
-  mode "755"
+  mode "750"
   action :create
   variables({
-        :jupyter_python => jupyter_python,
-        :hadoop_version => hadoop_version
+        :jupyter_python => jupyter_python
+#        :hadoop_version => hadoop_version
   })
 end
 
