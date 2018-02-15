@@ -62,6 +62,7 @@ action :return_publickey do
     group cb_group
     mode 0600
     cookbook "kagent"
+    action :create_if_missing
   end
  
  kagent_param "/tmp" do
