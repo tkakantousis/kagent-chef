@@ -1,7 +1,5 @@
 include_attribute "conda"
 
-default["install"]["dir"]                          = ""
-default["install"]["user"]                         = ""
 default["install"]["ssl"]                          = "false"
 default["install"]["cleanup_downloads"]            = "false"
 default["install"]["upgrade"]                      = "false"
