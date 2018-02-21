@@ -1,8 +1,9 @@
 #!/usr/bin/env python
+"""Script to register a new cluster host with Hopsworks and get a valid certificate"""
+
+__author__="Jim Dowling <jdowling@kth.se> Antonios Kouzoupis <kouzoupis.ant@gmail.com>"
 
 '''
-@author: Jim Dowling <jdowling@kth.se>
-
 Install:
  requests:    easy_install requests
  Netifaces:   easy_install netifaces
@@ -12,180 +13,24 @@ Install:
  pexpect:     apt-get install python-pexpect
 '''
 
-import time
-from threading import Lock
-import os
-import sys
 import ConfigParser
-import requests
-import logging.handlers
-import json
-from OpenSSL import crypto
 import socket
-from os.path import exists, join
-import netifaces
-from IPy import IP
-import logging
-import subprocess
-import string
 import random
+import string
+import netifaces
+import sys
+import logging
+import logging.handlers
+import os
+import argparse
+import requests
+import json
+import time
+import subprocess
 
-
-try:
-    import http.client as http_client
-except ImportError:
-    # Python 2
-    import httplib as http_client
-http_client.HTTPConnection.debuglevel = 1
-
-logging.basicConfig()
-logging.getLogger().setLevel(logging.DEBUG)
-requests_log = logging.getLogger("requests.packages.urllib3")
-requests_log.setLevel(logging.DEBUG)
-requests_log.propagate = True
-retries = 20
-
-class Util():
-
-    def logging_level(self, level):
-        return {
-                'INFO': logging.INFO,
-                'WARN': logging.WARN,
-                'WARNING': logging.WARNING,
-                'ERROR': logging.ERROR,
-                'DEBUG' : logging.DEBUG,
-                'CRITICAL': logging.CRITICAL,
-                }.get(level, logging.NOTSET)
-
-
-class Register():
-
-    def __init__(self, csr, key):
-        while True:
-            cert = Register.register(csr, key)
-            if cert != None:
-                Cert.store(cert, key)
-                break
-            time.sleep(heartbeat_interval)
-
-    @staticmethod
-    def register(csr, key):
-            try:
-		json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
-        	form_headers = {'User-Agent': 'Agent', 'content-type': 'application/x-www-form-urlencoded'}
-		payload = {}
-                payload["csr"] = csr
-                payload["agent-password"] = agent_password
-                payload["host-id"] = host_id
-                logger.info("Registering with HopsWorks...")
-                logger.info("Password: {0}".format(agent_password))                
-		session = requests.Session()
-		session.post(login_url, data={'email': server_username, 'password': server_password}, headers=form_headers, verify=False)
-		resp = session.post(register_url, data=json.dumps(payload), headers=json_headers, verify=False)
-		if not resp.status_code == HTTP_OK:
-               		raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0}).'.format(resp.status_code))
-
-                # Loads (Load String) takes a Json file and converts into python data structure (dict or list, depending on JSON)
-                # jData = json.loads(myResponse.content)
-                jData = json.loads(resp.content)
-                cert = jData['pubAgentCert']
-                caCert = jData['caPubCert']
-                hadoopHome = jData['hadoopHome']                
-                config.set('agent', 'hadoop-home', hadoopHome)
-                with open(CONFIG_FILE, 'wb') as configfile:
-                    config.write(configfile)
-                cert_dir = os.path.dirname(os.path.abspath(__file__))
-                with open(join(cert_dir, CA_FILE), "wt") as f:
-                    f.write(caCert)
-                logger.info("Writing Ca Public key to {0}.".format(CA_FILE))
-
-                logger.info("Registered successfully.")
-                return cert
-            except Exception as err:
-                logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
-                return None
-
-class Cert():
-
-    @staticmethod
-    def get_dir():
-        return os.path.dirname(os.path.abspath(__file__))
-
-    @staticmethod
-    def exist():
-        cert_dir = Cert.get_dir()
-        return exists(join(cert_dir, CERT_FILE)) and exists(join(cert_dir, KEY_FILE))
-
-    @staticmethod
-    def existsKeystore():
-        return exists(SERVER_KEYSTORE) and exists(SERVER_TRUSTSTORE) and exists(CLIENT_TRUSTSTORE)
-
-    @staticmethod
-    def create_key_and_csr():
-        """
-        Create key-pair and certificate sign request (CSR)
-        """
-        # create a key pair
-        pkey = crypto.PKey()
-        pkey.generate_key(crypto.TYPE_RSA, 2048)
-        # create certificate sign request
-        req = crypto.X509Req()
-        req.get_subject().C = "SE"
-        req.get_subject().ST = "Sweden"
-        req.get_subject().L = "Stockholm"
-        req.get_subject().O = "HopsWorks"
-        req.get_subject().OU = "KTH"
-
-#
-# The CN should be the FQDN of the server
-#
-#        hshort = <%= node['fqdn'] %>
-        hshort = hostname
-        if (len(hostname) > 63):
-            hshort = hostname[0:63]
-            validEndChar = False
-            offset = 63
-            while (validEndChar == false):
-                if (hshort[offset].isalnum()):
-                    hshort = hostname[0:offset]
-                    validEndChar = True
-                offset -= 1
-        req.get_subject().CN = hshort
-        req.set_pubkey(pkey)
-
-### For kafka fix
-
-
-        base_constraints = ([crypto.X509Extension("keyUsage", False, "Digital Signature, Non Repudiation, Key Encipherment")])
-        x509_extensions = base_constraints
-# If there are SAN entries, append the base_constraints to include them.
-        san_constraint = crypto.X509Extension("subjectAltName", False, "DNS: %s" % hostname)
-        x509_extensions.append(san_constraint)
-        req.add_extensions(x509_extensions)
-### End Kafka
-
-        req.sign(pkey, 'sha256')
-        csr = crypto.dump_certificate_request(crypto.FILETYPE_PEM, req)
-        private_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey)
-        return csr, private_key
-
-    @staticmethod
-    def store(cert, key):
-        """
-        Write certificate and private key in current directory
-        """
-        cert_dir = Cert.get_dir()
-        with open(join(cert_dir, CERT_FILE), "wt") as f:
-            f.write(cert)
-        with open(join(cert_dir, KEY_FILE), "wt") as f:
-            f.write(key)
-        logger.info("Writing Cert/Key pair to {0} - {1}.".format(CERT_FILE, KEY_FILE))
-
-var="~#@#@!#@!#!@#@!#"
-
-config_mutex = Lock()
-
-HTTP_OK = 200
+from IPy import IP
+from OpenSSL import crypto
+from os.path import join, exists
 
 CONFIG_FILE = "<%= node[:kagent][:base_dir] %>/config.ini"
 LOG_FILE = "<%= node[:kagent][:base_dir] %>/csr.log"
@@ -196,100 +41,307 @@ SERVER_KEYSTORE = "<%= @kstore %>"
 SERVER_TRUSTSTORE = "<%= @tstore %>"
 CLIENT_TRUSTSTORE = "<%= node["kagent"]["keystore_dir"] %>/node_client_truststore.jks"
 
-# reading config
-try:
-    config = ConfigParser.ConfigParser()
-    config.read(CONFIG_FILE)
-    server_url = config.get('server', 'url')
-    register_url = server_url + config.get('server', 'path-register')
-    login_url = server_url + config.get('server', 'path-login')
-    server_username = config.get('server', 'username')
-    server_password = config.get('server', 'password')
-    heartbeat_interval = config.getfloat('agent', 'heartbeat-interval')
-    logging_level = config.get('agent', 'logging-level').upper()
-    max_log_size = config.getint('agent', 'max-log-size')
-    agent_pidfile = config.get('agent', 'pid-file')
-    network_interface = config.get('agent', 'network-interface')
+class Certificate:
+    """Class representing X509 certificate for host"""
+    
+    def __init__(self, config):
+        self._config = config
+        self._private_key = None
+        self._certificate = None
+        self._ca_certificate = None        
+        
+    def create_csr(self):
+        """Generates a cryptographic key-pair and a CSR"""
 
-    if (config.has_option("agent", "hostname")):
-        hostname = config.get("agent", "hostname")
-    else:
-        hostname = socket.gethostbyaddr(eth0_ip)[0]
+        LOG.info("Creating Certificate Signing Request")
+        pKey = self._generate_key()
+        # Create CSR
+        csr = crypto.X509Req()
+        csr.get_subject().C = "SE"
+        csr.get_subject().ST = "Sweden"
+        csr.get_subject().L = "Stockholm"
+        csr.get_subject().O = "Hopsworks"
+        csr.get_subject().OU = "LC"
 
-    if (config.has_option("agent", "host-id")):
-        host_id = config.get("agent", "host-id")
-    else:
-        host_id = hostname
+        # CN should be the hostname of the server
+        _hostname = self._getHostname()
+        LOG.debug("Hostname used in CN is {}".format(_hostname))
+        csr.get_subject().CN = _hostname
+        csr.set_pubkey(pKey)
 
-# First time we run csr.py, it will generate an agent password and store it in the config.ini file.
-# The agent password is then stored in the 'hosts' table in hopsworks.
-    if (config.has_option("agent", "password")):
-        agent_password = config.get('agent', 'password')
-    else:
-        agent_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8))
-        config.set('agent', 'password', agent_password)
-        with open(CONFIG_FILE, 'wb') as configfile:
-            config.write(configfile)
+        ### For kafka fix
+        base_constraints = ([crypto.X509Extension("keyUsage", False, "Digital Signature, Non Repudiation, Key Encipherment")])
+        x509_extensions = base_constraints
+        # If there are SAN entries, append the base_constraints to include them.
+        san_constraint = crypto.X509Extension("subjectAltName", False, "DNS: %s" % self._config.hostname)
+        x509_extensions.append(san_constraint)
+        csr.add_extensions(x509_extensions)
+        ### End Kafka
 
-# TODO find public/private IP addresses
-    public_ip = None
-    private_ip = None
-    eth0_ip = netifaces.ifaddresses(network_interface)[netifaces.AF_INET][0]['addr']
-    if (IP(eth0_ip).iptype() == "PUBLIC"):
-        public_ip = eth0_ip
-    else:
-        private_ip = eth0_ip
+        csr.sign(pKey, 'sha256')
+        self.csr_req = crypto.dump_certificate_request(crypto.FILETYPE_PEM, csr)
+        self._private_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, pKey)
+        LOG.debug("Finished CSR")
 
-    hostname = socket.gethostbyaddr(eth0_ip)[0]
+    def set_certificate(self, certificate):
+        """Setter for a host certificate returned by Hopsworks"""
+        self._certificate = certificate
 
-    if (config.has_option("agent", "host-id")):
-        host_id = config.get("agent", "host-id")
-    else:
-        host_id = hostname
+    def set_ca_certificate(self, ca_certificate):
+        """Setter for CA certificate returned by Hopsworks"""
+        self._ca_certificate = ca_certificate
+
+    def keystoresExist(self):
+        """Checks if keystore, truststore and client_truststore exist in the predefined directory"""
+        return exists(SERVER_KEYSTORE) and exists(SERVER_TRUSTSTORE) and exists(CLIENT_TRUSTSTORE)
+    
+    def store(self):
+        """Write certificate and private key in current directory"""
+        LOG.debug("Storing certificate, key and CA certificate")
+        cert_dir = os.path.dirname(os.path.abspath(__file__))
+
+        if self._ca_certificate is not None:
+            with open(join(cert_dir, CA_FILE), "wt") as fd:
+                fd.write(self._ca_certificate)
+                
+        if self._private_key is not None:
+            with open(join(cert_dir, KEY_FILE), "wt") as fd:
+                fd.write(self._private_key)
+
+        if self._certificate is not None:
+            with open(join(cert_dir, CERT_FILE), "wt") as fd:
+                fd.write(self._certificate)
+        LOG.info("Flushed crypto material to filesystem")
+        
+    def _generate_key(self):
+        """Generates cryptographic pair"""
+
+        LOG.debug("Generating cryptographic key-pair")
+        pKey = crypto.PKey()
+        pKey.generate_key(crypto.TYPE_RSA, 2048)
+        
+        return pKey
+    
+    def _getHostname(self):
+        """Get and prepare host's hostname for CN"""
+        hShort = self._config.hostname
+        if (len(self._config.hostname) > 63):
+            hShort = self._config.hostname[0:63]
+            validEndChar = False
+            offset = 63
+            while (validEndChar == False):
+                if (hShort[offset].isalnum()):
+                    hShort = self._config.hostname[0:offset]
+                    validEndChar = True
+                offset -= 1
+        return hShort
 
 
-except Exception, e:
-    print "Exception while reading {0}: {1}".format(CONFIG_FILE, e)
-    sys.exit(1)
+class Host:
+    """Class representing a host in the cluster"""
+    form_headers = {'Content-Type': 'application/x-www-form-urlencoded',
+                     'User-Agent': 'hops-csr'}
+    json_headers = {'User-Agent': 'Agent', 'content-type': 'application/json'}
+    
+    def __init__(self, conf, certificate):
+        LOG.debug("Creating new host")
+        self._conf = conf
+        self._certificate = certificate
 
-# logging
-try:
-    os.remove(LOG_FILE + '.1')
-except:
-    pass
-with open(LOG_FILE, 'w'):  # clear log file
-    pass
-logger = logging.getLogger('agent')
-logger_formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-logger_file_handler = logging.handlers.RotatingFileHandler(LOG_FILE, "w", maxBytes=max_log_size, backupCount=1)
-logger_stream_handler = logging.StreamHandler()
-logger_file_handler.setFormatter(logger_formatter)
-logger_stream_handler.setFormatter(logger_formatter)
-logger.addHandler(logger_file_handler)
-logger.addHandler(logger_stream_handler)
-logger.setLevel(logging.INFO)
+    def register_host(self, session):
+        """Public method to register a new host and sign its CSR"""
+        registered = False
+        while not registered:
+            try :
+                self._register_host_internal(session)
+                registered = True
+            except Exception, e:
+                LOG.warning("Error while registering host {0}, will try again in {1} seconds..."
+                            .format(e, self._conf.heartbeat_interval))
+                time.sleep(self._conf.heartbeat_interval)
 
-logger.info("Hops Csr-Agent started.")
-logger.info("Register URL: {0}".format(register_url))
-logger.info("Public IP: {0}".format(public_ip))
-logger.info("Private IP: {0}".format(private_ip))
+    def _register_host_internal(self, session):
+        self._login(session)
+        payload = {}
+        payload["csr"] = self._certificate.csr_req
+        payload["agent-password"] = self._conf.agent_password
+        payload["host-id"] = self._conf.host_id
+        LOG.info("Registering with Hopsworks")
+        response = session.post(self._conf.register_url, headers=self.json_headers, data=json.dumps(payload), verify=False)
+
+        if (response.status_code != requests.codes.ok):
+            raise Exception('Could not register: Unknown host id or internal error on the dashboard (Status code: {0} - {1}).'
+                            .format(response.status_code, response.text))
+
+        json_response = json.loads(response.content)
+        self._extract_crypto_material(json_response)
+        
+        hadoopHome = json_response["hadoopHome"]
+        self._conf.set_conf_value('agent', 'hadoop-home', hadoopHome)
+        self._conf.dump_to_file()
+
+    def _extract_crypto_material(self, json_response):
+        """Extract crypto material from the response from hopsworks-ca and write them locally"""
+        certificate = json_response["pubAgentCert"]
+        caCertificate = json_response["caPubCert"]
+        self._certificate.set_certificate(certificate)
+        self._certificate.set_ca_certificate(caCertificate)
+        self._certificate.store()
+        
+    def _login(self, session):
+        """Helper method to login to Hopsworks"""
+        login_payload = {'email': self._conf.server_username, 'password': self._conf.server_password}
+        # First login
+        LOG.debug("Logging in to Hopsworks")
+        response = session.post(self._conf.login_url, headers=self.form_headers, data=login_payload, verify=False)
+        if (response.status_code != requests.codes.ok):
+            raise Exception('Could not login to Hopsworks')
+
+        LOG.debug("Logged in successfully")        
+
+        
+class Config:
+    """Class representig kagent configuration"""
+
+    _log_level_mapping = {
+        'DEBUG': logging.DEBUG,
+        'INFO': logging.INFO,
+        'WARNING': logging.WARNING,
+        'ERROR': logging.ERROR,
+        'CRITICAL': logging.CRITICAL}
+    
+    def __init__(self, configFile):
+        self._configFile = configFile
+
+    def set_conf_value(self, section, name, value):
+        """Set a new configuration property"""
+        if self._config is not None:
+            self._config.set(section, name, value)
+
+    def dump_to_file(self):
+        """Dump configuration object to file"""
+        with open(CONFIG_FILE, 'wb') as fd:
+            self._config.write(fd)
+            
+    def read_conf(self):
+        """Load configuration from file"""
+        try:
+            self._config = ConfigParser.ConfigParser()
+            self._config.read(self._configFile)
+            self.server_url = self._config.get('server', 'url')
+            self.register_url = self.server_url + self._config.get('server', 'path-register')
+            self.login_url = self.server_url + self._config.get('server', 'path-login')
+            self.server_username = self._config.get('server', 'username')
+            self.server_password = self._config.get('server', 'password')
+            self.heartbeat_interval = self._config.getfloat('agent', 'heartbeat-interval')
+            logging_level_str = self._config.get('agent', 'logging-level')
+            self.logging_level = self._get_logging_level(logging_level_str)
+            self.max_log_size = self._config.getint('agent', 'max-log-size')
+            self.agent_pidfile = self._config.get('agent', 'pid-file')
+            self.network_interface = self._config.get('agent', 'network-interface')
+
+            if (self._config.has_option("agent", "hostname")):
+                self.hostname = self._config.get("agent", "hostname")
+            else:
+                self.hostname = socket.gethostbyaddr(eth0_ip)[0]
+
+            if (self._config.has_option("agent", "host-id")):
+                self.host_id = self._config.get("agent", "host-id")
+            else:
+                self.host_id = self.hostname
+
+            # First time we run csr.py, it will generate an agent password and store it in the config.ini file.
+            # The agent password is then stored in the 'hosts' table in hopsworks.
+            if (self._config.has_option("agent", "password")):
+                self.agent_password = self._config.get('agent', 'password')
+            else:
+                self.agent_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8))
+                self._config.set('agent', 'password', self.agent_password)
+                with open(self._configFile, 'wb') as configfile:
+                    self._config.write(configfile)
+
+            # TODO find public/private IP addresses
+            self.public_ip = None
+            self.private_ip = None
+            self.eth0_ip = netifaces.ifaddresses(self.network_interface)[netifaces.AF_INET][0]['addr']
+            if (IP(self.eth0_ip).iptype() == "PUBLIC"):
+                self.public_ip = self.eth0_ip
+            else:
+                self.private_ip = self.eth0_ip
+                
+            self.hostname = socket.gethostbyaddr(self.eth0_ip)[0]
+
+            if (self._config.has_option("agent", "host-id")):
+                self.host_id = self._config.get("agent", "host-id")
+            else:
+                self.host_id = self.hostname
+        except Exception, e:
+            print ("Exception while reading {0}: {1}".format(self._configFile, e))
+            sys.exit(1)
+
+    def _get_logging_level(self, log_level_str):
+        return self._log_level_mapping.get(log_level_str.upper(), logging.INFO)
+
+def setup_logging(max_log_size, logLevel):
+    """Setup logging utilities"""
+    global LOG
+    LOG = logging.getLogger('csr-agent')
+    LOG.setLevel(logLevel)
+    file_handler = logging.handlers.RotatingFileHandler(LOG_FILE, mode='a', maxBytes=max_log_size, backupCount=5)
+    file_handler.setLevel(logLevel)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logLevel)
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+    LOG.addHandler(file_handler)
+    LOG.addHandler(console_handler)
+    requests_log = logging.getLogger("requests.packages.urllib3")
+    requests_log.setLevel(logLevel)
+    requests_log.propagate = True
 
 
+    
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Register host with Hopsworks and get certificate.')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-i', '--initialize', action='store_true',
+                       help="Register and generate certificate for a new host")
+    group.add_argument('-r', '--rotate', action='store_true',
+                       help="Perform a key rotation")
+    args = parser.parse_args()
+    
+    config = Config(CONFIG_FILE)
+    config.read_conf()
+    setup_logging(config.max_log_size, config.logging_level)
+    LOG.info("Hops CSR-agent started.")
+    LOG.info("Register URL: {0}".format(config.register_url))
+    LOG.info("Public IP: {0}".format(config.public_ip))
+    LOG.info("Private IP: {0}".format(config.private_ip))
 
     agent_pid = str(os.getpid())
-    file(agent_pidfile, 'w').write(agent_pid)
-    logger.info("Hops-CSR-Agent PID: {0}".format(agent_pid))
-    logger.setLevel(Util().logging_level(logging_level))
+    file(config.agent_pidfile, 'w').write(agent_pid)
+    LOG.info("Hops CSR-agent PID: {0}".format(agent_pid))
 
-    if not Cert.exist():
-        (csr, key) = Cert.create_key_and_csr()
-        Register(csr, key) # Registering with the dashboard
-        subprocess.call("<%= node[:kagent][:base_dir] %>/keystore.sh")
-    else:
-        logger.info('Certificate files exist. Already registered. Skipping registration phase.')
+    if args.initialize:
+        LOG.debug("Initializing")
+        cert = Certificate(config)
 
-    if not Cert.existsKeystore():
-        subprocess.call("<%= node[:kagent][:base_dir] %>/keystore.sh")
-    else:
-        logger.info('Keystore files found.')
+        if cert.keystoresExist():
+            LOG.warning("Keystores already exist, aborting initializing")
+            sys.exit(2)
+            
+        cert.create_csr()
+
+        h = Host(config, cert)
+        with requests.Session() as session:
+            try:
+                h.register_host(session)
+                subprocess.call("<%= node[:kagent][:base_dir] %>/keystore.sh")
+            except Exception, e:
+                LOG.error("Error while registering host: {0}".format(e))
+                raise e
+            
+    elif args.rotate:
+        LOG.warning("Key rotation not implemented yet!")
+    
