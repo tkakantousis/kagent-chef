@@ -300,8 +300,8 @@ class Heartbeat():
 
                 conda_mutex.acquire()
                 if bool(conda_list):
-                    payload["conda-ops"] = conda_list
-                    logger.info(json.dumps(payload, indent=2))                    
+                    payload["commands-reply"] = {"condaCommands": conda_list, "systemCommands": []}
+                    logger.debug(json.dumps(payload, indent=2))                    
                 conda_mutex.release()                
 
                 block_report_mutex.acquire()
@@ -341,10 +341,10 @@ class Heartbeat():
                     conda_mutex.release()
                     theResponse = resp.json()
                     try:
-                        Conda().commands(theResponse)
+                        Conda().commands(theResponse['condaCommands'])
                     except Exception as err:
                         logger.info("No commands to execute")
-                        for data in theResponse:
+                        for data in theResponse['condaCommands']:
                             proj = data['proj']
                             conda_ongoing[proj] = False                            
                         
@@ -858,12 +858,12 @@ class Conda():
         block_report_mutex.release()
 
     
-    def commands(self, dataArray):
+    def commands(self, conda_commands):
         global conda_ongoing
-        if (dataArray is None):
+        if (conda_commands is None):
             return;
-        logger.info("Commands to execute: {0}".format(len(dataArray)))
-        for data in dataArray:
+        logger.info("Commands to execute: {0}".format(len(conda_commands)))
+        for data in conda_commands:
             logger.info(json.dumps(data, indent=2))            
             op = data['op'].upper()
             user = data['user']
@@ -879,18 +879,20 @@ class Conda():
                     arg=data['arg']
                 if op == "REMOVE" or op == "CLONE" or op == "CREATE":
                     self.envOp(user, command_id, op, proj, arg, offline)
-                if op == "LIB_SYNC":
+                elif op == "LIB_SYNC":
                     arg=data['lib']
                     # open with 'w+' to overwrite the file if it exists
                     with io.open('/tmp/' + proj + '_server.json', 'w+', encoding='utf-8') as outfile:
                         json.dumps(arg, outfile, ensure_ascii=False)                    
                     self.envOp(user, command_id, op, proj, arg, "")                    
-                else:  # Conda package  commands (install, remove, upgrade)
+                elif op == "INSTALL" or op == "UNINSTALL" or op == "UPGRADE":  # Conda package  commands (install, uninstall, upgrade)
                     version = data['version']
                     channelUrl = data['channelUrl']
                     installType = data['installType']
                     lib = data['lib']
                     self.libOp(user, command_id, op, proj, channelUrl, installType, lib, version)
+                else:
+                    logger.error("Unkown command OP: {0} Ignoring...".format(op))
             else:
                 logger.warn("Conda busy executing a command for project: {0}".format(proj))
 
