@@ -467,10 +467,7 @@ class CondaCommandsHandler:
         except subprocess.CalledProcessError as e:
             logger.info("Execption in envOp {0}".format(e.output))
             logger.info("Execption in envOp. Ret code: {0}".format(e.returncode))
-            msg = e.output
-            truncated = (msg[:250] + '...') if len(msg) > 255 else msg
             command['status'] = 'FAILED'
-            command['arg'] = truncated
         finally:
             if command_id != -1:
                 self._conda_commands_status_mutex.acquire()
@@ -1279,7 +1276,7 @@ if __name__ == '__main__':
         if (op == "clone"):
             arg = request.params['srcproj']
         try:
-            msg = Conda().envOp(user, command_id, op, proj, arg, "")
+            msg = Conda()._envOp(user, command_id, op, proj, arg, "")
             resp = HTTPResponse(status=HTTP_OK, output=msg)
             logger.info("{0}".format(resp))
             return resp            

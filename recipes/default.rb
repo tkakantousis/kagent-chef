@@ -235,3 +235,13 @@ if node["install"]["addhost"] == 'true'
  end
   
 end  
+
+
+homedir = node['kagent']['user'].eql?("root") ? "/root" : "/home/#{node['kagent']['user']}"
+kagent_keys "#{homedir}" do
+  cb_user "#{node['kagent']['user']}"
+  cb_group "#{node['kagent']['group']}"
+  cb_name "hopsworks"
+  cb_recipe "default"  
+  action :get_publickey
+end  

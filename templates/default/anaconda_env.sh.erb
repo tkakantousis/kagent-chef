@@ -58,7 +58,7 @@ if [ "$OP" == "CREATE" ] ; then
     else  # python 2.7
 	    su $EXEC_AS_USER -c "export HADOOP_HOME=$HADOOP_DIR && ${CONDA_DIR}/envs/${PROJECT}/bin/pip install --upgrade pydoop"
 	    # Tensorflow serving only works with Python2
-        su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/pip install --upgrade tensorflow-serving-api==<%= node['tensorflow']['version'] %>"	
+        su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/pip install --upgrade tensorflow-serving-api"
     fi
 
     su $EXEC_AS_USER -c "${CONDA_DIR}/envs/${PROJECT}/bin/pip install --upgrade hopsfacets"
@@ -137,6 +137,7 @@ elif [ "$OP" == "REMOVE" ] ; then
        exit 0
     fi
     su $EXEC_AS_USER -c "${CONDA_DIR}/bin/conda-env remove -n $PROJECT -y -q"
+    rm -rf ${CONDA_DIR}/envs/${PROJECT}
     if [ "${WITH_PYTHON_KERNEL}" == "true" ] ; then
 	kernelsToDelete=$(sudo jupyter-kernelspec list | grep ${PROJECT}__ | sed -e 's/.*\/usr\/local\/share\/jupyter\/kernels\///g')
         echo "Kernels to delete:"

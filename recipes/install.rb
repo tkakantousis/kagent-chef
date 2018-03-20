@@ -71,7 +71,6 @@ user node["kagent"]["user"] do
   manage_home true
   home "/home/#{node["kagent"]["user"]}"
   action :create
-  system true
   shell "/bin/bash"
   not_if "getent passwd #{node["kagent"]["user"]}"
 end
