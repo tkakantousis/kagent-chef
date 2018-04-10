@@ -120,6 +120,15 @@ bash "install_python" do
  EOF
 end
 
+bash "reinstall_backports_functools" do
+  user 'root'
+  ignore_failure true
+  code <<-EOF
+  pip uninstall backports.functools_lru_cache
+  pip install backports.functools_lru_cache
+ EOF
+end
+
 # ubuntu python-mysqldb package install only works if we first run "apt-get update; apt-get upgrade"
 if platform?("ubuntu", "debian") 
   package "python-mysqldb" do
