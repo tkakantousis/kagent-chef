@@ -250,7 +250,7 @@ bash "reinstall_backports_functools" do
   user 'root'
   ignore_failure true
   code <<-EOF
-  pip uninstall backports.functools_lru_cache
-  pip install backports.functools_lru_cache
+  yes | pip uninstall backports.functools_lru_cache
+  yes | pip install backports.functools_lru_cache
  EOF
 end
