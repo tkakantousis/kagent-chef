@@ -244,4 +244,13 @@ kagent_keys "#{homedir}" do
   cb_name "hopsworks"
   cb_recipe "default"  
   action :get_publickey
-end  
+end
+
+bash "reinstall_backports_functools" do
+  user 'root'
+  ignore_failure true
+  code <<-EOF
+  yes | pip uninstall backports.functools_lru_cache
+  yes | pip install backports.functools_lru_cache
+ EOF
+end
