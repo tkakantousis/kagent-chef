@@ -16,7 +16,6 @@ default["kagent"]["certs_group"]                   = "certs"
 default["kagent"]["dir"]                           = node["install"]["dir"].empty? ? "/var/lib" : node["install"]["dir"]
 default["kagent"]["base_dir"]                      = "#{node["kagent"]["dir"]}/kagent"
 default["kagent"]["home"]                          = "#{node["kagent"]["dir"]}/kagent-#{node["kagent"]["version"]}"
-default["kagent"]["conda_enabled"]                 = "true"
 
 default["conda"]["default_libs"]                   = %w{ }
 #numpy hdfs3 scikit-learn matplotlib pandas }
@@ -45,7 +44,7 @@ default["kagent"]["certificate_file"]              = "server.pem"
 
 # dashboard ip:port endpoint
 default["kagent"]["dashboard"]["ip"]               = "10.0.2.15"
-default["kagent"]["dashboard"]["port"]             = "8080"  
+default["kagent"]["dashboard"]["port"]             = "8080"
 default["kagent"]["dashboard_app"]                 = "hopsworks-api"
 default["kagent"]["ca_app"]                        = "hopsworks-ca"
 
@@ -56,7 +55,6 @@ default["kagent"]["watch_interval"]                = 2
 default["kagent"]["pid_file"]                      = node["kagent"]["base_dir"] + "/kagent.pid"
 default["kagent"]["logging_level"]                 = "INFO"
 default["kagent"]["max_log_size"]                  = "10000000"
-default["kagent"]["env_report_freq_in_secs"]       = "86400"  # Synchronize libraries with Hopsworks once per day
 
 default["kagent"]["network"]["interface"]          = ""
 
@@ -76,7 +74,7 @@ default["kagent"]["hostid"]                        = 100
 default["kagent"]["hostname"]                      =
 
 default["kagent"]["password"]                      = ""
-  
+
 default["kagent"]["keystore_dir"] 		   = node["kagent"]["certs_dir"] + "/keystores"
 
 default["public_ips"]                              = ['10.0.2.15']
