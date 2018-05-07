@@ -12,12 +12,10 @@ source_url       "https://github.com/karamelchef/kagent-chef"
   supports os
 end
 
-depends 'poise-python'
 depends 'openssl'
 depends 'sudo'
 depends 'hostsfile'
 depends 'ntp'
-depends 'poise-python'
 depends 'conda'
 depends 'magic_shell'
 
@@ -50,6 +48,10 @@ attribute "kagent/dashboard/port",
 
 attribute "kagent/enabled",
           :description => "Kagent enabled: default 'true'. Set to 'false' to disable it.",
+          :type => 'string'
+
+attribute "kagent/dns",
+          :description => "Default 'false'. Set to 'true' to use fully qualified domain names for kagent hosts in Hopsworks.",
           :type => 'string'
 
 attribute "kagent/hostid",

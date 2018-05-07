@@ -9,7 +9,7 @@ username = <%= node[:kagent][:dashboard][:user] %>
 password = <%= node[:kagent][:dashboard][:password] %>
 
 [agent]
-host-id = <%= node['hostname'] %>
+host-id = <%= @hostname %>
 restport = <%= node[:kagent][:port] %>
 heartbeat-interval = <%= node[:kagent][:heartbeat_interval] %>
 watch-interval = <%= node[:kagent][:watch_interval] %>
@@ -24,3 +24,4 @@ network-interface = <%= @network_if %>
 group-name = <%= node[:kagent][:group_name] %>
 hadoop-home = <%= @hops_dir %>/hadoop
 <%= @agent_password %>
+

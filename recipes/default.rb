@@ -12,6 +12,19 @@ when "ubuntu"
  end
 end
 
+#
+# Hack because of a problem with Cheroot 
+#
+bash "reinstall_backports_functools" do
+  user 'root'
+  ignore_failure true
+  code <<-EOF
+  yes | pip uninstall backports.functools_lru_cache
+  yes | pip install backports.functools_lru_cache
+ EOF
+end
+
+
 if node[:systemd] == "true"
   service "#{service_name}" do
     provider Chef::Provider::Service::Systemd
@@ -141,10 +154,27 @@ template "#{node["kagent"]["base_dir"]}/keystore.sh" do
 end
 
 # Default to hostname found in /etc/hosts, but allow user to override it.
-hostname = node['fqdn']
-if node["kagent"].attribute?("hostname") 
- hostname = node["kagent"]["hostname"]
+# First with DNS. Highest priority if user supplies the actual hostname
+hostname = node['hostname']  
+if node['kagent']['dns'].eql? "true"
+  hostname = node['fqdn']
 end
+
+if private_ip.eql? "127.0.0.1"
+  hostname="localhost"
+end  
+
+if node["kagent"].attribute?("hostname")
+   if node["kagent"]["hostname"].empty? == false
+      hostname = node["kagent"]["hostname"]
+   end
+end
+
+Chef::Log.info "Hostname to register kagent in config.ini is: #{hostname}"
+if hostname.empty?
+  raise "Hostname in kagent/config.ini cannot be empty"
+end
+
 
 hops_dir=node['install']['dir']
 if node.attribute?("hops") && node["hops"].attribute?("dir") 
@@ -155,7 +185,8 @@ if hops_dir == ""
  hops_dir = node['install']['dir'] + "/hadoop"
 end
 
-                   
+
+
 #
 # use :create_if_missing, as if there is a failure during/after the csr.py program,
 # you will get a failure. csr.py adds a password entry to the [agent] section. 
@@ -170,9 +201,9 @@ template "#{node["kagent"]["base_dir"]}/config.ini" do
   variables({
               :rest_url => "http://#{dashboard_endpoint}/",
               :rack => '/default',
+              :hostname => hostname,
               :public_ip => public_ip,
               :private_ip => private_ip,
-              :hostname => hostname,
               :network_if => network_if,
               :hops_dir => hops_dir,
               :agent_password => agent_password
@@ -230,7 +261,7 @@ if node["install"]["addhost"] == 'true'
  bash "sync-anaconda-with-existing-cluster" do
    user "root"
    code <<-EOH
-     <%= node['kagent']['base_dir'] %>/bin/anaconda_sync.sh
+     #{node['kagent']['base_dir']}/bin/anaconda_sync.sh
    EOH
  end
   
@@ -244,13 +275,6 @@ kagent_keys "#{homedir}" do
   cb_name "hopsworks"
   cb_recipe "default"  
   action :get_publickey
-end
+end  
 
-bash "reinstall_backports_functools" do
-  user 'root'
-  ignore_failure true
-  code <<-EOF
-  yes | pip uninstall backports.functools_lru_cache
-  yes | pip install backports.functools_lru_cache
- EOF
-end
+

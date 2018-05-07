@@ -7,7 +7,7 @@ default["install"]["addhost"]                      = "false"
 
 
 # Default values for configuration parameters
-default["kagent"]["version"]                       = "0.1.0"
+default["kagent"]["version"]                       = "0.2.0"
 default["kagent"]["user"]                          = node["install"]["user"].empty? ? "kagent" : node["install"]["user"]
 default["kagent"]["group"]                         = node["install"]["user"].empty? ? "kagent" : node["install"]["user"]
 default["kagent"]["certs_group"]                   = "certs"
@@ -77,6 +77,8 @@ default["kagent"]["password"]                      = ""
 
 default["kagent"]["keystore_dir"] 		   = node["kagent"]["certs_dir"] + "/keystores"
 
+default["kagent"]["dns"]                           = "false"
+
 default["public_ips"]                              = ['10.0.2.15']
 default["private_ips"]                             = ['10.0.2.15']
 default["gateway_ips"]                             = ['10.0.2.2']
@@ -116,7 +118,7 @@ default["services"]["enabled"]                     = "true"
 
 default["certs"]["dir"]                            = node["install"]["dir"].empty? ? node["kagent"]["dir"] + "/certs-dir" : node["install"]["dir"] + "/certs-dir"
 
-default["tensorflow"]["version"]                   = "1.7.0"
+default["tensorflow"]["version"]                   = "1.8.0"
 default["tensorflow"]["py36"]["url"]               = node["download_url"] + "/tensorflow-" + node["tensorflow"]["version"] + "-cp36-cp36m-manylinux1_x86_64.whl"
 default["tensorflow"]["py36_gpu"]["url"]           = node["download_url"] + "/tensorflow_gpu-" + node["tensorflow"]["version"] + "-cp36-cp36m-manylinux1_x86_64.whl"
 default["tensorflow"]["py27"]["url"]               = node["download_url"] + "/tensorflow-" + node["tensorflow"]["version"] + "-cp27-cp27mu-manylinux1_x86_64.whl"

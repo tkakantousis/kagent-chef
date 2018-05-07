@@ -67,7 +67,6 @@ states = {}
 global conda_ongoing
 conda_ongoing = defaultdict(lambda: False)
 
-
 cores = multiprocessing.cpu_count()
 
 def count_num_gpus():
@@ -108,7 +107,6 @@ try:
     network_interface = config.get('agent', 'network-interface')
     group_name = config.get('agent', 'group-name')
     hadoop_home = config.get('agent', 'hadoop-home')
-    group_name = config.get('agent', 'group-name')
 
 # TODO find public/private IP addresses
     public_ip = None
@@ -122,7 +120,13 @@ try:
     if (config.has_option("agent", "hostname")):
         hostname = config.get("agent", "hostname")
     else:
-        hostname = socket.gethostbyaddr(eth0_ip)[0]
+        try:
+            self.hostname = socket.gethostbyaddr(eth0_ip)[0]
+        except socket.herror:
+            try:
+                self.hostname = socket.gethostname()
+            except socket.herror:
+                self.hostname = "localhost"
 
     if (config.has_option("agent", "host-id")):
         host_id = config.get("agent", "host-id")
@@ -390,7 +394,6 @@ class Heartbeat():
                 logger.error("{0}. Retrying in {1} seconds...".format(err, heartbeat_interval))
                 logged_in = False
 
-
 class CondaCommandsHandler:
     def __init__(self, conda_commands_status, conda_commands_status_mutex):
         self._conda_commands_status = conda_commands_status
@@ -436,7 +439,7 @@ class CondaCommandsHandler:
         logger.info("sudo {0} {1} {2} {3} {4} '{5}' {6}".format(script, user, op, proj, arg, offline, hadoop_home))
         msg=""
         try:
-            msg = subprocess.check_output(['sudo', script, user, op, proj, arg, offline, hadoop_home])
+            msg = subprocess.check_output(['sudo', script, user, op, proj, arg, offline, hadoop_home], stderr=subprocess.STDOUT)
             command['status'] = 'SUCCESS'
             command['arg'] = arg
         except subprocess.CalledProcessError as e:
@@ -470,8 +473,8 @@ class CondaCommandsHandler:
 
         try:
             command_str = "sudo {0} {1} {2} {3} {4} {5} {6} {7}".format(script, user, op, proj, channelUrl, installType, lib, version)
-            logger.info("Executing libOp command {0}".format(command_str))
-            msg = subprocess.check_output(['sudo', script, user, op, proj, channelUrl, installType, lib, version])
+            logger.info("Executing libOp command {0}".format(command_str))                                            
+            msg = subprocess.check_output(['sudo', script, user, op, proj, channelUrl, installType, lib, version], stderr=subprocess.STDOUT)
             logger.info("Lib op finished without error.")
             logger.info("{0}".format(msg))
             command['status'] = 'SUCCESS'
@@ -978,6 +981,7 @@ if __name__ == '__main__':
         if (sys.argv[1] == "-v" or sys.argv[1] == "-verbose" or sys.argv[1] == "--verbose"):
             verbose=True
         else:
+            print "usage: <prog> [-v|-verbose]"
             sys.exit()
 
     agent_pid = str(os.getpid())
@@ -1014,8 +1018,7 @@ if __name__ == '__main__':
             my_thread.setDaemon(True)
             my_thread.start()
         else:
-            logger.info("Not watching {0}/{1}".format(cluster, group))
-
+            logger.info("Not watching {0}/{1}".format(cluster, group))        
 
 # The REST code uses a CherryPy webserver, but Bottle for the REST endpoints
 # WSGI server for SSL
