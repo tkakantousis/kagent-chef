@@ -154,6 +154,14 @@ directory node["kagent"]["certs_dir"] do
   action :create
 end
 
+if node["kagent"]["test"] == false && node['install']['upgrade'] == "true"
+  bash "copy_old_config_ini_to_new_version" do
+    user "root"
+    code <<-EOF
+      cp -p #{node["kagent"]["base_dir"]}/config.ini #{node["kagent"]["home"]}
+ EOF
+  end
+end
 
 link node["kagent"]["base_dir"] do
   owner node["kagent"]["user"]
