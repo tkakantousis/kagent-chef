@@ -126,5 +126,6 @@ default["tensorflow"]["py27_gpu"]["url"]           = node["download_url"] + "/te
 
 
 default['mml']['version']                          = "0.12"
-# https://mmlspark.azureedge.net/pip/mmlspark-0.11-py2.py3-none-any.whl
+# https://mmlspark.azureedge.net/pip/mmlspark-0.12-py2.py3-none-any.whl
+# spark.jars.packages=Azure:mmlspark:0.12
 default["mml"]["url"]                              = node["download_url"] + "/mmlspark-" + node['mml']['version'] + "-py2.py3-none-any.whl"
