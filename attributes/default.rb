@@ -4,10 +4,11 @@ default["install"]["ssl"]                          = "false"
 default["install"]["cleanup_downloads"]            = "false"
 default["install"]["upgrade"]                      = "false"
 default["install"]["addhost"]                      = "false"
-
+default["install"]["version"]                      = "0.6.0-SNAPSHOT"
+default["install"]["versions"]                     = "0.1.0,0.2.0,0.3.0,0.4.0,0.4.1,0.4.2,0.5.0"
 
 # Default values for configuration parameters
-default["kagent"]["version"]                       = "0.2.0"
+default["kagent"]["version"]                       = node["install"]["version"]
 default["kagent"]["user"]                          = node["install"]["user"].empty? ? "kagent" : node["install"]["user"]
 default["kagent"]["group"]                         = node["install"]["user"].empty? ? "kagent" : node["install"]["user"]
 default["kagent"]["certs_group"]                   = "certs"
@@ -129,3 +130,6 @@ default['mml']['version']                          = "0.12"
 # https://mmlspark.azureedge.net/pip/mmlspark-0.12-py2.py3-none-any.whl
 # spark.jars.packages=Azure:mmlspark:0.12
 default["mml"]["url"]                              = node["download_url"] + "/mmlspark-" + node['mml']['version'] + "-py2.py3-none-any.whl"
+
+
+default['pydoop']['version']                       = "2.0a3"
