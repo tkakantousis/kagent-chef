@@ -70,10 +70,11 @@ end
 
 user node["kagent"]["user"] do
   gid node["kagent"]["group"]
-  manage_home true
-  home "/home/#{node["kagent"]["user"]}"
   action :create
+  manage_home true
+  home "/home/#{node['kagent']['user']}"
   shell "/bin/bash"
+  system true
   not_if "getent passwd #{node["kagent"]["user"]}"
 end
 
