@@ -15,7 +15,7 @@ end
 if ::File.exists?("#{node["kagent"]["etc"]}/config.ini") && agent_password.empty?
   ini_file = IniFile.load("#{node["kagent"]["etc"]}/config.ini", :comment => ';#')
   if ini_file.has_section?("agent")
-    agent_password = ini_file["agent"]["password"]
+    agent_password = "#{ini_file["agent"]["password"]}"
   end
 end  
 
