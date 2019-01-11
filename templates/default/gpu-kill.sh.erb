@@ -1,0 +1,47 @@
+#!/bin/bash
+
+sudo systemctl stop nodemanager
+if [ $? -ne 0 ] ; then
+  echo "Problem stopping the nodemanager"
+fi
+sudo systemctl stop kagent
+if [ $? -ne 0 ] ; then
+  echo "Problem stopping kagent"
+fi
+
+procs=`sudo nvidia-smi --format=csv,noheader,nounits --query-gpu=index,memory.used | grep -v ', 0' | awk {'print $1'} | sed -e 's/,//'`
+
+PIDS=( $procs )
+for i in "${PIDS[@]}"
+do
+
+ RUNNING_PIDS=`sudo nvidia-smi pmon -c 1 | grep -v '#' | grep -v "-" | cut -d " " -f 2-8 | tr "\n" " "`
+ found=0
+ for r in $RUNNING_PIDS
+ do
+   if [ "$i" == "$r" ] ; then
+     found=1
+     echo "Found process for Device id: $i"
+   fi
+ done
+
+ if [ $found -eq 0 ] ; then
+   echo "Resetting device: $i"
+   sudo nvidia-smi --gpu-reset -i $i
+ fi
+
+done
+
+sudo systemctl start nodemanager
+if [ $? -ne 0 ] ; then
+  echo "Problem starting the nodemanager"
+fi
+sudo systemctl start kagent
+if [ $? -ne 0 ] ; then
+  echo "Problem starting the nodemanager"
+fi
+
+exit
+
+
+
