@@ -114,42 +114,6 @@ attribute "services/enabled",
           :description => "Default 'false'. Set to 'true' to enable daemon services, so that they are started on a host restart.",
           :type => "string"
 
-attribute "install/dir",
-          :description => "Default ''. Set to a base directory under which all hops services will be installed.",
-          :type => "string"
-
-attribute "install/user",
-          :description => "User to install the services as",
-          :type => "string"
-
-attribute "install/upgrade",
-          :description => "User to upgrade the software",
-          :type => "string"
-
-attribute "install/ssl",
-          :description => "Is SSL turned on for all services?",
-          :type => "string"
-
-attribute "install/cleanup_downloads",
-          :description => "Remove any zipped binaries that were downloaded and used to install services",
-          :type => "string"
-
-attribute "install/addhost",
-          :description => "Indicates that this host will be added to an existing Hops cluster.",
-          :type => "string"
-
-attribute "install/current_version",
-          :description => "Current installed Hopsworks version",
-          :type => "string"
-
-attribute "install/version",
-          :description => "Hopsworks target install version.",
-          :type => "string"
-
-attribute "install/versions",
-          :description => "Comma-separated list of previous versions of Hopsworks.",
-          :type => "string"
-
 attribute "hops/yarn/user",
           :description => "Yarn user for conda",
           :type => "string"
@@ -157,9 +121,6 @@ attribute "hops/yarn/user",
 attribute "hops/group",
           :description => "Haodop group for conda",
           :type => "string"
-
-
-
 
 attribute "smtp/host",
           :description => "Ip Address/hostname of SMTP server (default is smtp.gmail.com)",

@@ -3,13 +3,15 @@ Description = Kagent, monitors/controls Hops services
 After = syslog.target network.target remote-fs.target
 
 [Service]
-User = <%= node["kagent"]["user"] %>
-
-PIDFile = <%= node[:kagent][:pid_file] %>
-ExecStart = <%= "#{node[:kagent][:base_dir]}/bin/start-agent.sh" %>
-ExecStop = <%= "#{node[:kagent][:base_dir]}/bin/stop-agent.sh" %>
-ExecReload = <%= "#{node[:kagent][:base_dir]}/bin/restart-agent.sh" %>
-
+User = <%= node['kagent']['user'] %>
+Restart=always
+RestartSec=5
+PIDFile = <%= node['kagent']['pid_file'] %>
+# Prefixing a command with '-' means that you should still continue, even if it fails.
+ExecStartPre=-/bin/chown <%= node['kagent']['user'] %> <%= node['kagent']['pid_file'] %>
+ExecStart = <%= "#{node['kagent']['base_dir']}/bin/start-agent.sh" %>
+ExecStop = <%= "#{node['kagent']['base_dir']}/bin/stop-agent.sh" %>
+ExecReload = <%= "#{node['kagent']['base_dir']}/bin/restart-agent.sh" %>
 
 Type = forking
 

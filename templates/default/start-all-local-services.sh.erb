@@ -35,7 +35,7 @@ services=$(grep service <%= node["kagent"]["services"] %> | perl -p -e "s/servic
 services="kagent $services glassfish-domain1"
 
 echo -e ""
-# Shut down the services in the correct order
+# Start all the services in the correct order
 
 active="ndb_mgmd"
 _start
@@ -93,3 +93,18 @@ active="hiveserver2"
 _start
 active="hivecleaner"
 _start
+active="sqoop"
+_start
+active="airflow-webserver"
+_start
+active="airflow-worker"
+_start
+active="airflow-scheduler"
+_start
+
+
+
+echo -e ""
+echo -e "Status of all local services now:"
+sudo <%= node["kagent"]["base_dir"] %>/bin/status-all-local-services.sh 
+
