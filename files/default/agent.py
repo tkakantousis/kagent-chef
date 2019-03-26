@@ -78,7 +78,7 @@ def count_num_gpus():
 
 # logging
 def setupLogging(kconfig):
-    agent_log_file = os.path.join(kconfig.agent_log_dir, AGENT_LOG_FILENAME)
+    agent_log_file = kconfig.agent_log_file
     try:
         os.remove(kconfig.agent_log_file + '.1')
     except:
@@ -117,14 +117,6 @@ def setupLogging(kconfig):
     logger.info("Public IP: {0}".format(kconfig.public_ip))
     logger.info("Private IP: {0}".format(kconfig.private_ip))
 
-def prepare_conda_commands_logger(kconfig):
-    logger = logging.getLogger(CONDA_COMMANDS_LOGGER_NAME)
-    logger.setLevel(logging.INFO)
-    file_handler = logging.handlers.RotatingFileHandler(os.path.join(kconfig.agent_log_dir, "conda_commands.log"))
-    file_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
     
 ## Antonis: This should go away in the future!!! Used only by RESTCommandHandler execute
 # reading services

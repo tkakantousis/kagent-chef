@@ -29,7 +29,7 @@ class TestKConfig(unittest.TestCase):
     watch_interval = '4s'
     bin_dir = 'path/to/bin/dir'
     pid_file = 'path/to/pid/file'
-    agent_log_file = 'path/to/agent/log_file'
+    agent_log_file = 'path/to/agent/agent.log'
     csr_log_file = 'path/to/csr/log_file'
     logging_level = 'DEBUG'
     max_log_size = '100'
