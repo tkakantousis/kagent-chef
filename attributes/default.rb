@@ -61,8 +61,6 @@ default["kagent"]["cluster"]                       = "Hops"
 
 default["kagent"]["hostid"]                        = 100
 
-default["kagent"]["hostname"]                      =
-
 default["kagent"]["password"]                      = ""
 
 default["kagent"]["keystore_dir"] 		   = node["kagent"]["certs_dir"] + "/keystores"
@@ -102,4 +100,5 @@ default["java"]["install_flavor"]                  = "openjdk"
 default["java"]["jdk_version"]                     = 8
 
 default["kagent"]["conda_gc_interval"]             = "1h"
+
 default["kagent"]["python_conda_versions"]         = "2.7, 3.6"

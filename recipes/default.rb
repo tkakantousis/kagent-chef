@@ -5,6 +5,7 @@ service_name = "kagent"
 
 agent_password = ""
 
+
 # First try to read from Chef attributes
 if node["kagent"]["password"].empty? == false
  agent_password = node["kagent"]["password"]
@@ -23,6 +24,25 @@ end
 if agent_password.empty?
   agent_password = SecureRandom.hex[0...10]
 end
+
+
+
+if !node['install']['cloud'].empty? 
+  template "#{node['kagent']['base_dir']}/bin/edit-config-ini-inplace.py" do
+    source "edit-config-ini-inplace.py.erb"
+    owner node['kagent']['user']
+    group node['kagent']['group']
+    mode 0744
+  end
+
+  template "#{node['kagent']['base_dir']}/bin/edit-and-start.sh" do
+    source "edit-and-start.sh.erb"
+    owner node['kagent']['user']
+    group node['kagent']['group']
+    mode 0744
+  end
+end
+
 
 case node[:platform]
 when "ubuntu"
@@ -121,38 +141,18 @@ template "#{node["kagent"]["home"]}/bin/status-all-local-services.sh" do
   mode 0740
 end
 
-
-#
-# Certificate Signing code - Needs Hopsworks dashboard
-#
-
-
-template "#{node["kagent"]["home"]}/keystore.sh" do
-  source "keystore.sh.erb"
-  owner node["kagent"]["user"]
-  group node["kagent"]["group"]
-  mode 0700
-   variables({
-              :directory => node["kagent"]["keystore_dir"],
-              :keystorepass => node["hopsworks"]["master"]["password"]
-            })
-end
-
 # Default to hostname found in /etc/hosts, but allow user to override it.
 # First with DNS. Highest priority if user supplies the actual hostname
-hostname = node['fqdn']  
+hostname = node['fqdn']
 
-if node["kagent"].attribute?("hostname")
-   if node["kagent"]["hostname"].empty? == false
-      hostname = node["kagent"]["hostname"]
-   end
+if node['install']['localhost'].casecmp?("true")
+  hostname = "localhost"
 end
 
 Chef::Log.info "Hostname to register kagent in config.ini is: #{hostname}"
 if hostname.empty?
   raise "Hostname in kagent/config.ini cannot be empty"
 end
-
 
 hops_dir=node['install']['dir']
 if node.attribute?("hops") && node["hops"].attribute?("dir") 
@@ -189,12 +189,25 @@ template "#{node["kagent"]["etc"]}/config.ini" do
               :tstore => "#{node["kagent"]["keystore_dir"]}/#{hostname}__tstore.jks",
               :blacklisted_envs => blacklisted_envs
             })
-  
 if node["services"]["enabled"] == "true"  
   notifies :enable, "service[#{service_name}]"
 end
   notifies :restart, "service[#{service_name}]", :delayed
 end
+
+
+template "#{node["kagent"]["home"]}/keystore.sh" do
+  source "keystore.sh.erb"
+  owner node["kagent"]["user"]
+  group node["kagent"]["group"]
+  mode 0700
+  variables({
+              :fqdn => hostname,
+              :directory => node["kagent"]["keystore_dir"],
+              :keystorepass => node["hopsworks"]["master"]["password"]
+            })
+end
+  
 
 if node["kagent"]["test"] == false && node['install']['upgrade'] == "false"
     kagent_keys "sign-certs" do

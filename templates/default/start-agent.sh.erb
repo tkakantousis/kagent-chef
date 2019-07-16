@@ -3,8 +3,8 @@
 # returns '1' if agent already running
 
 source <%= node[:kagent][:base_dir] %>/bin/get-pid.sh
-
 if [ $? -ne 0 ]; then
+
         echo "Starting the agent..."
 	nohup <%= node[:conda][:base_dir] %>/envs/hops-system/bin/python <%= node[:kagent][:base_dir] %>/agent.py \
 	--config <%= node[:kagent][:etc] %>/config.ini &> /dev/null &

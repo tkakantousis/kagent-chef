@@ -223,6 +223,7 @@ template "#{node["kagent"]["certs_dir"]}/run_csr.sh" do
   mode 0710
 end
 
+
 ['start-agent.sh', 'stop-agent.sh', 'restart-agent.sh', 'get-pid.sh'].each do |script|
   Chef::Log.info "Installing #{script}"
   template "#{node["kagent"]["home"]}/bin/#{script}" do

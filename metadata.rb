@@ -1,3 +1,4 @@
+
 maintainer       "Jim Dowling"
 maintainer_email "jdowling@kth.se"
 name             "kagent"
@@ -67,10 +68,6 @@ attribute "kagent/rest_api/password",
 
 attribute "kagent/dashboard/user",
           :description => "kagent username to register with server",
-          :type => "string"
-
-attribute "kagent/hostname",
-          :description => "hostname used to register with hopsworks",
           :type => "string"
 
 attribute "kagent/dashboard/password",
