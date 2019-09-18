@@ -103,7 +103,6 @@ def setupLogging(kconfig):
 
     logger.info("Hops-Kagent started.")
     logger.info("Heartbeat URL: {0}".format(kconfig.heartbeat_url))
-    logger.info("Alert URL: {0}".format(kconfig.alert_url))
     logger.info("Host Id: {0}".format(kconfig.host_id))
     logger.info("Hostname: {0}".format(kconfig.hostname))
     logger.info("Public IP: {0}".format(kconfig.public_ip))
@@ -195,11 +194,8 @@ class Heartbeat():
         services = []
         for name, service in self._host_services.iteritems():
             srv_status = {}
-            srv_status['cluster'] = service.cluster
             srv_status['group'] = service.group
             srv_status['service'] = service.name
-            # Antonis: Do we even need this?
-            srv_status['web-port'] = 0
             srv_status['status'] = service.get_state()
             services.append(srv_status)
         return services
@@ -225,11 +221,6 @@ class Heartbeat():
                 payload["num-gpus"] = devices.get_num_gpus()
                 payload["host-id"] = kconfig.host_id
                 payload["agent-time"] = now
-                payload["load1"] = load_info.load1
-                payload["load5"] = load_info.load5
-                payload["load15"] = load_info.load15
-                payload["disk-used"] = disk_info.used
-                payload['memory-used'] = memory_info.used
                 payload["services"] = services_list
                 payload["recover"] = self._recover
                 
@@ -280,7 +271,6 @@ class Heartbeat():
                     payload["private-ip"] = ""
 
                 payload["cores"] = cores
-                payload["disk-capacity"] = disk_info.capacity
                 payload['memory-capacity'] = memory_info.total
                 logger.debug("Sending heartbeat...")
                 resp = session.post(kconfig.heartbeat_url, data=json.dumps(payload), headers=headers, verify=False)
@@ -616,11 +606,11 @@ class LoadInfo(object):
 ## *removed* along with the method!
 class Config():
 
-    def section_name(self, cluster, group, service=None):
+    def section_name(self, group, service=None):
         if service == None:
-            return "{0}-{1}".format(cluster, group)
+            return "{0}".format(group)
         else:
-            return "{0}-{1}-{2}".format(cluster, group, service)
+            return "{0}-{1}".format(group, service)
 
     def get_section(self, section):
         config_mutex.acquire()
@@ -651,7 +641,7 @@ class RESTCommandHandler():
         logger.warn("{0}".format(resp))
         return resp
 
-    def start(self, cluster, group, service):
+    def start(self, group, service):
         if not service in self._host_services:
             return self.error_response(400, "Service not installed.")
         else:
@@ -664,7 +654,7 @@ class RESTCommandHandler():
             else:
                 return self.error_response(400, "Error: Cannot start the service.")
             
-    def stop(self, cluster, group, service):
+    def stop(self, group, service):
         if not service in self._host_services:
             return self.error_response(400, "Service not installed.")
         else:
@@ -680,7 +670,7 @@ class RESTCommandHandler():
                 return self.error_response(400, "Error: Cannot stop the service.")
 
             
-    def restart(self, cluster, group, service):
+    def restart(self, group, service):
         if not service in self._host_services:
             return self.error_response(400, "Service not installed.")
         else:
@@ -691,7 +681,7 @@ class RESTCommandHandler():
                 return self.error_response(400, "Error: Cannot restart the service.")
 
             
-    def read_log(self, cluster, group, service, lines):
+    def read_log(self, group, service, lines):
         try:
             lines = int(lines)
 
@@ -723,7 +713,7 @@ class RESTCommandHandler():
         log = "".join(str(x) for x in lines)
         return log
     
-    def read_config(self, cluster, group, service):
+    def read_config(self, group, service):
         try:
             if service not in self._host_services:
                 return self.error_response(400, "Service not installed.")
@@ -736,12 +726,12 @@ class RESTCommandHandler():
             logger.error(err)
             return self.error_response(400, "Cannot read file.")
 
-    def info(self, cluster, group, service):
+    def info(self, group, service):
         try:
             if service is None:
-                section_name = "{0}-{1}".format(cluster, group)
+                section_name = "{0}".format(group)
             else:
-                section_name = "{0}-{1}-{2}".format(cluster, group, service)
+                section_name = "{0}-{1}".format(group, service)
 
             items = {}
             for key, val in services.items(section):
@@ -756,12 +746,12 @@ class RESTCommandHandler():
 
     ## Antonis: Most probably we don't need this and it should be
     ## removed in the future
-    def execute(self, cluster, group, service, command, params):
+    def execute(self, group, service, command, params):
         try:
             if service == None:
-                section = Config().section_name(cluster, group)
+                section = Config().section_name(group)
             else:
-                section = Config().section_name(cluster, group, service)
+                section = Config().section_name(group, service)
             script = Config().get(section, "command-script")
             logger.info("Script name executing is: {0}".format(script))
             env = Config().get(section, "command-env")
@@ -801,7 +791,6 @@ class SSLCherryPy(ServerAdapter):
 def construct_services(k_config, hw_http_client):
     host_services = {}
     for c_service in services.sections():
-        cluster = services.get(c_service, 'cluster')
         group = services.get(c_service, 'group')
         if services.has_option(c_service, 'service'):
             service_name = services.get(c_service, 'service')
@@ -811,7 +800,7 @@ def construct_services(k_config, hw_http_client):
                 fail_attempts = 1
             stdout_file = services.get(c_service, "stdout-file")
             config_file = services.get(c_service, "config-file")
-            k_service = kagent_utils.Service(cluster, group, service_name, stdout_file,
+            k_service = kagent_utils.Service(group, service_name, stdout_file,
                                              config_file, fail_attempts, k_config, hw_http_client)
             host_services[service_name] = k_service
     return host_services
@@ -862,12 +851,12 @@ if __name__ == '__main__':
         ordered_host_services = construct_ordered_services_list(kconfig, hw_http_client)
         if args.services == 'start':
             for service in ordered_host_services:
-                if not service.start(alert=False):
-                    service.start(alert=False)
+                if not service.start():
+                    service.start()
         elif args.services == 'stop':
             for service in reversed(ordered_host_services):
-                if not service.stop(alert=False):
-                    service.stop(alert=False)
+                if not service.stop():
+                    service.stop()
         elif args.services == 'status':
             for service in ordered_host_services:
                 service.alive(currently=True)
@@ -952,80 +941,60 @@ if __name__ == '__main__':
     def _authentication_error():
         return HTTPResponse(status=400, output="Invalid password")
         
-    @get('/restartService/<cluster>/<group>/<service>')
-    def restartService(cluster, group, service):
-        logger.info('Incoming REST Request:  GET /restartService/{0}/{1}/{2}'.format(cluster, group, service))
+    @get('/restartService/<group>/<service>')
+    def restartService(group, service):
+        logger.info('Incoming REST Request:  GET /restartService/{0}/{1}'.format(group, service))
         if not _authenticate():
             return _authentication_error()
 
         if not service in host_services:
-            return HTTPResponse(status=400, output='Cluster/Group/Service not available.')
+            return HTTPResponse(status=400, output='Group/Service not available.')
 
-        return rest_command_handler.restart(cluster, group, service);
+        return rest_command_handler.restart(group, service);
 
-    @get('/startService/<cluster>/<group>/<service>')
-    def startService(cluster, group, service):
-        logger.info('Incoming REST Request:  GET /startService/{0}/{1}/{2}'.format(cluster, group, service))
+    @get('/startService/<group>/<service>')
+    def startService(group, service):
+        logger.info('Incoming REST Request:  GET /startService/{0}/{1}'.format(group, service))
         if not _authenticate():
             return _authentication_error()
 
         if not service in host_services:
-            return HTTPResponse(status=400, output='Cluster/Group/Service not available.')
+            return HTTPResponse(status=400, output='Group/Service not available.')
 
-        return rest_command_handler.start(cluster, group, service);
+        return rest_command_handler.start(group, service);
 
-    @get('/stopService/<cluster>/<group>/<service>')
-    def stopService(cluster, group, service):
-        logger.info('Incoming REST Request:  GET /stopService/{0}/{1}/{2}'.format(cluster, group, service))
+    @get('/stopService/<group>/<service>')
+    def stopService(group, service):
+        logger.info('Incoming REST Request:  GET /stopService/{0}/{1}'.format(group, service))
         if not _authenticate():
             return _authentication_error()
 
         if not service in host_services:
-            return HTTPResponse(status=400, output='Cluster/Group/Service not available.')
+            return HTTPResponse(status=400, output='Group/Service not available.')
 
-        return rest_command_handler.stop(cluster, group, service);
+        return rest_command_handler.stop(group, service);
 
-    @get('/log/<cluster>/<group>/<service>/<lines>')
-    def log(cluster, group, service, lines):
-        logger.info('Incoming REST Request:  GET /log/{0}/{1}/{2}/{3}'.format(cluster, group, service, lines))
+    @get('/config/<group>/<service>')
+    def config(group, service):
+        logger.info('Incoming REST Request:  GET /log/{0}/{1}'.format(group, service))
         if not _authenticate():
             return _authentication_error()
 
         if not service in host_services:
-            return HTTPResponse(status=400, output='Cluster/Group/Service not available.')
+            return HTTPResponse(status=400, output='Group/Service not available.')
 
-        return rest_command_handler.read_log(cluster, group, service, lines);
+        return rest_command_handler.read_config(group, service);
 
-
-    @get('/agentlog/<lines:int>')
-    def agentlog(lines):
-        logger.info('Incoming REST Request:  GET /agentlog/{0}'.format(lines))
-        if not _authenticate():
-            return _authentication_error()
-
-        return rest_command_handler.read_agent_log(lines);
-
-    @get('/config/<cluster>/<group>/<service>')
-    def config(cluster, group, service):
-        logger.info('Incoming REST Request:  GET /log/{0}/{1}/{2}'.format(cluster, group, service))
+    @get('/info/<group>/<service>')
+    def info(group, service):
+        logger.info('Incoming REST Request:  GET /status/{0}/{1}'.format(group, service))
         if not _authenticate():
             return _authentication_error()
 
         if not service in host_services:
-            return HTTPResponse(status=400, output='Cluster/Group/Service not available.')
+            return HTTPResponse(status=400, output='Group/Service not available.')
 
-        return rest_command_handler.read_config(cluster, group, service);
-
-    @get('/info/<cluster>/<group>/<service>')
-    def info(cluster, group, service):
-        logger.info('Incoming REST Request:  GET /status/{0}/{1}/{2}'.format(cluster, group, service))
-        if not _authenticate():
-            return _authentication_error()
-
-        if not service in host_services:
-            return HTTPResponse(status=400, output='Cluster/Group/Service not available.')
-
-        return rest_command_handler.info(cluster, group, service);
+        return rest_command_handler.info(group, service);
 
     @get('/refresh')  # request heartbeat
     def refresh():
@@ -1035,9 +1004,9 @@ if __name__ == '__main__':
 
         return rest_command_handler.refresh();
 
-    @post('/execute/<state>/<cluster>/<group>/<service>/<command>')
-    def execute_hdfs(state, cluster, group, service, command):
-        logger.info('Incoming REST Request:  POST /execute/{0}/{1}/{2}/{3}/{4}'.format(state, cluster, group, service, command))
+    @post('/execute/<state>/<group>/<service>/<command>')
+    def execute_hdfs(state, group, service, command):
+        logger.info('Incoming REST Request:  POST /execute/{0}/{1}/{2}/{3}'.format(state, group, service, command))
         if not _authenticate():
             return _authentication_error()
         
@@ -1047,11 +1016,10 @@ if __name__ == '__main__':
             params = ""
         if state == "run" :
             if service == "-":
-                return rest_command_handler.execute(cluster, group, None, command, params);
+                return rest_command_handler.execute(group, None, command, params);
             else:
-                return rest_command_handler.execute(cluster, group, service, command, params);
+                return rest_command_handler.execute(group, service, command, params);
         return rest_command_handler.response(404, "Error")
-
 
 
     @get('/conda/<user>/<command_id>/<op>/<proj>/<lib>')
