@@ -231,6 +231,10 @@ if node["kagent"]["test"] == false && (not conda_helpers.is_upgrade)
     end
 end
 
+kagent_keys "combine_certs" do 
+  action :combine_certs
+end 
+
 bash "convert private key to PKCS#1 format on update" do
   user "root"
   group node['kagent']['certs_group']
@@ -278,5 +282,3 @@ kagent_keys "#{homedir}" do
   cb_recipe "default"  
   action :get_publickey
 end  
-
-

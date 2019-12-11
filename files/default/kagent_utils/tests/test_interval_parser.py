@@ -21,7 +21,7 @@ class TestIntervalParser(unittest.TestCase):
         
     def test_with_default_time_unit(self):
         in_ms = self.parser.get_interval_in_ms('5')
-        self.assertEquals(300000, in_ms)
+        self.assertEquals(5000, in_ms)
 
     def test_with_time_unit(self):
         in_ms = self.parser.get_interval_in_ms('5ms')

@@ -97,6 +97,9 @@ class KConfig:
             else:
                 self.host_id = self.hostname
 
+            self.elk_key_file = self._config.get('agent', 'elk-key-file')
+            self.elk_certificate_file = self._config.get('agent', 'elk-certificate-file')
+            self.elk_cn = self._config.get('agent', 'elk-cn')  
         except Exception, e:
             print("Exception while reading {0}: {1}".format(
                 self._configFile, e))

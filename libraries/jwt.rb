@@ -51,6 +51,41 @@ module Kagent
           end
           Chef::Log.debug("Command: #{command} - STDOUT: #{stdout.readlines}")
         end
+
+        def get_elk_signing_key()
+          master_token, renew_tokens = get_service_jwt()
+          hopsworks_hostname = private_recipe_hostnames("hopsworks", "default")[0]
+          port = 8181
+          if node.attribute?("hopsworks")
+            if node['hopsworks'].attribute?("https")
+              if node['hopsworks']['https'].attribute?("port")
+                port = node['hopsworks']['https']['port']
+              end
+            end
+          end
+
+          url = URI("https://#{hopsworks_hostname}:#{port}/hopsworks-api/api/jwt/elk/key")
+
+          http = Net::HTTP.new(url.host, url.port)
+
+          # Don't verify the host certificate
+          http.use_ssl = true
+          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+          request = Net::HTTP::Get.new(url)
+
+          request["Content-Type"] = 'application/json'
+          request['Authorization'] = "Bearer #{master_token}" 
+                     
+          response = http.request(request)
+
+          if !response.kind_of? Net::HTTPOK
+            raise "Error getting the elk signing key"
+          end
+
+          return response.body.strip
+        end
+
     end
 end
 

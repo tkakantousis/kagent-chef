@@ -48,7 +48,10 @@ class TestKConfig(unittest.TestCase):
     conda_gc_interval = '2h'
     private_ip = '127.0.0.1'
     public_ip = '192.168.0.1'
-
+    elk_key_file = 'path/to/certs_dir/elastic_admin.key'
+    elk_certificate_file = 'path/to/certs_dir/elastic_admin.pem'
+    elk_cn = 'ELkAdmin'
+    
     def setUp(self):
         self.config_file = tempfile.mkstemp(prefix='kagent_config_')
 
@@ -98,7 +101,10 @@ class TestKConfig(unittest.TestCase):
         self.assertEqual(self.conda_envs_blacklist,
                          config.conda_envs_blacklist)
         self.assertEqual(self.conda_gc_interval, config.conda_gc_interval)
-
+        self.assertEqual(self.elk_key_file, config.elk_key_file)
+        self.assertEqual(self.elk_certificate_file, config.elk_certificate_file)
+        self.assertEqual(self.elk_cn, config.elk_cn)
+        
     # Let KConfig figure out values for these properties
     def test_parse_partial_config(self):
         self._prepare_config_file(False)
@@ -154,7 +160,10 @@ class TestKConfig(unittest.TestCase):
                 'conda-envs-blacklist': self.conda_envs_blacklist,
                 'conda-gc-interval': self.conda_gc_interval,
                 'private-ip': self.private_ip,
-                'public-ip': self.public_ip
+                'public-ip': self.public_ip,
+                'elk-key-file' : self.elk_key_file,
+                'elk-certificate-file' : self.elk_certificate_file,
+                'elk-cn' : self.elk_cn
             }
         else:
             config['agent'] = {
@@ -182,7 +191,10 @@ class TestKConfig(unittest.TestCase):
                 'conda-envs-blacklist': self.conda_envs_blacklist,
                 'conda-gc-interval': self.conda_gc_interval,
                 'private-ip': self.private_ip,
-                'public-ip': self.public_ip
+                'public-ip': self.public_ip,
+                'elk-key-file' : self.elk_key_file,
+                'elk-certificate-file' : self.elk_certificate_file,
+                'elk-cn' : self.elk_cn
             }
 
         with open(self.config_file[1], 'w') as config_fd:

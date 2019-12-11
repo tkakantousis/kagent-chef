@@ -34,9 +34,78 @@ action :csr do
       chown root:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs_dir"]}/priv.key.rsa
     EOH
     only_if { ::File.exists?( "#{node['kagent']['certs_dir']}/priv.key.rsa" ) }
-  end
+  end  
+  
 end
 
+action :combine_certs do 
+  bash "append hops ca certificates to chef cacerts" do
+    user "root"
+    code <<-EOH
+      set -eo pipefail
+      echo "Hops Root CA " >>  /opt/chefdk/embedded/ssl/certs/cacert.pem
+      echo "==================" >>  /opt/chefdk/embedded/ssl/certs/cacert.pem
+      cat #{node["kagent"]["certs_dir"]}/hops_root_ca.pem >> /opt/chefdk/embedded/ssl/certs/cacert.pem
+
+      echo "Hops Intermediate CA " >>  /opt/chefdk/embedded/ssl/certs/cacert.pem
+      echo "==================" >>  /opt/chefdk/embedded/ssl/certs/cacert.pem
+      cat #{node["kagent"]["certs_dir"]}/hops_intermediate_ca.pem >> /opt/chefdk/embedded/ssl/certs/cacert.pem
+    EOH
+    only_if { ::File.exists?( "/opt/chefdk/embedded/ssl/certs/cacert.pem" ) }
+  end
+
+  bash "create #{node["kagent"]["certs"]["root_ca"]} by concatenating hops_root_ca and hops_intermediate_ca " do
+    user "root"
+    code <<-EOH
+      set -eo pipefail
+      
+      echo "Hops Root CA " > #{node["kagent"]["certs"]["root_ca"]}
+      echo "==================" >>  #{node["kagent"]["certs"]["root_ca"]}
+      cat #{node["kagent"]["certs_dir"]}/hops_root_ca.pem >> #{node["kagent"]["certs"]["root_ca"]}
+
+      echo "Hops Intermediate CA " >> #{node["kagent"]["certs"]["root_ca"]}
+      echo "==================" >>  #{node["kagent"]["certs"]["root_ca"]}
+      cat #{node["kagent"]["certs_dir"]}/hops_intermediate_ca.pem >>#{node["kagent"]["certs"]["root_ca"]}
+
+      chown root:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs"]["root_ca"]}
+      chmod 640 #{node["kagent"]["certs"]["root_ca"]}
+    EOH
+    not_if { ::File.exists?( node["kagent"]["certs"]["root_ca"] ) }
+  end
+
+  bash "create #{node["kagent"]["certs"]["elastic_host_certificate"]} by concatenating pub.pem and hops_intermediate_ca " do
+    user "root"
+    code <<-EOH
+      set -eo pipefail
+      cat #{node["kagent"]["certs_dir"]}/pub.pem > #{node["kagent"]["certs"]["elastic_host_certificate"]}
+      cat #{node["kagent"]["certs_dir"]}/hops_intermediate_ca.pem >> #{node["kagent"]["certs"]["elastic_host_certificate"]}
+
+      chown root:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs"]["elastic_host_certificate"]}
+      chmod 640 #{node["kagent"]["certs"]["elastic_host_certificate"]}
+    EOH
+    not_if { ::File.exists?( node["kagent"]["certs"]["elastic_host_certificate"] ) }
+  end
+end 
+
+action :generate_elastic_admin_certificate do
+  bash "sign-admin-elastic-key" do
+    user "root"
+    retries 4
+    retry_delay 10
+    timeout 300
+    code <<-EOF
+      set -eo pipefail
+      export PYTHON_EGG_CACHE=/tmp
+      #{node[:conda][:base_dir]}/envs/hops-system/bin/python #{node[:kagent][:certs_dir]}/csr.py \
+      -c #{node[:kagent][:etc]}/config.ini elkadmin
+      chown root:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs"]["elastic_admin_key"]}
+      chmod 640 #{node["kagent"]["certs"]["elastic_admin_key"]}
+      chown root:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs"]["elastic_admin_certificate"]}
+      chmod 640 #{node["kagent"]["certs"]["elastic_admin_certificate"]}
+    EOF
+    not_if { ::File.exists?( node["kagent"]["certs"]["elastic_admin_key"] ) }
+  end
+end
 
 action :generate do
   homedir = "#{new_resource.homedir}"

@@ -142,6 +142,89 @@ class Certificate:
         return hShort
 
 
+class ELKAdminCertificate:
+    """Class representing X509 certificate for elastic admin"""
+    
+    def __init__(self, config):
+        self._config = config
+        self._private_key = None
+        self._private_key_rsa = None
+        self._certificate = None
+        self._intermediate_ca = None
+        self._root_ca = None
+        self.cn = None
+        self.version = None
+        self._LOG = logging.getLogger(__name__)
+        
+    def create_csr(self):
+        """Generates a cryptographic key-pair and a CSR"""
+                
+        self._LOG.info("Creating Certificate Signing Request")
+        pKey = self._generate_key()
+        
+        self.version = 0
+        # Create CSR
+        csr = crypto.X509Req()
+        csr.get_subject().C = "SE"
+        csr.get_subject().ST = "Sweden"
+        csr.get_subject().L = "Stockholm"
+        csr.get_subject().O = "Hopsworks"
+        csr.get_subject().OU = str(self.version)
+
+        # CN should be the hostname of the server
+        self.cn = self._config.elk_cn
+        csr.get_subject().CN = self.cn
+        csr.set_pubkey(pKey)
+
+        ### For kafka fix
+        base_constraints = ([crypto.X509Extension("keyUsage", False, "Digital Signature, Non Repudiation, Key Encipherment")])
+        x509_extensions = base_constraints
+        # If there are SAN entries, append the base_constraints to include them.
+        san_constraint = crypto.X509Extension("subjectAltName", False, "DNS: %s" % self.cn)
+        x509_extensions.append(san_constraint)
+        csr.add_extensions(x509_extensions)
+        ### End Kafka
+
+        csr.sign(pKey, 'sha256')
+        self.csr_req = crypto.dump_certificate_request(crypto.FILETYPE_PEM, csr)
+        self._private_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, pKey)
+        cryptography_key = pKey.to_cryptography_key()
+        self._private_key_rsa = cryptography_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption())
+        self._LOG.debug("Finished CSR")
+
+    def store(self):
+        """Write certificate and private key in current directory"""
+        self._LOG.debug("Storing certificate, key and CA certificate")
+        cert_dir = os.path.dirname(os.path.abspath(__file__))
+
+        if self._private_key is not None:
+            with open(join(cert_dir, self._config.elk_key_file), "wt") as fd:
+                fd.write(self._private_key)
+
+        # OpenSSL traditional format PKCS#1, MySQL assumes this format when we enable TLS connections
+        if self._private_key_rsa:
+            with open(join(cert_dir, self._config.elk_key_file + ".rsa"), "wt") as fd:
+                fd.write(self._private_key_rsa)
+                
+        if self._certificate is not None:
+            with open(join(cert_dir, self._config.elk_certificate_file), "wt") as fd:
+                fd.write(self._certificate)
+                fd.write(self._intermediate_ca)
+
+        self._LOG.info("Flushed crypto material to filesystem")
+        
+    def _generate_key(self):
+        """Generates cryptographic pair"""
+
+        self._LOG.debug("Generating cryptographic key-pair")
+        pKey = crypto.PKey()
+        pKey.generate_key(crypto.TYPE_RSA, 2048)
+        
+        return pKey
+
 class Host:
     """Class representing a host in the cluster"""
     form_headers = {'Content-Type': 'application/x-www-form-urlencoded',
@@ -161,6 +244,10 @@ class Host:
         self._store_new_crypto_state()
         self._revoke_certificate(session)
 
+    def generate_elkadmin_cert(self, session):
+        """Public method to generate admin certificates for elastic"""
+        self._sign_csr(session)
+            
     def _sign_csr(self, session):
         """Sends CSR to HopsCA and gets the signed X509 certificate"""
         jwt = self._login(session)
@@ -276,6 +363,7 @@ if __name__ == '__main__':
     subparser = parser.add_subparsers(dest='operation', help='Operations')
     subparser.add_parser('init', help='Initialize agent')
     subparser.add_parser('rotate', help='Rotate node certificate')
+    subparser.add_parser('elkadmin', help='Generate elastic admin certificate')
 
     args = parser.parse_args()
 
@@ -327,5 +415,18 @@ if __name__ == '__main__':
                 subprocess.call(config.keystore_script)
             except Exception, e:
                 LOG.error("Error while rotating key: {0}".format(e))
+                raise e
+    elif args.operation == "elkadmin":
+        LOG.debug("ELK Admin certificate")
+        cert = ELKAdminCertificate(config)
+        
+        cert.create_csr()
+        
+        h = Host(config, cert, state_store)
+        with requests.Session() as session:
+            try:
+                h.generate_elkadmin_cert(session)
+            except Exception, e:
+                LOG.error("Error while generating elk admin certificate: {0}".format(e))
                 raise e
     
