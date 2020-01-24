@@ -203,14 +203,6 @@ cookbook_file "#{node["kagent"]["home"]}/agent.py" do
   mode 0710
 end
 
-## Touch cssr script log file as kagent user, so agent.py can write to it
-file "#{node["kagent"]["dir"]}/csr.log" do
-  mode '0750'
-  owner node["kagent"]["user"]
-  group node["kagent"]["group"]
-  action :touch
-end
-
 cookbook_file "#{node["kagent"]["certs_dir"]}/csr.py" do
   source 'csr.py'
   owner node["kagent"]["certs_user"]
