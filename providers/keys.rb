@@ -3,7 +3,6 @@ action :csr do
   bash "sign-local-csr-key" do
     user node['kagent']['certs_user']
     group node['kagent']['group']
-    umask 022
     retries 4
     retry_delay 10
     timeout 300
@@ -14,6 +13,18 @@ action :csr do
       -c #{node[:kagent][:etc]}/config.ini init
     EOF
     not_if { ::File.exists?( "#{node['kagent']['certs_dir']}/priv.key" ) }
+  end
+
+  # We need to run the previous block with Kagent group otherwise 
+  # it won't be able to access the configuration file
+  # Now we need to chown the directory to the certs group
+  bash "chown-certificates" do
+    user "root"
+    code <<-EOH
+      chmod -R 750 #{node["kagent"]["certs_dir"]}
+      chown -R #{node["kagent"]["certs_user"]}:#{node["kagent"]["certs_group"]} #{node["kagent"]["certs_dir"]}
+    EOH
+    only_if { ::File.exists?( "#{node['kagent']['certs_dir']}/priv.key" ) }    
   end
 end
 
