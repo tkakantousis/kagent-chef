@@ -32,7 +32,7 @@ key-file = <%= node["kagent"]["certs_dir"] %>/priv.key
 hops_ca-cert-file = <%= node["kagent"]["certs"]["root_ca"] %>
 server-keystore = <%= @kstore %>
 server-truststore = <%= @tstore %>
-keystore-script = <%= node["kagent"]["base_dir"] %>/keystore.sh
+keystore-script = <%= node["kagent"]["certs_dir"] %>/keystore.sh
 state-store = <%= node["kagent"]["etc"]%>/state_store
 password = <%= @agent_password %>
 conda-dir = <%= node["conda"]["home"] %>
