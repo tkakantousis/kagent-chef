@@ -27,13 +27,19 @@ module Kagent
             request = Net::HTTP::Post.new(url)
 
             request["Content-Type"] = 'application/x-www-form-urlencoded'
-            request.body = URI.encode_www_form([["email", node["kagent"]["dashboard"]["user"]], ["password", node["kagent"]["dashboard"]["password"]]]) 
-            
-            response = http.request(request)
+            request.body = URI.encode_www_form([["email", node["kagent"]["dashboard"]["user"]], ["password", node["kagent"]["dashboard"]["password"]]])
 
-            if !response.kind_of? Net::HTTPSuccess
-                raise "Error authenticating with the Hopsworks server"
+            # Retry authenticating against Hopsworks in case of HTTP non-Success
+            retries = 0
+            response = http.request(request)
+            until response.kind_of? Net::HTTPSuccess or retries > 5 do
+              Chef::Log.warn("Could not authenticate with Hopsworks, will retry in 30 sec.")
+              sleep(30)
+              response = http.request(request)
+              retries += 1
             end
+            if !response.kind_of? Net::HTTPSuccess
+              raise "Error authenticating with Hopsworks"
 
             # Take only the token
             master_token = response['Authorization'].split[1].strip
