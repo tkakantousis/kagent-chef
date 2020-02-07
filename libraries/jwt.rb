@@ -40,6 +40,7 @@ module Kagent
             end
             if !response.kind_of? Net::HTTPSuccess
               raise "Error authenticating with Hopsworks"
+            end
 
             # Take only the token
             master_token = response['Authorization'].split[1].strip
