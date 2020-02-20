@@ -209,3 +209,27 @@ cookbook_file "#{node["kagent"]["certs_dir"]}/csr.py" do
   group node["kagent"]["certs_group"]
   mode 0710
 end
+
+
+template "#{node["kagent"]["home"]}/bin/start-all-local-services.sh" do
+  source "start-all-local-services.sh.erb"
+  owner node["kagent"]["user"]
+  group node["kagent"]["group"]
+  mode 0740
+end
+
+
+template "#{node["kagent"]["home"]}/bin/shutdown-all-local-services.sh" do
+  source "shutdown-all-local-services.sh.erb"
+  owner node["kagent"]["user"]
+  group node["kagent"]["group"]
+  mode 0740
+end
+
+template "#{node["kagent"]["home"]}/bin/status-all-local-services.sh" do
+  source "status-all-local-services.sh.erb"
+  owner node["kagent"]["user"]
+  group node["kagent"]["group"]
+  mode 0740
+end
+
