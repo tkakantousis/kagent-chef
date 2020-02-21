@@ -134,14 +134,10 @@ module Kagent
         hname = hostf.getname(ip)
       rescue
         begin
-          hname = node['fqdn']
+          hostname = dns.getname(ip)
+          hname = hostname.to_s
         rescue
-          begin
-            hostname = dns.getname(ip)
-            hname = hostname.to_s
-          rescue
-            raise "Cannot resolve the hostname for IP address: #{ip}"
-          end
+          raise "Cannot resolve the hostname for IP address: #{ip}"
         end
       end
     end
