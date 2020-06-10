@@ -70,7 +70,6 @@ default["public_ips"]                              = ['10.0.2.15']
 default["private_ips"]                             = ['10.0.2.15']
 default["gateway_ips"]                             = ['10.0.2.2']
 
-default["download_url"]                       = "https://repo.hops.works/master"
 default["systemd"]                            = "true"
 
 default["vagrant"]                            = "false"
