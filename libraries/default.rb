@@ -266,6 +266,11 @@ module Kagent
       header['Authorization'] = "Basic #{credentials_b64}"
       header
     end
+
+    def service_discovery_enabled()
+       exists_local('consul', 'master') or exists_local('consul', 'slave')
+    end
+    
   end
 end
 
