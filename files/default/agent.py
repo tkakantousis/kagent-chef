@@ -246,6 +246,8 @@ class SystemCommandsHandler:
 
         if op == 'SERVICE_KEY_ROTATION':
             self._service_key_rotation(command)
+        elif op == 'CONDA_GC':
+            self._conda_gc(command)
         else:
             logger.error("Unknown OP {0} for system command {1}".format(op, command))
 
@@ -272,6 +274,30 @@ class SystemCommandsHandler:
             command['status'] = 'FAILED'
         except Exception as e:
             logger.error("General error while rotating certificates {0}".format(e))
+            command['status'] = 'FAILED'
+
+        self._system_commands_status_mutex.acquire()
+        logger.debug("Adding status {0} for command ID {1} - {2}".format(command['status'], command['id'], command))
+        self._system_commands_status[command['id']] = command
+        self._system_commands_status_mutex.release()
+
+    def _conda_gc(self, command):
+        try:
+            logger.debug("Calling conda gc script")
+            conda_gc_helper_script = os.path.join(kconfig.sbin_dir, "dockerImage.sh")
+            docker_image = command['arguments']
+
+            logger.info("Deleting docker image {0}".format(docker_image))
+            subprocess.check_call(["sudo", conda_gc_helper_script, "delete", docker_image])
+            logger.info("Deleted docker image {0}".format(docker_image))
+
+            command['status'] = 'FINISHED'
+            logger.info("Successfully removed docker image")
+        except CalledProcessError as e:
+            logger.error("Error while deleting docker image: <{0}> Reason: {1}".format(docker_image, e))
+            command['status'] = 'FAILED'
+        except Exception as e:
+            logger.error("General error while removing docker image {0}".format(e))
             command['status'] = 'FAILED'
 
         self._system_commands_status_mutex.acquire()
