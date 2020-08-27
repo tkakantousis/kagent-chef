@@ -284,7 +284,7 @@ class SystemCommandsHandler:
     def _conda_gc(self, command):
         try:
             logger.debug("Calling conda gc script")
-            conda_gc_helper_script = os.path.join(kconfig.sbin_dir, "dockerImage.sh")
+            conda_gc_helper_script = os.path.join(kconfig.sbin_dir, "dockerImageDelete.sh")
             docker_image = command['arguments']
 
             logger.info("Deleting docker image {0}".format(docker_image))
