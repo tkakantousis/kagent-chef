@@ -65,6 +65,14 @@ kagent_sudoers "run_csr" do
     run_as      node["kagent"]["certs_user"]
 end
 
+kagent_sudoers "dockerImageDelete" do
+  user          node['kagent']['user']
+  group         "root"
+  script_name   "dockerImageDelete.sh"
+  template      "dockerImageDelete.sh.erb"
+  run_as        "ALL" # run this as root - inside we change to different users
+end
+
 service_name = "kagent"
 
 agent_password = ""
@@ -266,6 +274,7 @@ end
   
 kagent_config service_name do
   service "kagent"
+  
   config_file "#{node["kagent"]["etc"]}/config.ini"
   log_file "#{node["kagent"]["dir"]}/logs/agent.log"
   restart_agent false
