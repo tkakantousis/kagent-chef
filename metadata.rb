@@ -15,7 +15,7 @@ end
 
 depends 'openssl', '~> 4.4.0'
 depends 'hostsfile', '~> 2.4.5'
-depends 'ntp', '~> 2.1.0'
+depends 'ntp', '~> 2.0.0'
 depends 'sudo', '~> 4.0.0'
 depends 'magic_shell', '~> 1.0.0'
 depends 'conda'
